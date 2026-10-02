@@ -41,22 +41,10 @@ impl Layout {
         self.height
     }
 
-    /// The field containing `x`, or the nearest one (ties go left).
+    /// The field for pixel `x` (Java `RowLayout.findAppropriateFieldIndex`):
+    /// the last field starting at or before `x`, else the first field.
     pub fn field_index_at(&self, x: i32) -> Option<usize> {
-        if self.fields.is_empty() {
-            return None;
-        }
-        if let Some(i) = self.fields.iter().position(|f| f.contains(x)) {
-            return Some(i);
-        }
-        let distance = |f: &ClippingTextField| {
-            if x < f.start_x() {
-                f.start_x() - x
-            } else {
-                x - (f.start_x() + f.width() - 1)
-            }
-        };
-        (0..self.fields.len()).min_by_key(|&i| (distance(&self.fields[i]), i))
+        self.fields.iter().rposition(|f| f.start_x() <= x).or(if self.fields.is_empty() { None } else { Some(0) })
     }
 
     /// Cursor location for pixel `x` on the layout at `index`, if it has fields.
@@ -100,10 +88,13 @@ mod tests {
     }
 
     #[test]
-    fn x_between_fields_snaps_to_nearest() {
+    fn x_between_fields_belongs_to_the_field_on_its_left() {
+        // Java RowLayout.findAppropriateFieldIndex: last field starting at or
+        // before x, so a gap pixel is the left field's end column.
         let l = layout();
-        assert_eq!(l.cursor_location(0, 84).field, 0); // 4px past field 0, 6px before field 1
-        assert_eq!(l.cursor_location(0, 87).field, 1);
+        assert_eq!(l.cursor_location(0, 84), FieldLocation { index: 0, field: 0, row: 0, col: 8 });
+        assert_eq!(l.cursor_location(0, 87), FieldLocation { index: 0, field: 0, row: 0, col: 8 });
+        assert_eq!(l.cursor_location(0, 125).field, 1);
     }
 
     #[test]

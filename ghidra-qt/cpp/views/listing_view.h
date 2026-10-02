@@ -17,6 +17,10 @@ public:
     ListingView(uint64_t pid, QStatusBar* status, QWidget* parent = nullptr);
     // Text of the first n rows as painted ("a  b  c  d"), for smoke tests.
     QStringList dumpRows(int n);
+    // Scroll by delta rows as the wheel does (smoke tests).
+    void scrollRows(int64_t delta);
+    // "index: x0 x1 ..." of the first painted row (smoke tests).
+    QString firstRowSummary();
 
 protected:
     void paintEvent(QPaintEvent* event) override;
@@ -25,13 +29,13 @@ protected:
     void mousePressEvent(QMouseEvent* event) override;
     void keyPressEvent(QKeyEvent* event) override;
     void scrollContentsBy(int dx, int dy) override;
+    void changeEvent(QEvent* event) override;
 
 private:
     void reportMetrics();
     void setTop(const QString& top);
     void syncScrollBar();
     void ensureCursorVisible();
-    int pageRows() const;
 
     uint64_t m_pid;
     QStatusBar* m_status;

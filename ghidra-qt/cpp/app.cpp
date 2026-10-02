@@ -1,6 +1,7 @@
 #include "ghidra-qt/cpp/app.h"
 
 #include <QApplication>
+#include <QFont>
 #include <QFile>
 #include <QPixmap>
 #include <QString>
@@ -8,6 +9,7 @@
 #include <QKeySequence>
 #include <QTimer>
 #include <cstdio>
+#include <memory>
 
 #include "DockWidget.h"
 #include "ghidra-qt/cpp/bridge_call.h"
@@ -71,6 +73,19 @@ int32_t run_app(const UiSession& session, const AppOptions& options) {
         std::fflush(stdout);
         return 0;
     }
+    if (options.listing_font_change) {
+        ads::CDockWidget* dock = window.dockByTitle(QStringLiteral("Listing"));
+        auto* view = dock ? dynamic_cast<ListingView*>(dock->widget()) : nullptr;
+        if (!view) return 5;
+        view->scrollRows(3);
+        std::printf("%s\n", view->firstRowSummary().toUtf8().constData());
+        QFont f = view->font();
+        f.setPointSizeF(f.pointSizeF() * 2);
+        view->setFont(f);
+        std::printf("%s\n", view->firstRowSummary().toUtf8().constData());
+        std::fflush(stdout);
+        return 0;
+    }
     if (options.count_after_rebuilds > 0) {
         for (uint32_t i = 0; i < options.count_after_rebuilds; ++i) {
             window.rebuildActions();
@@ -91,13 +106,31 @@ int32_t run_app(const UiSession& session, const AppOptions& options) {
         QString press = toQString(options.press);
         QTimer::singleShot(200, &window, [&window, focus, press, pump] {
             window.focusDock(focus);
-            QWidget* target = QApplication::focusWidget();
-            if (!target) target = window.dockByTitle(focus) ? window.dockByTitle(focus)->widget() : &window;
-            const QKeySequence seq = QKeySequence::fromString(QString(press).replace(QLatin1Char('-'), QLatin1Char('+')));
-            if (seq.isEmpty()) return;
-            const QKeyCombination combo = seq[0];
-            QApplication::postEvent(target, new QKeyEvent(QEvent::KeyPress, combo.key(), combo.keyboardModifiers()));
-            QTimer::singleShot(300, pump, [pump] { pump->pump(); });
+            // Post only once focus has really landed in the dock: the key is
+            // dispatched in the focused provider's context, and under load the
+            // window may not be active yet when this timer fires.
+            auto* poll = new QTimer(&window);
+            auto deadline = std::make_shared<int>(150);  // x20ms = 3s
+            QObject::connect(poll, &QTimer::timeout, &window, [&window, focus, press, pump, poll, deadline] {
+                ads::CDockWidget* dock = window.dockByTitle(focus);
+                QWidget* fw = QApplication::focusWidget();
+                const bool landed = !dock || (fw && dock->widget() && dock->widget()->isAncestorOf(fw)) ||
+                                    (fw && fw == dock->widget());
+                if (!landed && --*deadline > 0) {
+                    if (*deadline % 10 == 0) window.focusDock(focus);
+                    return;
+                }
+                poll->stop();
+                poll->deleteLater();
+                if (!landed) std::fprintf(stderr, "ghidra-qt: focus never reached %s\n", focus.toUtf8().constData());
+                QWidget* target = fw ? fw : (dock ? dock->widget() : &window);
+                const QKeySequence seq = QKeySequence::fromString(QString(press).replace(QLatin1Char('-'), QLatin1Char('+')));
+                if (seq.isEmpty()) return;
+                const QKeyCombination combo = seq[0];
+                QApplication::postEvent(target, new QKeyEvent(QEvent::KeyPress, combo.key(), combo.keyboardModifiers()));
+                QTimer::singleShot(300, pump, [pump] { pump->pump(); });
+            });
+            poll->start(20);
         });
     }
 

@@ -164,7 +164,7 @@ mod tests {
         let bad = std::env::temp_dir().join(format!("ghidra-ui-model-bad-{}.xml", std::process::id()));
         std::fs::write(&bad, "<not xml").unwrap();
         assert!(s.load_tool_config(&bad).is_err());
-        assert_eq!(s.tool().provider_ids().count(), 4);
+        assert_eq!(s.tool().provider_ids().count(), 5);
         let _ = std::fs::remove_file(&bad);
     }
 

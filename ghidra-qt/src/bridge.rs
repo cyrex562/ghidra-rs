@@ -108,6 +108,8 @@ pub mod ffi {
         pub count_after_rebuilds: u32,
         /// Print the first N listing rows the view would paint; 0 = off.
         pub dump_listing: u32,
+        /// Scroll, change the listing font, print the first row before/after.
+        pub listing_font_change: bool,
     }
 
     /// A provider as the shell needs it.
@@ -201,6 +203,11 @@ pub mod ffi {
     }
 
     /// A listing cursor; `index` is a decimal u128; `valid` false = none.
+    pub struct ScrollbarInfo {
+        pub max: i32,
+        pub page_step: i32,
+    }
+
     pub struct CursorInfo {
         pub index: String,
         pub field: u32,
@@ -249,12 +256,14 @@ pub mod ffi {
         fn listing_set_metrics(pid: u64, metrics: MetricsInfo) -> Result<()>;
         fn listing_index_count(pid: u64) -> Result<String>;
         fn listing_rows(pid: u64, top: &str, viewport_px: i32) -> Result<Vec<RowInfo>>;
-        fn listing_hit(pid: u64, index: &str, x: i32) -> Result<CursorInfo>;
-        fn listing_move(pid: u64, cursor: CursorInfo, direction: u8, page_rows: u32) -> Result<CursorInfo>;
+        fn listing_hit(pid: u64, top: &str, x: i32, y: i32, viewport_px: i32) -> Result<CursorInfo>;
+        fn listing_move(pid: u64, cursor: CursorInfo, direction: u8, viewport_px: i32) -> Result<CursorInfo>;
         fn listing_goto(pid: u64, address: u64) -> Result<String>;
-        fn listing_scroll(pid: u64, top: &str, delta_rows: i64) -> Result<String>;
-        fn listing_top_for_fraction(pid: u64, fraction: f64) -> Result<String>;
-        fn listing_fraction(pid: u64, top: &str) -> Result<f64>;
+        fn listing_scroll(pid: u64, top: &str, delta_rows: i64, viewport_px: i32) -> Result<String>;
+        fn listing_scrollbar(pid: u64, viewport_px: i32) -> Result<ScrollbarInfo>;
+        fn listing_top_for_value(pid: u64, value: i32, viewport_px: i32) -> Result<String>;
+        fn listing_value_for_top(pid: u64, top: &str, viewport_px: i32) -> Result<i32>;
+        fn listing_ensure_visible(pid: u64, top: &str, cursor: &str, viewport_px: i32) -> Result<String>;
 
         fn menu_bar(focused_pid: i64) -> Result<Vec<MenuItemInfo>>;
         fn popup_menu(pid: u64) -> Result<Vec<MenuItemInfo>>;
@@ -280,8 +289,9 @@ pub mod ffi {
     }
 }
 
-use ffi::{CursorInfo, EventInfo, FieldInfo, KeyResult, MenuItemInfo, MetricsInfo, ProviderInfo, RowInfo, RunInfo, RunPosInfo, ToolBarInfo};
-use ghidra_ui_model::listing::{CursorPos, FontMetrics, Move};
+use ffi::{CursorInfo, EventInfo, FieldInfo, KeyResult, MenuItemInfo, MetricsInfo, ProviderInfo, RowInfo, RunInfo, RunPosInfo, ScrollbarInfo, ToolBarInfo};
+use ghidra_ui_model::listing::{CursorPos, FontMetrics, ListingViewModel, Move};
+use ghidra_ui_model::listing_scroll::ScrollModel;
 
 fn session_title(session: &UiSession) -> Result<String, String> {
     guard("session_title", || session.0.clone())
@@ -473,27 +483,43 @@ fn cursor_info(c: Option<CursorPos>) -> CursorInfo {
     }
 }
 
-fn listing_hit(pid: u64, index: &str, x: i32) -> Result<CursorInfo, String> {
-    let index = parse_index(index)?;
-    with("listing_hit", |s| Ok(cursor_info(model!(s, pid, Listing, "listing").hit_test(index, x))))
+/// Rows that fit entirely in a `viewport_px`-tall viewport (at least 1).
+fn page_rows(m: &dyn ListingViewModel, viewport_px: i32) -> u32 {
+    m.rows(0, viewport_px).iter().filter(|r| r.y + r.height <= viewport_px).count().max(1) as u32
 }
 
-fn listing_move(pid: u64, cursor: CursorInfo, direction: u8, page_rows: u32) -> Result<CursorInfo, String> {
-    let index = parse_index(&cursor.index)?;
-    let mv = match direction {
-        0 => Move::Up,
-        1 => Move::Down,
-        2 => Move::Left,
-        3 => Move::Right,
-        4 => Move::PageUp,
-        5 => Move::PageDown,
-        6 => Move::Home,
-        7 => Move::End,
-        d => return Err(format!("bad cursor direction {d}")),
-    };
+fn scroll_model(m: &dyn ListingViewModel, viewport_px: i32) -> ScrollModel {
+    ScrollModel::new(m.index_count(), page_rows(m, viewport_px))
+}
+
+/// Cursor for a click at (`x`, `y`) in a viewport whose first row is `top`;
+/// invalid below the last row.
+fn listing_hit(pid: u64, top: &str, x: i32, y: i32, viewport_px: i32) -> Result<CursorInfo, String> {
+    with("listing_hit", |s| {
+        let top = parse_index(top)?;
+        let m = model!(s, pid, Listing, "listing");
+        let row = m.rows(top, viewport_px.max(y + 1)).into_iter().find(|r| r.y <= y && y < r.y + r.height);
+        Ok(cursor_info(row.and_then(|r| m.hit_test(r.index, x))))
+    })
+}
+
+fn listing_move(pid: u64, cursor: CursorInfo, direction: u8, viewport_px: i32) -> Result<CursorInfo, String> {
     with("listing_move", |s| {
+        let index = parse_index(&cursor.index)?;
+        let mv = match direction {
+            0 => Move::Up,
+            1 => Move::Down,
+            2 => Move::Left,
+            3 => Move::Right,
+            4 => Move::PageUp,
+            5 => Move::PageDown,
+            6 => Move::Home,
+            7 => Move::End,
+            d => return Err(format!("bad cursor direction {d}")),
+        };
+        let m = model!(s, pid, Listing, "listing");
         let c = CursorPos { index, field: cursor.field as usize, col: cursor.col as usize };
-        Ok(cursor_info(Some(model!(s, pid, Listing, "listing").move_cursor(c, mv, page_rows))))
+        Ok(cursor_info(Some(m.move_cursor(c, mv, page_rows(m.as_ref(), viewport_px)))))
     })
 }
 
@@ -501,32 +527,43 @@ fn listing_goto(pid: u64, address: u64) -> Result<String, String> {
     with("listing_goto", |s| Ok(model!(s, pid, Listing, "listing").goto(address).map(|i| i.to_string()).unwrap_or_default()))
 }
 
-fn listing_scroll(pid: u64, top: &str, delta_rows: i64) -> Result<String, String> {
-    let top = parse_index(top)?;
+/// `top` moved by `delta_rows`, clamped so the last page stays full (Java
+/// `IndexedScrollPane`).
+fn listing_scroll(pid: u64, top: &str, delta_rows: i64, viewport_px: i32) -> Result<String, String> {
     with("listing_scroll", |s| {
-        let count = model!(s, pid, Listing, "listing").index_count();
-        let max = count.saturating_sub(1);
-        let t = if delta_rows < 0 { top.saturating_sub(delta_rows.unsigned_abs() as u128) } else { top.saturating_add(delta_rows as u128).min(max) };
-        Ok(t.to_string())
+        let top = parse_index(top)?;
+        let m = model!(s, pid, Listing, "listing");
+        Ok(scroll_model(m.as_ref(), viewport_px).scroll(top, delta_rows).to_string())
     })
 }
 
-/// Scrollbar mapping (Java `IndexedScrollPane` style): fraction 0..1 of the
-/// index space, so a 2^64-row listing still maps onto an int scrollbar.
-fn listing_top_for_fraction(pid: u64, fraction: f64) -> Result<String, String> {
-    with("listing_top_for_fraction", |s| {
-        let count = model!(s, pid, Listing, "listing").index_count();
-        let f = fraction.clamp(0.0, 1.0);
-        let t = ((count.saturating_sub(1)) as f64 * f) as u128;
-        Ok(t.min(count.saturating_sub(1)).to_string())
+/// Scrollbar range and page step: exact rows for small listings, a fixed
+/// fraction range for huge ones.
+fn listing_scrollbar(pid: u64, viewport_px: i32) -> Result<ScrollbarInfo, String> {
+    with("listing_scrollbar", |s| {
+        let sm = scroll_model(model!(s, pid, Listing, "listing").as_ref(), viewport_px);
+        Ok(ScrollbarInfo { max: sm.range_max(), page_step: sm.page_step() })
     })
 }
 
-fn listing_fraction(pid: u64, top: &str) -> Result<f64, String> {
-    let top = parse_index(top)?;
-    with("listing_fraction", |s| {
-        let count = model!(s, pid, Listing, "listing").index_count();
-        Ok(if count <= 1 { 0.0 } else { top as f64 / (count - 1) as f64 })
+fn listing_top_for_value(pid: u64, value: i32, viewport_px: i32) -> Result<String, String> {
+    with("listing_top_for_value", |s| {
+        Ok(scroll_model(model!(s, pid, Listing, "listing").as_ref(), viewport_px).top_for_value(value).to_string())
+    })
+}
+
+fn listing_value_for_top(pid: u64, top: &str, viewport_px: i32) -> Result<i32, String> {
+    with("listing_value_for_top", |s| {
+        let top = parse_index(top)?;
+        Ok(scroll_model(model!(s, pid, Listing, "listing").as_ref(), viewport_px).value_for_top(top))
+    })
+}
+
+/// The top index that keeps `cursor` on screen (exact u128 comparison).
+fn listing_ensure_visible(pid: u64, top: &str, cursor: &str, viewport_px: i32) -> Result<String, String> {
+    with("listing_ensure_visible", |s| {
+        let (top, cursor) = (parse_index(top)?, parse_index(cursor)?);
+        Ok(scroll_model(model!(s, pid, Listing, "listing").as_ref(), viewport_px).ensure_visible(top, cursor).to_string())
     })
 }
 
@@ -746,13 +783,46 @@ mod tests {
         assert_eq!(first, vec!["00401000", "55", "??", "55h"]);
         assert_eq!(listing_goto(p, 0x402000).unwrap(), "12");
         assert_eq!(listing_goto(p, 0x401800).unwrap(), "");
-        assert_eq!(listing_scroll(p, "0", -5).unwrap(), "0");
-        assert_eq!(listing_scroll(p, "15", 10).unwrap(), "17");
-        assert_eq!(listing_top_for_fraction(p, 1.0).unwrap(), "17");
         assert!(listing_rows(p, "not-a-number", 100).is_err());
-        let c = listing_hit(p, "1", 0).unwrap();
+    }
+
+    fn row_height(p: u64) -> i32 {
+        let rows = listing_rows(p, "0", 1000).unwrap();
+        rows[1].y - rows[0].y
+    }
+
+    #[test]
+    fn scrolling_keeps_the_last_page_full() {
+        let p = pid("Listing");
+        let vp = 5 * row_height(p); // 5 rows of 18: max top 13
+        assert_eq!(listing_scroll(p, "0", -5, vp).unwrap(), "0");
+        assert_eq!(listing_scroll(p, "10", 100, vp).unwrap(), "13");
+        assert_eq!(listing_ensure_visible(p, "0", "17", vp).unwrap(), "13");
+        assert_eq!(listing_ensure_visible(p, "4", "3", vp).unwrap(), "3");
+        assert_eq!(listing_ensure_visible(p, "4", "8", vp).unwrap(), "4");
+    }
+
+    #[test]
+    fn small_listing_scrollbar_maps_rows_exactly() {
+        let p = pid("Listing");
+        let vp = 5 * row_height(p);
+        let sb = listing_scrollbar(p, vp).unwrap();
+        assert_eq!((sb.max, sb.page_step), (13, 5));
+        assert_eq!(listing_top_for_value(p, 1, vp).unwrap(), "1");
+        assert_eq!(listing_value_for_top(p, "7", vp).unwrap(), 7);
+        assert!(listing_value_for_top(p, "x", vp).is_err());
+    }
+
+    #[test]
+    fn clicks_hit_the_row_under_the_pointer() {
+        let p = pid("Listing");
+        let h = row_height(p);
+        let c = listing_hit(p, "13", 0, 2 * h + 1, 5 * h).unwrap();
         assert!(c.valid);
-        assert_eq!(listing_move(p, c, 1, 10).unwrap().index, "2");
+        assert_eq!(c.index, "15");
+        assert!(!listing_hit(p, "13", 0, 9 * h, 20 * h).unwrap().valid); // below the last row
+        let c = listing_hit(p, "1", 0, 0, 5 * h).unwrap();
+        assert_eq!(listing_move(p, c, 1, 5 * h).unwrap().index, "2");
     }
 
     #[test]

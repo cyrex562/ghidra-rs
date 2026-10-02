@@ -251,6 +251,23 @@ fn rebuilding_actions_does_not_leak_menus_or_toolbar_actions() {
 }
 
 #[test]
+fn listing_font_change_relayouts_and_keeps_the_top_row() {
+    let out = shell().arg("--listing-font-change").output().expect("spawn");
+    assert!(out.status.success(), "stderr {}", String::from_utf8_lossy(&out.stderr));
+    let text = String::from_utf8_lossy(&out.stdout).to_string();
+    let lines: Vec<&str> = text.lines().collect();
+    assert_eq!(lines.len(), 2, "{text}");
+    let parse = |l: &str| {
+        let (index, xs) = l.split_once(": ").expect("index: xs");
+        (index.to_string(), xs.split(' ').map(|x| x.parse::<i32>().unwrap()).collect::<Vec<_>>())
+    };
+    let (before, after) = (parse(lines[0]), parse(lines[1]));
+    assert_eq!(before.0, "3");
+    assert_eq!(after.0, "3", "top row must survive a font change");
+    assert!(after.1[1] > before.1[1], "columns must widen with the font: {text}");
+}
+
+#[test]
 fn listing_dock_renders_undefined_bytes() {
     let out = shell().args(["--dump-listing", "3"]).output().expect("spawn");
     assert!(out.status.success(), "stderr {}", String::from_utf8_lossy(&out.stderr));

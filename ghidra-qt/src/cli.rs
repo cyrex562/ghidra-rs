@@ -44,6 +44,11 @@ pub struct Args {
     #[arg(long, value_name = "N", default_value_t = 0)]
     pub dump_listing: u32,
 
+    /// Scroll the Listing 3 rows, print its first row's index and run x
+    /// positions, double the font size, print them again, exit (smoke test).
+    #[arg(long, hide = true)]
+    pub listing_font_change: bool,
+
     /// Rebuild menus/toolbar N times, print menubar+toolbar child counts, exit (leak test).
     #[arg(long, hide = true, value_name = "N", default_value_t = 0)]
     pub count_after_rebuilds: u32,

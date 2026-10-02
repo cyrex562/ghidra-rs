@@ -8,6 +8,7 @@ pub mod demo;
 pub mod demo_tool;
 mod events;
 pub mod listing;
+pub mod listing_scroll;
 pub mod menus;
 mod session;
 mod view_kind;
