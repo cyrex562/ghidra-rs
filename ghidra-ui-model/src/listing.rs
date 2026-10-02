@@ -1,0 +1,343 @@
+//! The listing view-model contract (spec §5) and `MemoryListing`, which
+//! renders every byte of a memory snapshot as Ghidra shows undefined data:
+//! `address  bytes  ??  NNh`. Layout math happens here, from the renderer's
+//! font metrics; the renderer paints the positioned runs.
+
+pub use ghidra_rs::docking::widgets::fieldpanel::field::FontMetrics;
+use ghidra_rs::docking::widgets::fieldpanel::field::{ClippingTextField, FieldElement, TextStyle};
+use ghidra_rs::docking::widgets::fieldpanel::Layout;
+
+/// A run of text placed at an x position.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PositionedRun {
+    /// Left edge in pixels.
+    pub x: i32,
+    /// Shown text.
+    pub text: String,
+    /// Theme color id.
+    pub color_id: Option<String>,
+    /// Bold.
+    pub bold: bool,
+}
+
+/// One laid-out listing row.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FieldRow {
+    /// Row index.
+    pub index: u128,
+    /// Top of the row relative to the viewport top.
+    pub y: i32,
+    /// Row height.
+    pub height: i32,
+    /// Positioned runs, one per field.
+    pub runs: Vec<PositionedRun>,
+}
+
+/// Cursor position.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct CursorPos {
+    /// Row index.
+    pub index: u128,
+    /// Field within the row.
+    pub field: usize,
+    /// Column within the field.
+    pub col: usize,
+}
+
+/// Cursor movements.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Move {
+    /// Previous row.
+    Up,
+    /// Next row.
+    Down,
+    /// Previous column (wraps to the previous field).
+    Left,
+    /// Next column (wraps to the next field).
+    Right,
+    /// Up a page.
+    PageUp,
+    /// Down a page.
+    PageDown,
+    /// First row.
+    Home,
+    /// Last row.
+    End,
+}
+
+/// The listing view-model the renderer drives.
+pub trait ListingViewModel: Send {
+    /// Sets the renderer's font metrics (re-layout).
+    fn set_metrics(&mut self, metrics: FontMetrics);
+    /// Number of rows.
+    fn index_count(&self) -> u128;
+    /// Rows from `top` filling `viewport_px` (a partial last row included).
+    fn rows(&self, top: u128, viewport_px: i32) -> Vec<FieldRow>;
+    /// Cursor position for pixel `x` on row `index`.
+    fn hit_test(&self, index: u128, x: i32) -> Option<CursorPos>;
+    /// Moves the cursor; `page_rows` sizes PageUp/PageDown.
+    fn move_cursor(&self, cursor: CursorPos, mv: Move, page_rows: u32) -> CursorPos;
+    /// Row index of an address, if listed.
+    fn goto(&self, address: u64) -> Option<u128>;
+    /// The address of a row as text.
+    fn address_text(&self, index: u128) -> String;
+}
+
+/// One memory block's bytes (an immutable snapshot).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MemoryBlockSnapshot {
+    /// First address.
+    pub start: u64,
+    /// The block's bytes.
+    pub bytes: Vec<u8>,
+}
+
+/// Every byte of a memory snapshot as an undefined-data row.
+pub struct MemoryListing {
+    addr_digits: usize,
+    blocks: Vec<MemoryBlockSnapshot>,
+    starts: Vec<u128>,
+    count: u128,
+    metrics: FontMetrics,
+}
+
+/// Field widths in characters: address, bytes, mnemonic, operand.
+const FIELD_CHARS: [i32; 4] = [0 /* address: digits + 2 */, 12, 8, 16];
+
+impl MemoryListing {
+    /// A listing over `blocks` (sorted by start) in a space of `address_bits`.
+    pub fn new(address_bits: u32, mut blocks: Vec<MemoryBlockSnapshot>) -> Self {
+        blocks.sort_by_key(|b| b.start);
+        let mut starts = Vec::with_capacity(blocks.len());
+        let mut count: u128 = 0;
+        for b in &blocks {
+            starts.push(count);
+            count += b.bytes.len() as u128;
+        }
+        let addr_digits = (address_bits as usize).div_ceil(4).max(1);
+        Self { addr_digits, blocks, starts, count, metrics: FontMetrics::monospace(7, 11, 3) }
+    }
+
+    fn locate(&self, index: u128) -> Option<(u64, u8)> {
+        if index >= self.count {
+            return None;
+        }
+        let i = self.starts.partition_point(|&s| s <= index) - 1;
+        let off = (index - self.starts[i]) as usize;
+        let b = &self.blocks[i];
+        Some((b.start.wrapping_add(off as u64), b.bytes[off]))
+    }
+
+    fn field_xs(&self) -> [(i32, i32); 4] {
+        let cw = self.metrics.char_width;
+        let mut x = 0;
+        let mut out = [(0, 0); 4];
+        for (i, chars) in FIELD_CHARS.iter().enumerate() {
+            let w = if i == 0 { (self.addr_digits as i32 + 2) * cw } else { chars * cw };
+            out[i] = (x, w);
+            x += w;
+        }
+        out
+    }
+
+    fn layout(&self, index: u128) -> Option<Layout> {
+        let (addr, byte) = self.locate(index)?;
+        let texts = [
+            format!("{:0width$x}", addr, width = self.addr_digits),
+            format!("{byte:02x}"),
+            "??".to_owned(),
+            format!("{byte:02X}h"),
+        ];
+        let fields = self
+            .field_xs()
+            .iter()
+            .zip(texts)
+            .map(|((x, w), t)| ClippingTextField::new(*x, *w, FieldElement::new(t, None, TextStyle::Plain), &self.metrics))
+            .collect();
+        Some(Layout::new(fields, &self.metrics))
+    }
+}
+
+impl ListingViewModel for MemoryListing {
+    fn set_metrics(&mut self, metrics: FontMetrics) {
+        self.metrics = metrics;
+    }
+
+    fn index_count(&self) -> u128 {
+        self.count
+    }
+
+    fn rows(&self, top: u128, viewport_px: i32) -> Vec<FieldRow> {
+        let h = self.metrics.line_height().max(1);
+        if viewport_px <= 0 || top >= self.count {
+            return Vec::new();
+        }
+        let n = ((viewport_px + h - 1) / h) as u128;
+        let end = (top + n).min(self.count);
+        (top..end)
+            .enumerate()
+            .filter_map(|(i, index)| {
+                let layout = self.layout(index)?;
+                Some(FieldRow {
+                    index,
+                    y: i as i32 * h,
+                    height: layout.height(),
+                    runs: layout
+                        .fields()
+                        .iter()
+                        .map(|f| PositionedRun {
+                            x: f.start_x(),
+                            text: f.visible_text().to_owned(),
+                            color_id: f.visible_element().color_id().map(str::to_owned),
+                            bold: f.visible_element().style() == TextStyle::Bold,
+                        })
+                        .collect(),
+                })
+            })
+            .collect()
+    }
+
+    fn hit_test(&self, index: u128, x: i32) -> Option<CursorPos> {
+        let loc = self.layout(index)?.try_cursor_location(index, x)?;
+        Some(CursorPos { index, field: loc.field, col: loc.col })
+    }
+
+    fn move_cursor(&self, c: CursorPos, mv: Move, page_rows: u32) -> CursorPos {
+        if self.count == 0 {
+            return c;
+        }
+        let last = self.count - 1;
+        let clamp_col = |index: u128, field: usize, col: usize| -> CursorPos {
+            let cols = self.layout(index).map(|l| l.fields()[field].num_cols()).unwrap_or(1);
+            CursorPos { index, field, col: col.min(cols - 1) }
+        };
+        let page = page_rows.max(1) as u128;
+        match mv {
+            Move::Up => clamp_col(c.index.saturating_sub(1), c.field, c.col),
+            Move::Down => clamp_col((c.index + 1).min(last), c.field, c.col),
+            Move::PageUp => clamp_col(c.index.saturating_sub(page), c.field, c.col),
+            Move::PageDown => clamp_col((c.index + page).min(last), c.field, c.col),
+            Move::Home => clamp_col(0, c.field, c.col),
+            Move::End => clamp_col(last, c.field, c.col),
+            Move::Right => {
+                let Some(l) = self.layout(c.index) else { return c };
+                if c.col + 1 < l.fields()[c.field].num_cols() {
+                    CursorPos { col: c.col + 1, ..c }
+                } else if c.field + 1 < l.fields().len() {
+                    CursorPos { field: c.field + 1, col: 0, ..c }
+                } else {
+                    c
+                }
+            }
+            Move::Left => {
+                if c.col > 0 {
+                    CursorPos { col: c.col - 1, ..c }
+                } else if c.field > 0 {
+                    let cols = self.layout(c.index).map(|l| l.fields()[c.field - 1].num_cols()).unwrap_or(1);
+                    CursorPos { field: c.field - 1, col: cols - 1, ..c }
+                } else {
+                    c
+                }
+            }
+        }
+    }
+
+    fn goto(&self, address: u64) -> Option<u128> {
+        self.blocks.iter().enumerate().find_map(|(i, b)| {
+            let off = address.checked_sub(b.start)?;
+            ((off as usize) < b.bytes.len()).then(|| self.starts[i] + off as u128)
+        })
+    }
+
+    fn address_text(&self, index: u128) -> String {
+        self.locate(index).map(|(a, _)| format!("{:0width$x}", a, width = self.addr_digits)).unwrap_or_default()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn metrics() -> FontMetrics {
+        FontMetrics::monospace(7, 11, 3)
+    }
+    fn listing() -> MemoryListing {
+        let mut l = MemoryListing::new(
+            32,
+            vec![MemoryBlockSnapshot { start: 0x401000, bytes: vec![0x55, 0x48, 0x89, 0xe5] }, MemoryBlockSnapshot { start: 0x402000, bytes: vec![0xc3] }],
+        );
+        l.set_metrics(metrics());
+        l
+    }
+    fn texts(r: &FieldRow) -> Vec<String> {
+        r.runs.iter().map(|x| x.text.clone()).collect()
+    }
+
+    #[test]
+    fn undefined_bytes_render_like_ghidra() {
+        let l = listing();
+        assert_eq!(l.index_count(), 5);
+        let rows = l.rows(0, 1000);
+        assert_eq!(rows.len(), 5);
+        assert_eq!(texts(&rows[0]), vec!["00401000", "55", "??", "55h"]);
+        assert_eq!(texts(&rows[3]), vec!["00401003", "e5", "??", "E5h"]);
+        assert_eq!(texts(&rows[4]), vec!["00402000", "c3", "??", "C3h"]); // gap skipped
+        assert!(rows.windows(2).all(|w| w[1].y == w[0].y + w[0].height));
+    }
+
+    #[test]
+    fn rows_clamp_at_both_ends() {
+        let l = listing();
+        assert_eq!(l.rows(3, 1000).len(), 2);
+        assert!(l.rows(99, 1000).is_empty());
+        assert_eq!(l.rows(0, 15).len(), 2); // partial second row is included
+        assert!(l.rows(0, 0).is_empty());
+    }
+
+    #[test]
+    fn goto_and_address_text() {
+        let l = listing();
+        assert_eq!(l.goto(0x402000), Some(4));
+        assert_eq!(l.goto(0x401800), None); // gap
+        assert_eq!(l.address_text(1), "00401001");
+    }
+
+    #[test]
+    fn hit_test_and_cursor_moves() {
+        let l = listing();
+        let c = l.hit_test(1, 0).unwrap();
+        assert_eq!((c.index, c.field, c.col), (1, 0, 0));
+        assert_eq!(l.move_cursor(c, Move::Down, 10).index, 2);
+        assert_eq!(l.move_cursor(CursorPos { index: 4, field: 0, col: 0 }, Move::Down, 10).index, 4); // clamp
+        assert_eq!(l.move_cursor(c, Move::Up, 10).index, 0);
+        assert_eq!(l.move_cursor(c, Move::Right, 10).col, 1);
+        assert_eq!(l.move_cursor(CursorPos { index: 0, field: 0, col: 8 }, Move::Right, 10).field, 1); // wrap to next field
+        assert_eq!(l.move_cursor(c, Move::End, 10).index, 4);
+        assert_eq!(l.move_cursor(c, Move::PageDown, 2).index, 3);
+    }
+
+    #[test]
+    fn metric_changes_relayout_without_moving_indices() {
+        let mut l = listing();
+        let before = l.rows(2, 1000)[0].index;
+        l.set_metrics(FontMetrics::monospace(9, 13, 4));
+        let after = l.rows(2, 1000);
+        assert_eq!(after[0].index, before);
+        assert_eq!(after[0].height, 17);
+        assert!(after[0].runs[1].x > 0);
+    }
+
+    #[test]
+    fn rows_stay_fast_on_a_megabyte_block() {
+        let mut l = MemoryListing::new(32, vec![MemoryBlockSnapshot { start: 0x1000_0000, bytes: vec![0x90; 1 << 20] }]);
+        l.set_metrics(metrics());
+        let budget = if cfg!(debug_assertions) { 40 } else { 8 };
+        for i in 0..100u128 {
+            let top = (i * 7919) % l.index_count();
+            let t = std::time::Instant::now();
+            let rows = l.rows(top, 1200);
+            assert!(!rows.is_empty());
+            assert!(t.elapsed().as_millis() < budget, "rows() took {:?}", t.elapsed());
+        }
+    }
+}

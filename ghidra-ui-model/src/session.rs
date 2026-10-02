@@ -17,6 +17,8 @@ pub enum ViewModelBox {
     Text(Box<dyn TextModel>),
     /// A form pane.
     Form(Box<dyn FormModel>),
+    /// A listing pane.
+    Listing(Box<dyn crate::listing::ListingViewModel>),
 }
 
 /// The application-wide UI session: the root object a renderer is handed at
