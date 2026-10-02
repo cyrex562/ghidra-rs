@@ -784,8 +784,10 @@ fn drain_events() -> Result<Vec<EventInfo>, String> {
 mod tests {
     use super::*;
 
-    /// The listing tests drive the one shared demo listing.
-    static LISTING_TEST_LOCK: Mutex<()> = Mutex::new(());
+    /// Tests share one session: the demo listing and the single event queue
+    /// (a drain in one test would steal another's events). Every test that
+    /// drives the listing, posts/drains events or dispatches actions holds it.
+    static SESSION_TEST_LOCK: Mutex<()> = Mutex::new(());
 
     fn pid(title: &str) -> u64 {
         provider_ids().unwrap().into_iter().find(|p| provider_info(*p).unwrap().title == title).unwrap()
@@ -807,7 +809,7 @@ mod tests {
 
     #[test]
     fn listing_frames_and_intents_through_the_bridge() {
-        let _g = LISTING_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let _g = SESSION_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let p = pid("Listing");
         let h = fresh(p, 5);
         assert_eq!(frame_text(p)[0], "00401000 55 ?? 55h");
@@ -828,7 +830,7 @@ mod tests {
 
     #[test]
     fn go_to_prompt_round_trips_through_the_bridge() {
-        let _g = LISTING_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let _g = SESSION_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let p = pid("Listing");
         fresh(p, 5);
         drain_events().unwrap();
@@ -843,6 +845,7 @@ mod tests {
 
     #[test]
     fn window_menu_entries_reshow_hidden_providers() {
+        let _g = SESSION_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let decompiler = pid("Decompiler");
         with("test", |s| {
             s.tool_mut().show_provider(ProviderId(decompiler), false);
@@ -869,7 +872,7 @@ mod tests {
 
     #[test]
     fn double_clicking_a_symbol_navigates_the_listing() {
-        let _g = LISTING_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let _g = SESSION_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let symbols = pid("Symbols");
         let row = (0..table_row_count(symbols).unwrap()).find(|&r| table_cell(symbols, r, 0).unwrap() == "printf").unwrap();
         drain_events().unwrap();
@@ -917,6 +920,7 @@ mod tests {
 
     #[test]
     fn ctrl_f_in_symbols_performs_and_menus_flatten() {
+        let _g = SESSION_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
         let r = dispatch_key(0x46 /*Key_F*/, 0x0400_0000 /*Ctrl*/, pid("Symbols") as i64).unwrap();
         assert_eq!(r.code, 0);
         let menu = menu_bar(-1).unwrap();
