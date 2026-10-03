@@ -50,8 +50,20 @@ pub struct DialogSpec {
     pub status: String,
     /// Extra buttons beside OK/Cancel.
     pub buttons: Vec<ButtonSpec>,
-    /// Shows a tree pane beside a form pane ([`DialogModel::panes`]).
+    /// Shows a tree pane beside a form or table pane ([`DialogModel::panes`]).
     pub has_panes: bool,
+    /// Which right pane the current tree selection shows: 0 form, 1 table.
+    pub pane_kind: u8,
+}
+
+/// A dialog's pane view models (shared with its state).
+pub struct DialogPanes {
+    /// The tree on the left.
+    pub tree: Box<dyn crate::view_models::TreeModel>,
+    /// The form on the right (pane_kind 0).
+    pub form: Box<dyn crate::view_models::FormModel>,
+    /// The table on the right (pane_kind 1), if the dialog has one.
+    pub table: Option<Box<dyn crate::view_models::TableModel>>,
 }
 
 /// What OK did.
@@ -76,7 +88,7 @@ pub trait DialogModel: Send {
         DialogReply::Stay(self.spec())
     }
     /// The tree and form panes' view models (shared with this dialog's state).
-    fn panes(&self) -> Option<(Box<dyn crate::view_models::TreeModel>, Box<dyn crate::view_models::FormModel>)> {
+    fn panes(&self) -> Option<DialogPanes> {
         None
     }
 }
@@ -112,10 +124,7 @@ impl Dialogs {
     }
 
     /// Dialog `id`'s pane view models.
-    pub fn panes(
-        &self,
-        id: u64,
-    ) -> Result<Option<(Box<dyn crate::view_models::TreeModel>, Box<dyn crate::view_models::FormModel>)>, String> {
+    pub fn panes(&self, id: u64) -> Result<Option<DialogPanes>, String> {
         self.open.get(&id).map(|m| m.panes()).ok_or_else(|| format!("no open dialog {id}"))
     }
 

@@ -325,11 +325,16 @@ fn add_tool_options(
     );
     let listener: SharedOptionsListener = Arc::new(Mutex::new(MaxGotoListener(go_to)));
     options.add_options_change_listener(&listener);
-    config.push(("OPTIONS".to_owned(), Box::new(ToolOptionsState { options: options.clone(), _listener: listener })));
+    config.push(("OPTIONS".to_owned(), Box::new(ToolOptionsState { options: options.clone(), _listener: Some(listener) })));
+    // Key Bindings (DockingToolConstants.KEY_BINDINGS): the tool keeps the
+    // options in sync with its actions; the dialog edits them as a table.
+    let key_bindings = tool.key_binding_options().clone();
+    key_bindings.register_options_editor("", crate::options_dialog::KEY_BINDINGS_EDITOR);
+    config.push(("KEY_BINDINGS".to_owned(), Box::new(ToolOptionsState { options: key_bindings.clone(), _listener: None })));
 
     let (ev, tool_name) = (events.clone(), tool.name().to_owned());
     let mut edit = ClosureAction::new("Edit Options", OWNER, move |_| {
-        ev.open_dialog(Box::new(OptionsDialog(OptionsDialogState::shared(&tool_name, vec![options.clone()]))));
+        ev.open_dialog(Box::new(OptionsDialog(OptionsDialogState::shared(&tool_name, vec![key_bindings.clone(), options.clone()]))));
     });
     edit.state_mut().set_menu_bar_data(MenuData::full(&["&Edit", "&Tool Options"], None, Some("AOptions"), None, Some("AOptions")).ok());
     tool.add_action(Box::new(edit));
@@ -367,7 +372,7 @@ impl ghidra_rs::framework::seam_stubs::OptionsVetoException for SearchLimitVeto 
 /// (ToolOptions holds listeners weakly, as Java's WeakSet).
 struct ToolOptionsState {
     options: Arc<ToolOptions>,
-    _listener: SharedOptionsListener,
+    _listener: Option<SharedOptionsListener>,
 }
 
 impl ConfigState for ToolOptionsState {
@@ -491,9 +496,19 @@ mod tests {
         take_dialog(s)
     }
 
+    /// Selects the top-level options node `label` in the open options dialog.
+    fn select_options(s: &mut UiSession, d: u64, label: &str) {
+        let tree = s.dialog_pane_ids(d).unwrap().tree;
+        let Some(ViewModelBox::Tree(t)) = s.model_mut(tree) else { panic!("tree") };
+        let root = t.root();
+        let n = (0..t.child_count(root)).map(|i| t.child(root, i)).find(|&n| t.label(n) == label).expect(label);
+        t.select(n);
+    }
+
     fn set_max_goto_entries(s: &mut UiSession, n: &str) {
         let d = edit_options_dialog(s);
-        let (_, form) = s.dialog_pane_ids(d).unwrap();
+        select_options(s, d, "Tool");
+        let form = s.dialog_pane_ids(d).unwrap().form;
         let Some(ViewModelBox::Form(f)) = s.model_mut(form) else { panic!("form") };
         let key = f.fields().into_iter().find(|f| f.label == "Max Goto Entries").expect("field").key;
         f.set(&key, n).unwrap();
@@ -509,7 +524,8 @@ mod tests {
         assert_eq!(md.menu_path(), &["&Edit".to_string(), "Tool Options".to_string()]);
         let d = edit_options_dialog(&mut s);
         assert_eq!(s.events().dialog_spec(d).unwrap().title, "Options for Ghidra-rs");
-        let (_, form) = s.dialog_pane_ids(d).unwrap();
+        select_options(&mut s, d, "Tool");
+        let form = s.dialog_pane_ids(d).unwrap().form;
         let Some(ViewModelBox::Form(f)) = s.model(form) else { panic!("form") };
         let goto = f.fields().into_iter().find(|f| f.label == "Max Goto Entries").expect("Max Goto Entries");
         assert_eq!(goto.value, "10");
@@ -554,7 +570,8 @@ mod tests {
         let d = take_dialog(&s);
         s.events().dialog_ok(d, "401000", &[]).unwrap();
         let opts = edit_options_dialog(&mut s);
-        let (_, form) = s.dialog_pane_ids(opts).unwrap();
+        select_options(&mut s, opts, "Tool");
+        let form = s.dialog_pane_ids(opts).unwrap().form;
         let Some(ViewModelBox::Form(f)) = s.model_mut(form) else { panic!("form") };
         let key = f.fields().into_iter().find(|f| f.label == "Max Goto Entries").unwrap().key;
         f.set(&key, "0").unwrap();
@@ -566,6 +583,48 @@ mod tests {
         s.tool_mut().dispatch_key(KeyStroke::new(vk::G, 0), Some(id));
         let again = take_dialog(&s);
         assert_eq!(s.events().dialog_spec(again).unwrap().combo.unwrap().items, vec!["401000"]);
+    }
+
+    fn rebind_go_to(s: &mut UiSession, key: &str) {
+        let d = edit_options_dialog(s);
+        select_options(s, d, "Key Bindings");
+        assert_eq!(s.events().dialog_spec(d).unwrap().pane_kind, 1);
+        let table = s.dialog_pane_ids(d).unwrap().table.expect("key bindings table");
+        let Some(ViewModelBox::Table(t)) = s.model_mut(table) else { panic!("table") };
+        let row = (0..t.row_count()).find(|&r| t.cell(r, 0) == crate::view_models::CellValue::Text("Go To Address/Label".into())).expect("Go To row");
+        t.edit(row, 1, key).unwrap();
+        assert_eq!(s.events().dialog_ok(d, "", &[]).unwrap(), crate::dialogs::DialogReply::Close);
+        s.release_dialog(d);
+        s.apply_tool_requests(); // the bridge does this after every dialog OK
+    }
+
+    fn g_like(s: &mut UiSession, ks: KeyStroke) -> bool {
+        let (id, _) = listing(s);
+        s.events().drain();
+        s.tool_mut().dispatch_key(ks, Some(id));
+        s.events().drain().iter().any(|e| matches!(e, UiEvent::Dialog(_)))
+    }
+
+    #[test]
+    fn rebinding_go_to_in_the_key_bindings_table_changes_its_key() {
+        let mut s = build_demo_session();
+        rebind_go_to(&mut s, "ctrl J");
+        assert!(g_like(&mut s, KeyStroke::new(vk::J, CTRL_DOWN_MASK)), "Ctrl-J opens Go To");
+        assert!(!g_like(&mut s, KeyStroke::new(vk::G, 0)), "G no longer does");
+    }
+
+    #[test]
+    fn key_bindings_are_saved_with_the_tool_config() {
+        let dir = std::env::temp_dir().join(format!("ghidra-ui-model-kb-{}", std::process::id()));
+        let path = dir.join("tool.xml");
+        let mut s = build_demo_session();
+        rebind_go_to(&mut s, "ctrl J");
+        s.save_tool_config(&path).unwrap();
+        let mut s2 = build_demo_session();
+        s2.load_tool_config(&path).unwrap();
+        assert!(g_like(&mut s2, KeyStroke::new(vk::J, CTRL_DOWN_MASK)));
+        assert!(!g_like(&mut s2, KeyStroke::new(vk::G, 0)));
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]
@@ -593,7 +652,8 @@ mod tests {
         let mut s2 = build_demo_session();
         s2.load_tool_config(&path).unwrap();
         let d = edit_options_dialog(&mut s2);
-        let (_, form) = s2.dialog_pane_ids(d).unwrap();
+        select_options(&mut s2, d, "Tool");
+        let form = s2.dialog_pane_ids(d).unwrap().form;
         let Some(ViewModelBox::Form(f)) = s2.model(form) else { panic!("form") };
         assert_eq!(f.fields().into_iter().find(|f| f.label == "Max Goto Entries").unwrap().value, "25");
         let _ = std::fs::remove_dir_all(&dir);

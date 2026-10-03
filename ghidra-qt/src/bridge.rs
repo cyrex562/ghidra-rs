@@ -256,6 +256,8 @@ pub mod ffi {
     pub struct PaneIds {
         pub tree: u64,
         pub form: u64,
+        /// 0 = none
+        pub table: u64,
     }
 
     /// A Rust-described dialog.
@@ -269,6 +271,8 @@ pub mod ffi {
         pub status: String,
         pub buttons: Vec<ButtonInfo>,
         pub has_panes: bool,
+        /// Right pane for the current selection: 0 form, 1 table.
+        pub pane_kind: u8,
     }
 
     /// A drained UI event.
@@ -623,6 +627,7 @@ fn dialog_spec(id: u64) -> Result<DialogInfo, String> {
                 .map(|b| ButtonInfo { key: b.key, label: b.label, confirm: b.confirm.unwrap_or_default() })
                 .collect(),
             has_panes: d.has_panes,
+            pane_kind: d.pane_kind,
         })
     })
 }
@@ -634,6 +639,7 @@ fn dialog_ok(id: u64, text: &str, checks: Vec<CheckInfo>) -> Result<bool, String
         if done {
             s.release_dialog(id);
         }
+        s.apply_tool_requests(); // e.g. key-binding option changes re-bind actions
         Ok(done)
     })
 }
@@ -652,14 +658,15 @@ fn dialog_button(id: u64, key: &str) -> Result<bool, String> {
         if done {
             s.release_dialog(id);
         }
+        s.apply_tool_requests();
         Ok(done)
     })
 }
 
 fn dialog_panes(id: u64) -> Result<PaneIds, String> {
     with("dialog_panes", |s| {
-        let (tree, form) = s.dialog_pane_ids(id)?;
-        Ok(PaneIds { tree: tree.0, form: form.0 })
+        let ids = s.dialog_pane_ids(id)?;
+        Ok(PaneIds { tree: ids.tree.0, form: ids.form.0, table: ids.table.map_or(0, |t| t.0) })
     })
 }
 
@@ -1023,8 +1030,19 @@ mod tests {
         assert_eq!(spec.buttons.iter().map(|b| b.label.as_str()).collect::<Vec<_>>(), vec!["Apply", "Restore Defaults"]);
         assert!(spec.buttons[1].confirm.contains("Restore"));
         let panes = dialog_panes(dialog).unwrap();
-        assert_eq!(tree_label(panes.tree, tree_root(panes.tree).unwrap()).unwrap(), "Tool");
-        tree_select(panes.tree, tree_root(panes.tree).unwrap()).unwrap();
+        let root = tree_root(panes.tree).unwrap();
+        assert_eq!(tree_label(panes.tree, root).unwrap(), "Options");
+        let child = |label: &str| {
+            (0..tree_child_count(panes.tree, root).unwrap())
+                .map(|i| tree_child(panes.tree, root, i).unwrap())
+                .find(|&n| tree_label(panes.tree, n).unwrap() == label)
+                .unwrap()
+        };
+        tree_select(panes.tree, child("Key Bindings")).unwrap();
+        assert_eq!(dialog_spec(dialog).unwrap().pane_kind, 1);
+        assert!(panes.table != 0 && table_column_name(panes.table, 1).unwrap() == "Key Binding");
+        tree_select(panes.tree, child("Tool")).unwrap();
+        assert_eq!(dialog_spec(dialog).unwrap().pane_kind, 0);
         let fields = form_fields(panes.form).unwrap();
         let goto = fields.iter().find(|f| f.label == "Max Goto Entries").unwrap();
         assert!(!goto.tooltip.is_empty() && !goto.read_only);

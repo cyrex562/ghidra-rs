@@ -364,12 +364,27 @@ fn options_run(dir: &std::path::Path, answer: &str) -> String {
 fn tool_options_dialog_edits_persist_across_restarts() {
     let dir = tmp("config-options");
     let _ = std::fs::remove_dir_all(&dir);
-    let first = options_run(&dir, "Max Goto Entries=4");
+    let first = options_run(&dir, "Tool > Max Goto Entries=4");
     assert!(first.lines().any(|l| l == "dialog: Options for Ghidra-rs"), "{first}");
-    assert!(first.lines().any(|l| l == "tree: Tool"), "{first}");
+    assert!(first.lines().any(|l| l == "tree: Options"), "{first}");
     assert!(first.lines().any(|l| l == "form: Max Goto Entries=10"), "{first}");
-    let second = options_run(&dir, "none");
+    let second = options_run(&dir, "Tool");
     assert!(second.lines().any(|l| l == "form: Max Goto Entries=4"), "{second}");
+}
+
+#[test]
+fn a_key_binding_set_in_tool_options_works_after_a_restart() {
+    let dir = tmp("config-keys");
+    let _ = std::fs::remove_dir_all(&dir);
+    let first = options_run(&dir, "Key Bindings > Go To Address/Label=ctrl J");
+    assert!(first.lines().any(|l| l == "row: Go To Address/Label=G"), "{first}");
+    let out = shell_with_config(&dir)
+        .args(["--focus", "Listing", "--press", "Ctrl-J", "--prompt-answer", "402000", "--print-listing-state", "--quit-after-ms", "2500"])
+        .output()
+        .expect("spawn");
+    let text = String::from_utf8_lossy(&out.stdout).to_string();
+    assert!(text.lines().any(|l| l == "dialog: Go To ..."), "Ctrl-J opens Go To: {text}");
+    assert!(text.lines().any(|l| l.contains("cursor=00402000")), "{text}");
 }
 
 #[test]

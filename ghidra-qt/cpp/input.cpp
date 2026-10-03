@@ -6,6 +6,7 @@
 #include <QItemSelectionModel>
 #include <QFormLayout>
 #include <QTreeView>
+#include <QTableView>
 #include <QSplitter>
 #include <QScrollArea>
 #include <QPushButton>
@@ -223,6 +224,7 @@ private:
         PaneIds ids{};
         if (!bridgeCall(m_status, [&] { ids = dialog_panes(m_id); })) return;
         m_formPid = ids.form;
+        m_tablePid = ids.table;
         QWidget* tree = createProviderView(ids.tree, 1, m_status, m_panes);
         m_panes->addWidget(tree);
         m_formHost = new QScrollArea(m_panes);
@@ -244,10 +246,31 @@ private:
         resize(820, 520);
     }
 
+    // The right pane for the current selection: Rust says form or table.
     void rebuildForm() {
         if (!m_formHost) return;
-        m_formHost->setWidget(createProviderView(m_formPid, 3, m_status, m_formHost));
+        DialogInfo d;
+        const bool table = bridgeCall(m_status, [&] { d = dialog_spec(m_id); }) && d.pane_kind == 1 && m_tablePid != 0;
+        m_formHost->setWidget(createProviderView(table ? m_tablePid : m_formPid, table ? 0 : 3, m_status, m_formHost));
     }
+
+public:
+    // Selects the top-level tree node labelled `label` (smoke tests).
+    bool selectNode(const QString& label) {
+        auto* view = m_panes->findChild<QTreeView*>();
+        if (!view) return false;
+        const QModelIndex root = view->model()->index(0, 0);
+        for (int r = 0; r < view->model()->rowCount(root); ++r) {
+            const QModelIndex child = view->model()->index(r, 0, root);
+            if (child.data().toString() == label) {
+                view->setCurrentIndex(child);
+                return true;
+            }
+        }
+        return false;
+    }
+
+private:
 
     void addExtraButton(const QString& key, const QString& label, const QString& confirm) {
         QPushButton* b = m_buttonBox->addButton(label, QDialogButtonBox::ActionRole);
@@ -280,6 +303,11 @@ public:
     QStringList summary() const {
         QStringList out;
         if (auto* view = m_panes->findChild<QTreeView*>()) out << QStringLiteral("tree: ") + view->model()->index(0, 0).data().toString();
+        if (auto* table = m_formHost ? m_formHost->findChild<QTableView*>() : nullptr) {
+            for (int r = 0; r < table->model()->rowCount(); ++r) {
+                out << QStringLiteral("row: %1=%2").arg(table->model()->index(r, 0).data().toString(), table->model()->index(r, 1).data().toString());
+            }
+        }
         if (m_formHost && m_formHost->widget()) {
             if (auto* form = qobject_cast<QFormLayout*>(m_formHost->widget()->layout())) {
                 for (int r = 0; r < form->rowCount(); ++r) {
@@ -296,8 +324,14 @@ public:
         return out;
     }
 
-    // Edits form row `label` as a user would, then presses OK (smoke tests).
+    // Edits form row `label` (or the table row whose first cell is `label`) as
+    // a user would, then presses OK (smoke tests).
     void setFieldAndOk(const QString& label, const QString& value) {
+        if (auto* table = m_formHost ? m_formHost->findChild<QTableView*>() : nullptr) {
+            for (int r = 0; r < table->model()->rowCount(); ++r) {
+                if (table->model()->index(r, 0).data().toString() == label) table->model()->setData(table->model()->index(r, 1), value);
+            }
+        }
         if (m_formHost && m_formHost->widget()) {
             if (auto* form = qobject_cast<QFormLayout*>(m_formHost->widget()->layout())) {
                 for (int r = 0; r < form->rowCount(); ++r) {
@@ -354,6 +388,7 @@ private:
     QScrollArea* m_formHost = nullptr;
     QDialogButtonBox* m_buttonBox = nullptr;
     uint64_t m_formPid = 0;
+    uint64_t m_tablePid = 0;
 };
 }  // namespace
 
@@ -364,10 +399,19 @@ void EventPump::showDialog(uint64_t id) {
             // Build the real dialog (unshown), report it, apply "label=value" via its form.
             auto* dialog = new RustDialog(id, m_window->statusBar(), this, m_window);
             std::printf("dialog: %s\n", qs(probe.title).toUtf8().constData());
+            // "<node> > <field>=<value>" selects a top-level node first.
+            QString answer = m_promptAnswer;
+            const int sep = answer.indexOf(QStringLiteral(" > "));
+            if (sep > 0) {
+                dialog->selectNode(answer.left(sep));
+                answer = answer.mid(sep + 3);
+            } else if (!answer.contains(QLatin1Char('='))) {
+                dialog->selectNode(answer);
+            }
             for (const QString& line : dialog->summary()) std::printf("%s\n", line.toUtf8().constData());
-            const int eq = m_promptAnswer.indexOf(QLatin1Char('='));
+            const int eq = answer.indexOf(QLatin1Char('='));
             if (eq > 0) {
-                dialog->setFieldAndOk(m_promptAnswer.left(eq), m_promptAnswer.mid(eq + 1));
+                dialog->setFieldAndOk(answer.left(eq), answer.mid(eq + 1));
             } else {
                 dialog->reject();
             }

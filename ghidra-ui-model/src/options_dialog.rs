@@ -7,6 +7,7 @@ use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex, PoisonError};
 
 use ghidra_rs::framework::options::option_type::OptionType;
+use ghidra_rs::util::awt::KeyStroke;
 use ghidra_rs::framework::options::ToolOptions;
 
 use crate::view_models::{FormField, FormFieldKind, FormModel, NodeId, TreeModel};
@@ -48,14 +49,18 @@ impl OptionsDialogState {
         let mut nodes = Vec::new();
         if options.len() == 1 {
             nodes.push(Node { label: options[0].get_name(), options: Some(0), path: String::new(), parent: None, children: Vec::new() });
-            add_categories(&mut nodes, &options[0], 0, "", 0);
+            if !is_table_set(&options[0]) {
+                add_categories(&mut nodes, &options[0], 0, "", 0);
+            }
         } else {
             nodes.push(Node { label: ROOT_NAME.to_owned(), options: None, path: String::new(), parent: None, children: Vec::new() });
             for (i, o) in options.iter().enumerate() {
                 let id = nodes.len();
                 nodes.push(Node { label: o.get_name(), options: Some(i), path: String::new(), parent: Some(0), children: Vec::new() });
                 nodes[0].children.push(id);
-                add_categories(&mut nodes, o, i, "", id);
+                if !is_table_set(o) {
+                    add_categories(&mut nodes, o, i, "", id); // action names may contain '.'
+                }
             }
         }
         Self {
@@ -95,6 +100,9 @@ impl OptionsDialogState {
     pub fn fields(&self) -> Vec<FormField> {
         let node = &self.nodes[self.selected];
         let Some(i) = node.options else { return Vec::new() };
+        if self.selected_shows_table() {
+            return Vec::new();
+        }
         self.options[i]
             .leaf_option_names(&node.path)
             .iter()
@@ -202,6 +210,74 @@ impl OptionsDialogState {
         &self.status
     }
 
+    /// Whether any shown options set uses the key-bindings table editor.
+    pub fn has_table_editor(&self) -> bool {
+        self.options.iter().any(|o| o.get_options_editor("").as_deref() == Some(KEY_BINDINGS_EDITOR))
+    }
+
+    /// Whether the selected node's options are edited as a table.
+    pub fn selected_shows_table(&self) -> bool {
+        let node = &self.nodes[self.selected];
+        node.options.is_some_and(|i| node.path.is_empty() && is_table_set(&self.options[i]))
+    }
+
+    /// The key-binding rows of the selected table set: (options index, full option name).
+    fn key_binding_rows(&self) -> Vec<(usize, String)> {
+        let node = &self.nodes[self.selected];
+        let Some(i) = node.options.filter(|_| self.selected_shows_table()) else { return Vec::new() };
+        let mut names: Vec<String> = self.options[i]
+            .get_option_names()
+            .into_iter()
+            .filter(|n| self.options[i].find_option(n).is_some_and(|e| e.is_registered() && e.option_type() == OptionType::ActionTrigger))
+            .collect();
+        names.sort_by(|a, b| split_full_name(a).0.cmp(split_full_name(b).0).then(a.cmp(b)));
+        names.into_iter().map(|n| (i, n)).collect()
+    }
+
+    /// The key text shown for a key-binding option (typed, staged or stored).
+    fn key_text(&self, i: usize, name: &str) -> String {
+        let k = (i, name.to_owned());
+        if let Some((typed, _)) = self.invalid.get(&k) {
+            return typed.clone();
+        }
+        if let Some(v) = self.staged.get(&k) {
+            return v.clone();
+        }
+        trigger_text(self.options[i].get_object(name, None).ok().flatten().as_ref())
+    }
+
+    /// Stages a key-binding edit: "" clears; otherwise a key stroke
+    /// (`Ctrl-J`, `ctrl J`). Notes other actions already using it.
+    fn stage_key_binding(&mut self, i: usize, name: &str, text: &str) -> Result<(), String> {
+        let k = (i, name.to_owned());
+        let text = text.trim();
+        let parsed = if text.is_empty() { None } else { Some(KeyStroke::parse(text)) };
+        if let Some(None) = parsed {
+            let e = format!("Invalid key binding: {text}");
+            self.staged.remove(&k);
+            self.invalid.insert(k, (text.to_owned(), e.clone()));
+            self.status = e.clone();
+            return Err(e);
+        }
+        let canonical = parsed.flatten().map(|ks| ks.to_ghidra_string()).unwrap_or_default();
+        self.invalid.remove(&k);
+        self.staged.insert(k, canonical.clone());
+        let others: Vec<String> = self
+            .key_binding_rows()
+            .into_iter()
+            .filter(|(j, n)| !(*j == i && n == name) && !canonical.is_empty() && self.key_text(*j, n) == canonical)
+            .map(|(_, n)| n)
+            .collect();
+        self.status = if canonical.is_empty() {
+            format!("Key binding for {name} will be removed")
+        } else if others.is_empty() {
+            format!("Key binding for {name} will be {canonical}")
+        } else {
+            format!("Key binding {canonical} is also used by: {}", others.join(", "))
+        };
+        Ok(())
+    }
+
     /// The form field for option `name` of options `i`.
     fn field(&self, i: usize, name: &str) -> Option<FormField> {
         let entry = self.options.get(i)?.find_option(name)?;
@@ -223,6 +299,29 @@ impl OptionsDialogState {
         };
         let field = FormField { key, label: leaf.to_owned(), kind, value, tooltip: entry.description().to_owned(), read_only };
         Some(field)
+    }
+}
+
+/// Whether an options set is edited as the key-bindings table.
+fn is_table_set(options: &ToolOptions) -> bool {
+    options.get_options_editor("").as_deref() == Some(KEY_BINDINGS_EDITOR)
+}
+
+/// "Go To (Demo)" → ("Go To", "Demo") (Java `ActionBindingsDescriptor`).
+fn split_full_name(full: &str) -> (&str, &str) {
+    match full.rfind(" (") {
+        Some(p) if full.ends_with(')') => (&full[..p], &full[p + 2..full.len() - 1]),
+        _ => (full, ""),
+    }
+}
+
+/// An action trigger's key as Ghidra prints it ("" for none).
+fn trigger_text(value: Option<&ghidra_rs::framework::options::option_type::OptionValue>) -> String {
+    match value {
+        Some(ghidra_rs::framework::options::option_type::OptionValue::ActionTrigger(t)) => {
+            t.key_stroke().map(|k| k.to_ghidra_string()).unwrap_or_default()
+        }
+        _ => String::new(),
     }
 }
 
@@ -265,9 +364,62 @@ fn write_option(options: &ToolOptions, name: &str, value: &str) -> Result<(), St
             options.set_enum(name, Some(EnumOptionValue { class_name, name: v.to_owned() }))
         }
         OptionType::FileType => options.put_object(name, Some(OptionValue::File(v.into()))),
+        OptionType::ActionTrigger => {
+            use ghidra_rs::framework::options::action_trigger::ActionTrigger;
+            // Only the key stroke is edited; a mouse binding is kept (Java KeyBindingData.update).
+            let mouse = match options.get_object(name, None) {
+                Ok(Some(OptionValue::ActionTrigger(t))) => t.mouse_binding(),
+                _ => None,
+            };
+            let ks = if v.is_empty() { None } else { Some(KeyStroke::parse(v).ok_or("not a key stroke")?) };
+            options.set_action_trigger(name, ActionTrigger::new(ks, mouse).ok())
+        }
         other => return Err(format!("{other:?} options are read-only here")),
     };
     r.map_err(|e| format!("{e:?}"))
+}
+
+/// Editor id an options set registers (at its root) to be edited as the
+/// key-bindings table (Java's custom `KeyBindingsPanel` editor).
+pub const KEY_BINDINGS_EDITOR: &str = "key-bindings";
+
+/// The key-bindings table pane: Action Name | Key Binding | Owner (Java
+/// `KeyBindingsPanel.KeyBindingsTableModel`), over the selected options set's
+/// `ActionTrigger` options.
+pub struct KeyBindingsTable(pub SharedOptionsDialog);
+
+impl crate::view_models::TableModel for KeyBindingsTable {
+    fn column_count(&self) -> usize {
+        3
+    }
+    fn column_name(&self, column: usize) -> String {
+        ["Action Name", "Key Binding", "Owner"].get(column).map(|s| s.to_string()).unwrap_or_default()
+    }
+    fn row_count(&self) -> usize {
+        lock(&self.0).key_binding_rows().len()
+    }
+    fn cell(&self, row: usize, column: usize) -> crate::view_models::CellValue {
+        let s = lock(&self.0);
+        let Some((i, name)) = s.key_binding_rows().into_iter().nth(row) else { return crate::view_models::CellValue::Text(String::new()) };
+        let (action, owner) = split_full_name(&name);
+        crate::view_models::CellValue::Text(match column {
+            0 => action.to_owned(),
+            1 => s.key_text(i, &name),
+            2 => owner.to_owned(),
+            _ => String::new(),
+        })
+    }
+    fn is_editable(&self, _row: usize, column: usize) -> bool {
+        column == 1
+    }
+    fn edit(&mut self, row: usize, column: usize, value: &str) -> Result<(), String> {
+        if column != 1 {
+            return Err("only the key binding is editable".into());
+        }
+        let mut s = lock(&self.0);
+        let (i, name) = s.key_binding_rows().into_iter().nth(row).ok_or_else(|| format!("no row {row}"))?;
+        s.stage_key_binding(i, &name, value)
+    }
 }
 
 /// The category tree pane.
@@ -328,6 +480,7 @@ impl crate::dialogs::DialogModel for OptionsDialog {
                 },
             ],
             has_panes: true,
+            pane_kind: u8::from(s.selected_shows_table()),
             ..Default::default()
         }
     }
@@ -356,8 +509,13 @@ impl crate::dialogs::DialogModel for OptionsDialog {
         }
         crate::dialogs::DialogReply::Stay(self.spec())
     }
-    fn panes(&self) -> Option<(Box<dyn TreeModel>, Box<dyn FormModel>)> {
-        Some((Box::new(OptionsTree(self.0.clone())), Box::new(OptionsForm(self.0.clone()))))
+    fn panes(&self) -> Option<crate::dialogs::DialogPanes> {
+        let has_table = lock(&self.0).has_table_editor();
+        Some(crate::dialogs::DialogPanes {
+            tree: Box::new(OptionsTree(self.0.clone())),
+            form: Box::new(OptionsForm(self.0.clone())),
+            table: has_table.then(|| Box::new(KeyBindingsTable(self.0.clone())) as Box<dyn crate::view_models::TableModel>),
+        })
     }
 }
 
@@ -535,6 +693,70 @@ mod tests {
         lock(&d).stage(&key, "15").unwrap();
         assert_eq!(dialog.ok("", &[]), DialogReply::Close);
         assert_eq!(o.get_int("Max Goto Entries", 0).unwrap(), 15);
+    }
+
+    fn key_bindings() -> Arc<ToolOptions> {
+        use ghidra_rs::framework::options::action_trigger::ActionTrigger;
+        use ghidra_rs::util::awt::KeyStroke;
+        let o = ToolOptions::new("Key Bindings");
+        for (name, key) in [("Go To (Demo)", "G"), ("Find (Demo)", "ctrl F")] {
+            let t = ActionTrigger::new(KeyStroke::parse(key), None).unwrap();
+            o.register_option_with_type(name, OptionType::ActionTrigger, Some(OptionValue::ActionTrigger(t)), None, Some(&format!("Key Binding for {name}")), None)
+                .unwrap();
+        }
+        o.register_options_editor("", KEY_BINDINGS_EDITOR);
+        Arc::new(o)
+    }
+
+    #[test]
+    fn a_key_bindings_options_set_is_edited_as_a_table() {
+        use crate::dialogs::{DialogModel, DialogReply};
+        use crate::view_models::{CellValue, TableModel};
+        let kb = key_bindings();
+        let d = OptionsDialogState::shared("T", vec![kb.clone(), tool_options()]);
+        let mut dialog = OptionsDialog(d.clone());
+        let kb_node = node(&d, "Key Bindings");
+        lock(&d).select(kb_node);
+        assert_eq!(dialog.spec().pane_kind, 1);
+        let mut t = KeyBindingsTable(d.clone());
+        let rows: Vec<(String, String, String)> = (0..t.row_count())
+            .map(|r| {
+                let txt = |c| match t.cell(r, c) {
+                    CellValue::Text(s) => s,
+                    other => format!("{other:?}"),
+                };
+                (txt(0), txt(1), txt(2))
+            })
+            .collect();
+        assert_eq!(
+            rows,
+            vec![("Find".into(), "Ctrl-F".into(), "Demo".into()), ("Go To".into(), "G".into(), "Demo".into())]
+        );
+        t.edit(1, 1, "ctrl J").unwrap();
+        assert!(lock(&d).status().contains("Go To"), "staged edits are noted: {}", lock(&d).status());
+        t.edit(0, 1, "").unwrap(); // clear Find
+        assert!(t.edit(0, 1, "not a key").is_err());
+        assert!(matches!(dialog.ok("", &[]), DialogReply::Stay(_)), "invalid key text blocks OK");
+        t.edit(0, 1, "").unwrap();
+        assert_eq!(dialog.ok("", &[]), DialogReply::Close);
+        let key = |name: &str| match kb.get_object(name, None).unwrap() {
+            Some(OptionValue::ActionTrigger(t)) => t.key_stroke().map(|k| k.to_ghidra_string()),
+            _ => None,
+        };
+        assert_eq!(key("Go To (Demo)").as_deref(), Some("Ctrl-J"));
+        assert_eq!(key("Find (Demo)"), None);
+        let tool = node(&d, "Tool");
+        lock(&d).select(tool);
+        assert_eq!(dialog.spec().pane_kind, 0);
+    }
+
+    #[test]
+    fn a_shared_key_binding_is_reported() {
+        use crate::view_models::TableModel;
+        let d = OptionsDialogState::shared("T", vec![key_bindings()]);
+        let mut t = KeyBindingsTable(d.clone());
+        t.edit(1, 1, "ctrl F").unwrap(); // Go To := Find's key
+        assert!(lock(&d).status().contains("Find (Demo)"), "{}", lock(&d).status());
     }
 
     #[test]

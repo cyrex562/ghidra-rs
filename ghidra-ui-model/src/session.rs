@@ -36,7 +36,18 @@ pub struct UiSession {
     icons: Option<Box<dyn crate::icons::IconResolver>>,
     goto_target: Option<ProviderId>,
     config_states: Vec<(String, Box<dyn ConfigState>)>,
-    dialog_panes: BTreeMap<u64, (ProviderId, ProviderId)>,
+    dialog_panes: BTreeMap<u64, PaneViewIds>,
+}
+
+/// The view-model ids of an open dialog's panes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PaneViewIds {
+    /// Tree pane.
+    pub tree: ProviderId,
+    /// Form pane.
+    pub form: ProviderId,
+    /// Table pane, if the dialog has one.
+    pub table: Option<ProviderId>,
 }
 
 /// First view-model id used for dialog panes (tool providers count up from 1).
@@ -161,6 +172,7 @@ impl UiSession {
                 contributor.read_config_state(&ghidra_rs::framework::options::SaveState::from_xml(e));
             }
         }
+        self.apply_tool_requests(); // restored key bindings re-bind their actions
         Ok(true)
     }
 
@@ -227,23 +239,34 @@ impl UiSession {
     /// The view-model ids of dialog `id`'s tree and form panes, registered in
     /// this session's model registry on first use (ids from
     /// [`DIALOG_VIEW_BASE`], never a tool provider's).
-    pub fn dialog_pane_ids(&mut self, id: u64) -> Result<(ProviderId, ProviderId), String> {
+    pub fn dialog_pane_ids(&mut self, id: u64) -> Result<PaneViewIds, String> {
         if let Some(ids) = self.dialog_panes.get(&id) {
             return Ok(*ids);
         }
-        let (tree, form) = self.events.dialog_panes(id)?.ok_or_else(|| format!("dialog {id} has no panes"))?;
-        let ids = (ProviderId(DIALOG_VIEW_BASE + 2 * id), ProviderId(DIALOG_VIEW_BASE + 2 * id + 1));
-        self.models.insert(ids.0, ViewModelBox::Tree(tree));
-        self.models.insert(ids.1, ViewModelBox::Form(form));
+        let panes = self.events.dialog_panes(id)?.ok_or_else(|| format!("dialog {id} has no panes"))?;
+        let base = DIALOG_VIEW_BASE + 3 * id;
+        let ids = PaneViewIds {
+            tree: ProviderId(base),
+            form: ProviderId(base + 1),
+            table: panes.table.is_some().then_some(ProviderId(base + 2)),
+        };
+        self.models.insert(ids.tree, ViewModelBox::Tree(panes.tree));
+        self.models.insert(ids.form, ViewModelBox::Form(panes.form));
+        if let (Some(t), Some(table)) = (ids.table, panes.table) {
+            self.models.insert(t, ViewModelBox::Table(table));
+        }
         self.dialog_panes.insert(id, ids);
         Ok(ids)
     }
 
     /// Drops dialog `id`'s pane view models (after it closed).
     pub fn release_dialog(&mut self, id: u64) {
-        if let Some((tree, form)) = self.dialog_panes.remove(&id) {
-            self.models.remove(&tree);
-            self.models.remove(&form);
+        if let Some(ids) = self.dialog_panes.remove(&id) {
+            self.models.remove(&ids.tree);
+            self.models.remove(&ids.form);
+            if let Some(t) = ids.table {
+                self.models.remove(&t);
+            }
         }
     }
 
@@ -392,9 +415,11 @@ mod tests {
         o.register_option("B.Y", Some(OptionValue::Boolean(true)), None, "y").unwrap();
         let mut s = UiSession::new();
         let id = s.events().open_dialog(Box::new(OptionsDialog(OptionsDialogState::shared("T", vec![o]))));
-        let (tree, form) = s.dialog_pane_ids(id).unwrap();
+        let ids = s.dialog_pane_ids(id).unwrap();
+        let (tree, form) = (ids.tree, ids.form);
         assert!(tree.0 >= DIALOG_VIEW_BASE && form.0 >= DIALOG_VIEW_BASE && tree != form);
-        assert_eq!(s.dialog_pane_ids(id).unwrap(), (tree, form), "registered once");
+        assert_eq!(ids.table, None);
+        assert_eq!(s.dialog_pane_ids(id).unwrap(), ids, "registered once");
         let b = match s.model_mut(tree) {
             Some(ViewModelBox::Tree(t)) => {
                 let b = t.child(t.root(), 1);

@@ -271,10 +271,7 @@ impl UiEventQueue {
     }
 
     /// The pane view models of dialog `id`, if it has panes.
-    pub fn dialog_panes(
-        &self,
-        id: u64,
-    ) -> Result<Option<(Box<dyn crate::view_models::TreeModel>, Box<dyn crate::view_models::FormModel>)>, String> {
+    pub fn dialog_panes(&self, id: u64) -> Result<Option<crate::dialogs::DialogPanes>, String> {
         self.dialogs.lock().unwrap_or_else(std::sync::PoisonError::into_inner).panes(id)
     }
 

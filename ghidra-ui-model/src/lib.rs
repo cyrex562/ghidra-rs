@@ -22,6 +22,6 @@ mod view_kind;
 mod view_models;
 
 pub use events::{UiEvent, UiEventQueue, WakeHandle};
-pub use session::{ConfigState, UiSession, ViewModelBox};
+pub use session::{ConfigState, PaneViewIds, UiSession, ViewModelBox};
 pub use view_kind::ViewKind;
 pub use view_models::{CellValue, FormField, FormFieldKind, FormModel, NodeId, StyledRun, TableModel, TextModel, TreeModel};
