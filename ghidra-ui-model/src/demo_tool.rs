@@ -413,7 +413,7 @@ impl ListingEditor {
             .set_symbol_name(id, name, SourceType::UserDefined)
             .map_err(|e| e.to_string())?;
         // the program's source after the rename (an unchanged name keeps it)
-        let source = self
+        let symbol = self
             .live
             .program()
             .get_symbol_table()
@@ -421,10 +421,15 @@ impl ListingEditor {
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .get_symbol(id)
             .ok()
-            .flatten()
-            .map_or(SourceType::UserDefined, |s| s.get_source())
-            .display_string()
-            .to_owned();
+            .flatten();
+        let source = symbol.as_ref().map_or(SourceType::UserDefined, |s| s.get_source()).display_string().to_owned();
+        // instructions whose operands show the name re-read it (CodeUnitFormat)
+        let referring: Vec<(u64, u64)> = symbol
+            .map(|s| {
+                use ghidra_rs::program::model::symbol::reference::Reference;
+                self.live.program().references_to(&s.get_address()).iter().map(|r| r.from_address().offset() as u64).map(|a| (a, a)).collect()
+            })
+            .unwrap_or_default();
         let renamed = {
             let mut base = self.base.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
             let sym = base.symbols.iter_mut().find(|s| s.id == id);
@@ -445,7 +450,7 @@ impl ListingEditor {
             });
             self.events.post(UiEvent::ViewChanged(symbols_id.0));
         }
-        self.refresh(&[], &[]);
+        self.refresh(&[], &referring);
         // labels re-sort by name: find the renamed row again
         let mut c = lock(&self.listing);
         if let Some(index) = c.cursor().map(|cur| cur.index) {
@@ -1350,6 +1355,33 @@ mod tests {
             .map(|r| t.cell(r, 3).to_string())
             .collect();
         assert_eq!(sources, vec!["Imported".to_string()], "SymbolDB.setName keeps the source when the name is unchanged");
+    }
+
+    #[test]
+    fn renaming_a_referenced_label_renames_it_in_the_referring_operands() {
+        use ghidra_rs::program::model::symbol::{SourceType, SymbolTable};
+        let Some((program, _)) = bin_ls_with_undefined_code() else { return };
+        // an instruction whose operand refers to an address shown by its dynamic name
+        let Some((from, target)) = program.instructions.iter().find_map(|i| Some((i.start, i.references.first()?.to))) else { return };
+        let live = program.live.clone().unwrap();
+        let space = {
+            use ghidra_rs::program::model::lang::language::Language;
+            live.program().get_language().get_default_space()
+        };
+        let label = live
+            .program()
+            .get_symbol_table()
+            .write()
+            .unwrap()
+            .create_label(&ghidra_rs::program::model::address::Address::new(space, target as i64), "target_one", SourceType::UserDefined)
+            .unwrap();
+        let events_owner = UiSession::new();
+        let listing = ListingController::handle(Box::new(code_unit_listing(&program, program.instructions.clone())));
+        let editor = ListingEditor::new(&program, live, listing.clone(), ProviderId(1), events_owner.events());
+        editor.rename_label(label.get_id(), "renamed_target").unwrap();
+        let snapshot = editor.instructions.lock().unwrap();
+        let operands = &snapshot.iter().find(|i| i.start == from).unwrap().operands;
+        assert!(operands.contains("renamed_target"), "the referring operand re-reads the name: {operands}");
     }
 
     #[test]

@@ -100,7 +100,7 @@ impl Segment {
 }
 
 /// Field widths in characters after the address: bytes, mnemonic, operands.
-const FIELD_CHARS: [i32; 3] = [12, 8, 16];
+const FIELD_CHARS: [i32; 3] = [12, 8, 40];
 
 impl CodeUnitListing {
     /// A listing over `blocks` with `instructions` decoded and `labels` placed.
@@ -557,6 +557,14 @@ mod tests {
         assert_eq!(l.label_at(4), Some((9, "mid".to_string())), "the offcut label keeps its own symbol");
         assert_eq!(l.label_at(5), Some((7, "f".to_string())));
         assert_eq!(l.label_at(6), None, "the instruction row");
+    }
+
+    #[test]
+    fn a_long_operand_is_reachable_by_the_cursor() {
+        let mut l = listing(vec![insn(0x1000, 6, "CALL", "qword ptr [DAT_00bc06b8]")], vec![]);
+        l.set_metrics(FontMetrics::monospace(7, 11, 3));
+        let x = l.cursor_x(CursorPos { index: 0, field: 3, col: 0 }).unwrap() + 22 * 7 + 1;
+        assert_eq!(l.hit_test(0, x).map(|c| (c.field, c.col)), Some((3, 22)), "column 22 of the operands is visible");
     }
 
     #[test]

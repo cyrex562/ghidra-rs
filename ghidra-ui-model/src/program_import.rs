@@ -70,34 +70,52 @@ impl std::fmt::Debug for LiveProgram {
 
 /// The instructions starting in `start..=end`, in address order.
 pub fn instructions_in(
-    program: &ProgramDB,
+    program: &Arc<ProgramDB>,
     start: &ghidra_rs::program::model::address::Address,
     end: &ghidra_rs::program::model::address::Address,
 ) -> Vec<InstructionSnapshot> {
     use ghidra_rs::program::model::symbol::reference::Reference;
     let summaries = program.instruction_summaries(start, end);
-    let refs = program.get_reference_store();
-    let refs = refs.read().unwrap_or_else(std::sync::PoisonError::into_inner);
+    let references: Vec<Vec<OperandRef>> = {
+        let refs = program.get_reference_store();
+        let refs = refs.read().unwrap_or_else(std::sync::PoisonError::into_inner);
+        summaries
+            .iter()
+            .map(|u| {
+                (0..u.operands.len() as i32)
+                    .filter_map(|op| refs.primary_reference_from(&u.address, op))
+                    .filter(|r| r.is_memory_reference())
+                    .map(|r| OperandRef { op_index: r.operand_index(), to: r.to_address().offset() as u64 })
+                    .collect()
+            })
+            .collect()
+    };
+    // CodeUnitFormat text (symbols, dynamic labels) where an operand has a
+    // reference; plain text otherwise. No store lock is held here.
     summaries
         .into_iter()
-        .map(|u| InstructionSnapshot {
-            references: (0..u.operands.len() as i32)
-                .filter_map(|op| refs.primary_reference_from(&u.address, op))
-                .filter(|r| r.is_memory_reference())
-                .map(|r| OperandRef { op_index: r.operand_index(), to: r.to_address().offset() as u64 })
-                .collect(),
-            start: u.address.offset() as u64,
-            len: u32::try_from(u.length).unwrap_or(u32::MAX),
-            mnemonic: u.mnemonic,
-            operands: u.operand_text,
+        .zip(references)
+        .map(|(u, references)| {
+            let operands = if references.is_empty() {
+                u.operand_text
+            } else {
+                program.operand_display(&u.address).map_or(u.operand_text, |d| d.operand_field)
+            };
+            InstructionSnapshot {
+                references,
+                start: u.address.offset() as u64,
+                len: u32::try_from(u.length).unwrap_or(u32::MAX),
+                mnemonic: u.mnemonic,
+                operands,
+            }
         })
         .collect()
 }
 
 /// Every instruction in the program's loaded memory, in address order.
-pub fn snapshot_instructions(program: &ProgramDB) -> Vec<InstructionSnapshot> {
+pub fn snapshot_instructions(program: &Arc<ProgramDB>) -> Vec<InstructionSnapshot> {
     use ghidra_rs::program::model::listing::Program;
-    let Some(memory) = Program::get_memory(program) else { return Vec::new() };
+    let Some(memory) = Program::get_memory(program.as_ref()) else { return Vec::new() };
     let mut instructions: Vec<InstructionSnapshot> = memory
         .get_block_handles()
         .iter()
@@ -453,6 +471,12 @@ mod tests {
             .expect("a CALL through memory or to an address");
         assert!(call.references.iter().any(|r| r.op_index == 0), "{call:?}");
         assert!(p.instructions.iter().filter(|i| i.mnemonic == "PUSH" && !i.operands.contains('[')).all(|i| i.references.is_empty()));
+        // CodeUnitFormat: referenced addresses read as symbols or dynamic labels
+        assert!(
+            p.instructions.iter().any(|i| ["LAB_", "SUB_", "DAT_"].iter().any(|d| i.operands.contains(d))),
+            "operands show Ghidra's names"
+        );
+        assert!(p.instructions.iter().filter(|i| i.references.is_empty()).all(|i| !i.operands.contains("DAT_")));
         let first = p.instructions.iter().find(|i| i.start == entry).expect("an instruction at the entry");
         if bytes.windows(4).any(|w| w == [0xf3, 0x0f, 0x1e, 0xfa]) && first.len == 4 {
             assert_eq!(first.mnemonic, "ENDBR64");
