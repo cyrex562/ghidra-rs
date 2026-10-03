@@ -194,17 +194,26 @@ pub fn build_session_for(program: Option<&ImportedProgram>) -> UiSession {
 
     // The code listing over a small synthetic memory image (a real imported
     // program replaces this once the ELF loader lands).
-    let memory = match program {
-        Some(p) => MemoryListing::new(p.address_bits, p.blocks.clone()),
-        None => MemoryListing::new(
+    let memory: Box<dyn crate::listing::ListingViewModel> = match program {
+        // code units + the program's symbols as label rows
+        Some(p) => Box::new(crate::code_unit_listing::CodeUnitListing::new(
+            p.address_bits,
+            p.blocks.clone(),
+            p.instructions.clone(),
+            p.symbols
+                .iter()
+                .map(|s| crate::code_unit_listing::LabelSnapshot { address: s.address, name: s.name.clone(), primary: s.primary })
+                .collect(),
+        )),
+        None => Box::new(MemoryListing::new(
             32,
             vec![
                 MemoryBlockSnapshot::initialized(0x0040_1000, vec![0x55, 0x48, 0x89, 0xe5, 0x89, 0x7d, 0xfc, 0x8b, 0x45, 0xfc, 0x5d, 0xc3]),
                 MemoryBlockSnapshot::initialized(0x0040_2000, b"done\n\0".to_vec()),
             ],
-        ),
+        )),
     };
-    let listing = ListingController::handle(Box::new(memory));
+    let listing = ListingController::handle(memory);
     let listing_id = s.add_provider(
         provider("Listing", ProviderViewKind::Listing, WindowPosition::Stack),
         Some(ViewModelBox::Listing(listing.clone())),
@@ -499,9 +508,10 @@ mod tests {
             block_names: vec!["segment_1".into(), ".bss".into()],
             block_starts: vec![0x10_0000, 0x12_0000],
             symbols: vec![
-                crate::program_import::ImportedSymbol { name: "_start".into(), address: 0x10_0001, kind: "Label".into(), source: "Imported".into() },
-                crate::program_import::ImportedSymbol { name: "free".into(), address: 0x12_0002, kind: "Label".into(), source: "Imported".into() },
+                crate::program_import::ImportedSymbol { name: "_start".into(), address: 0x10_0001, kind: "Label".into(), source: "Imported".into(), primary: true },
+                crate::program_import::ImportedSymbol { name: "free".into(), address: 0x12_0002, kind: "Label".into(), source: "Imported".into(), primary: true },
             ],
+            instructions: vec![],
         };
         let s = build_session_for(Some(&program));
         let (_, h) = listing(&s);
@@ -510,8 +520,10 @@ mod tests {
             c.set_viewport(1000);
             c.frame()
         };
-        assert_eq!(frame.rows.len(), 5);
+        assert_eq!(frame.rows.len(), 7, "5 bytes + 2 label rows");
         assert_eq!(frame.rows[0].row.runs[0].text, "0000000000100000");
+        assert_eq!(frame.rows[1].row.runs[0].text, "_start", "label row above its address");
+        assert_eq!(frame.rows[2].row.runs[0].text, "0000000000100001");
         let tree = s.tool().find_provider("Demo", "Program Tree").unwrap();
         let Some(ViewModelBox::Tree(t)) = s.model(tree) else { panic!("tree") };
         let root = t.root();

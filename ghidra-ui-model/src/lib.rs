@@ -4,6 +4,7 @@
 //! `ghidra-qt` shell). It must never depend on Qt, egui or any other UI
 //! toolkit. See `docs/superpowers/specs/2026-10-01-qt6-ui-design.md`.
 
+pub mod code_unit_listing;
 pub mod demo;
 pub mod demo_tool;
 mod events;

@@ -25,6 +25,8 @@ pub struct ImportedProgram {
     pub block_starts: Vec<u64>,
     /// The symbol table in loaded memory, address order (Symbols pane).
     pub symbols: Vec<ImportedSymbol>,
+    /// Decoded instructions (empty until the disassembler runs).
+    pub instructions: Vec<crate::code_unit_listing::InstructionSnapshot>,
 }
 
 /// One symbol as the Symbols pane shows it.
@@ -38,6 +40,8 @@ pub struct ImportedSymbol {
     pub kind: String,
     /// Source ("Imported", "Analysis", ...).
     pub source: String,
+    /// The address's primary symbol.
+    pub primary: bool,
 }
 
 /// The Ghidra distribution whose compiled languages back imports:
@@ -152,10 +156,20 @@ pub fn import_elf(path: &Path, dist: &Path) -> Result<ImportedProgram, String> {
                 .get_symbol_type_display_name(program.as_ref(), sym.as_ref())
                 .unwrap_or_else(|| sym.get_symbol_type().name().to_owned()),
             source: source_display(sym.get_source()),
+            primary: sym.is_primary(),
         })
         .collect();
     symbols.sort_by(|a, b| a.address.cmp(&b.address).then_with(|| a.name.cmp(&b.name)));
-    Ok(ImportedProgram { name, language: language.to_owned(), address_bits, blocks, block_names, block_starts, symbols })
+    Ok(ImportedProgram {
+        name,
+        language: language.to_owned(),
+        address_bits,
+        blocks,
+        block_names,
+        block_starts,
+        symbols,
+        instructions: Vec::new(),
+    })
 }
 
 #[cfg(test)]
