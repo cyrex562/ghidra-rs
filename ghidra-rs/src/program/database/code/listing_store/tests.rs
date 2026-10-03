@@ -235,3 +235,27 @@ fn a_snapshot_answers_repeated_queries_from_its_cached_parser_context() {
     assert_eq!(view.display_string(), "jmp 0x100b");
     assert_eq!(view.operand_address(0).unwrap().offset(), 0x100b);
 }
+
+/// A stored instruction handed out as an `Instruction` trait object (over an owned snapshot),
+/// for the code that asks instructions questions through the trait (`CodeUnitFormat`, p-code).
+#[test]
+fn a_stored_instruction_answers_through_the_instruction_trait() {
+    use crate::program::model::listing::instruction::Instruction;
+    use crate::program::model::listing::code_unit::CodeUnit;
+    let mut f = Fixture::new();
+    let id = f.create(0x1004).unwrap();
+    let factory: Arc<dyn crate::program::model::address::AddressFactory> =
+        SleighLanguage::get_address_factory(&f.language);
+    let mem = f.memory.read().unwrap();
+    let insn = f.store.to_instruction(id, &*mem, None, factory.clone()).expect("no length override");
+    assert_eq!(insn.get_mnemonic_string(), "jmp");
+    assert_eq!(insn.get_length(), 2);
+    assert_eq!(insn.get_min_address().offset(), 0x1004);
+    assert_eq!(insn.get_flows().unwrap()[0].offset(), 0x100b);
+    assert_eq!(insn.to_string(), "jmp 0x100b");
+
+    // a length-overridden record has no faithful pseudo form
+    let proto = f.proto(0x1000);
+    let short = f.store.create_instruction(&*mem, f.at(0x1000), proto, None, 1).unwrap();
+    assert!(f.store.to_instruction(short, &*mem, None, factory).is_none());
+}

@@ -291,6 +291,25 @@ fn bin_ls_disassembles_from_its_entry_point() {
             _ => {}
         }
     }
+    {
+        use crate::program::model::listing::code_unit_format::{CodeUnitFormat, DefaultCodeUnitFormat};
+        let listing = program.get_listing_store();
+        let listing = listing.read().unwrap();
+        let mem = program.get_memory();
+        let mem = mem.read().unwrap();
+        let fmt = DefaultCodeUnitFormat::new();
+        // the program's instructions answer through the Instruction trait, so CodeUnitFormat
+        // (the listing's operand rendering) can format them; without references, register and
+        // scalar operands read as the default representation
+        for id in listing.instructions_in(&entry, &entry.add_wrap(0x10)) {
+            let factory = dyn_program.get_address_factory().unwrap();
+            let insn = listing.to_instruction(id, &*mem, Some(dyn_program.clone()), factory).unwrap();
+            let summary = listing.instruction_summary(id, &*mem);
+            if summary.operands.iter().all(|op| !op.contains("0x")) {
+                assert_eq!(fmt.get_representation_string(&insn), insn.to_string());
+            }
+        }
+    }
     // a typical glibc _start begins `endbr64; xor ebp,ebp`
     if units[0].bytes == [0xf3, 0x0f, 0x1e, 0xfa] {
         assert_eq!((units[0].length, units[0].mnemonic.as_str()), (4, "ENDBR64"));

@@ -30,8 +30,8 @@ use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 
 use crate::app::util::pseudo_instruction::byte_cache_size;
-use crate::program::disassemble::DisassemblerInstructionContext;
-use crate::program::model::address::{Address, AddressSet, AddressSetView};
+use crate::program::disassemble::{DisassembledInstruction, DisassemblerInstructionContext};
+use crate::program::model::address::{Address, AddressFactory, AddressSet, AddressSetView};
 use crate::program::model::lang::instruction_context::InstructionContextError;
 use crate::program::model::lang::instruction_prototype::GetPseudoParserContextError;
 use crate::program::model::lang::parser_context::ParserContext;
@@ -39,10 +39,12 @@ use crate::program::model::lang::processor_context_view::ProcessorContextView;
 use crate::program::model::lang::register_value::RegisterValue;
 use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::program::model::lang::unknown_context_exception::UnknownContextException;
-use crate::program::model::listing::instruction::MAX_LENGTH_OVERRIDE;
+use crate::program::model::listing::instruction::{Instruction, MAX_LENGTH_OVERRIDE};
 use crate::program::model::listing::instruction_record::{
-    InstructionRecord, InstructionSnapshot, InstructionView, SharedPrototype,
+    FallThroughOverride, InstructionRecord, InstructionSnapshot, InstructionView, SharedPrototype,
 };
+use crate::program::model::listing::program::Program;
+use crate::program::model::listing::FlowOverride;
 use crate::program::model::mem::{ByteMemBufferImpl, MemBuffer, Memory, MemoryAccessException};
 use crate::program::util::CodeUnitInsertionException;
 
@@ -296,6 +298,56 @@ impl ListingStore {
             context: DisassemblerInstructionContext::new(Arc::clone(&self.language), entry.context.clone()),
             own_context: std::cell::OnceCell::new(),
         }
+    }
+
+    /// Instruction `id` as an [`Instruction`] trait object, for code that asks instructions
+    /// questions through the trait (`CodeUnitFormat`, p-code): a
+    /// [`DisassembledInstruction`] over the instruction's current bytes and context, with the
+    /// record's flow and fall-through overrides. With `program`, labels, symbols, stored
+    /// references and neighbours come from it (`PseudoInstruction(Program, ...)`).
+    ///
+    /// This is the bridge until a program-backed `InstructionDB` resolves an [`InstructionId`]
+    /// against the store; a pseudo instruction has no length override, so a length-overridden
+    /// record yields `None`, as does one whose bytes can no longer be read.
+    ///
+    /// # Panics
+    /// As [`ListingStore::record`].
+    pub fn to_instruction(
+        &self,
+        id: InstructionId,
+        memory: &dyn Memory,
+        program: Option<Arc<dyn Program>>,
+        addr_factory: Arc<dyn AddressFactory>,
+    ) -> Option<DisassembledInstruction> {
+        let record = self.record(id);
+        if record.length_override() != 0 {
+            return None;
+        }
+        let snapshot = self.snapshot(id, memory);
+        let address = record.address().clone();
+        let prototype = Arc::clone(record.prototype());
+        let mut instruction = match program {
+            Some(program) => {
+                DisassembledInstruction::with_program(program, address, prototype, &snapshot.mem, snapshot.context)
+            }
+            None => DisassembledInstruction::with_address_factory(
+                addr_factory,
+                address,
+                prototype,
+                &snapshot.mem,
+                snapshot.context,
+            ),
+        }
+        .ok()?;
+        if record.flow_override() != FlowOverride::None {
+            instruction.set_flow_override(record.flow_override());
+        }
+        match record.fall_through_override() {
+            Some(FallThroughOverride::Removed) => instruction.set_fall_through(None),
+            Some(FallThroughOverride::Target(target)) => instruction.set_fall_through(Some(target.clone())),
+            None => {}
+        }
+        Some(instruction)
     }
 
     /// The code units intersecting `[start, end]` of `memory`, in address order: each
