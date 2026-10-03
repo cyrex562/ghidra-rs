@@ -347,7 +347,12 @@ struct ListingEditor {
     listing: ListingHandle,
     listing_id: ProviderId,
     events: UiEventQueue,
+    /// A background edit is running (the edit actions wait for it).
+    busy: Arc<std::sync::atomic::AtomicBool>,
 }
+
+/// Ids for background edits (`UiEvent::TaskProgress`/`TaskDone`).
+static NEXT_TASK: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
 
 impl ListingEditor {
     fn new(
@@ -365,7 +370,12 @@ impl ListingEditor {
             listing,
             listing_id,
             events: events.clone(),
+            busy: Arc::new(std::sync::atomic::AtomicBool::new(false)),
         }
+    }
+
+    fn is_busy(&self) -> bool {
+        self.busy.load(std::sync::atomic::Ordering::Acquire)
     }
 
     /// The cursor's address and the selection as address ranges.
@@ -466,7 +476,7 @@ fn add_edit_label_action(tool: &mut DockingTool, editor: &ListingEditor) {
         )));
     });
     a.state_mut().enabled_when(Box::new(move |context| {
-        context.component_provider() == Some(enabled.listing_id) && {
+        context.component_provider() == Some(enabled.listing_id) && !enabled.is_busy() && {
             let c = lock(&enabled.listing);
             c.cursor().and_then(|cur| c.model().label_at(cur.index)).is_some_and(|(id, _, _)| id != 0)
         }
@@ -497,20 +507,39 @@ fn add_disassemble_action(tool: &mut DockingTool, editor: &ListingEditor) {
                 return;
             }
         }
-        let done = ed.live.disassemble(start, &ranges);
-        if done.ranges.is_empty() {
-            ed.events.post(UiEvent::Status(done.status.unwrap_or_else(|| "Disassembly failed".into())));
+        // Java executeBackgroundCommand: a Task off the UI thread (spec §3 rule 2)
+        if ed.busy.swap(true, std::sync::atomic::Ordering::AcqRel) {
             return;
         }
-        if let Some(msg) = done.status {
-            ed.events.post(UiEvent::Status(msg));
-        }
-        ed.refresh(&[], &done.ranges);
+        let task = NEXT_TASK.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        ed.events.post(UiEvent::TaskProgress { task, message: "Disassembling...".into(), progress: 0, maximum: 0 });
+        ed.events.post(UiEvent::ActionsChanged);
+        let worker = ed.clone();
+        std::thread::spawn(move || {
+            let ed = worker;
+            let run = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                let done = ed.live.disassemble(start, &ranges);
+                if done.ranges.is_empty() {
+                    ed.events.post(UiEvent::Status(done.status.unwrap_or_else(|| "Disassembly failed".into())));
+                    return;
+                }
+                if let Some(msg) = done.status {
+                    ed.events.post(UiEvent::Status(msg));
+                }
+                ed.refresh(&[], &done.ranges);
+            }));
+            let error = run.err().map(|p| {
+                p.downcast_ref::<&str>().map(|m| (*m).to_owned()).or_else(|| p.downcast_ref::<String>().cloned()).unwrap_or_else(|| "Disassembly panicked".into())
+            });
+            ed.busy.store(false, std::sync::atomic::Ordering::Release);
+            ed.events.post(UiEvent::TaskDone { task, cancelled: false, error });
+            ed.events.post(UiEvent::ActionsChanged);
+        });
     });
     // DisassemblerPlugin.checkDisassemblyEnabled: a selection, or a cursor not
     // inside an instruction
     a.state_mut().enabled_when(Box::new(move |context| {
-        if context.component_provider() != Some(enabled.listing_id) {
+        if context.component_provider() != Some(enabled.listing_id) || enabled.is_busy() {
             return false;
         }
         let (cursor, ranges) = enabled.location();
@@ -540,7 +569,7 @@ fn add_clear_code_bytes_action(tool: &mut DockingTool, editor: &ListingEditor) {
         }
     });
     a.state_mut().enabled_when(Box::new(move |context| {
-        context.component_provider() == Some(enabled.listing_id) && {
+        context.component_provider() == Some(enabled.listing_id) && !enabled.is_busy() && {
             let (cursor, ranges) = enabled.location();
             cursor.is_some() || !ranges.is_empty()
         }
@@ -1099,6 +1128,9 @@ mod tests {
         s.events().drain();
         let r = s.tool_mut().dispatch_key(KeyStroke::new(vk::D, 0), Some(id));
         assert!(matches!(r, DispatchResult::Performed(_)), "D performs Disassemble");
+        // Java runs DisassembleCommand in the background: a Task (spec §3 rule 2)
+        let events = wait_for_task(&s);
+        assert!(events.iter().any(|e| matches!(e, UiEvent::TaskProgress { .. })), "{events:?}");
         let c = lock(&h);
         let cursor = c.cursor().unwrap();
         assert_eq!(c.model().address_of(cursor.index), Some(target), "cursor stays at the address");
@@ -1110,7 +1142,21 @@ mod tests {
         let mnemonic = c.model().field_text(CursorPos { index: row, field: 2, col: 0 }).unwrap_or_default();
         assert!(!mnemonic.is_empty() && mnemonic != "??", "an instruction at {target:x}: {mnemonic:?}");
         drop(c);
-        assert!(s.events().drain().contains(&UiEvent::ViewChanged(id.0)));
+        assert!(events.contains(&UiEvent::ViewChanged(id.0)));
+    }
+
+    /// Drains events until a task finishes (its events, TaskDone included).
+    fn wait_for_task(s: &UiSession) -> Vec<UiEvent> {
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(60);
+        let mut seen = Vec::new();
+        loop {
+            seen.extend(s.events().drain());
+            if seen.iter().any(|e| matches!(e, UiEvent::TaskDone { .. })) {
+                return seen;
+            }
+            assert!(std::time::Instant::now() < deadline, "no TaskDone: {seen:?}");
+            std::thread::sleep(std::time::Duration::from_millis(5));
+        }
     }
 
     #[test]
@@ -1175,6 +1221,7 @@ mod tests {
         assert!(s.events().drain().contains(&UiEvent::ViewChanged(id.0)));
         // and D brings it back
         s.tool_mut().dispatch_key(KeyStroke::new(vk::D, 0), Some(id));
+        wait_for_task(&s);
         assert_eq!(mnemonic_at(&h, insn.start), insn.mnemonic);
     }
 
