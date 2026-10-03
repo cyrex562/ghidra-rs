@@ -122,6 +122,8 @@ pub struct ImportedSymbol {
     pub source: String,
     /// The address's primary symbol.
     pub primary: bool,
+    /// The symbol's id in the program (0 for fixtures).
+    pub id: i64,
 }
 
 /// The Ghidra distribution whose compiled languages back imports:
@@ -288,6 +290,7 @@ pub fn import_elf(path: &Path, dist: &Path) -> Result<ImportedProgram, String> {
                 .unwrap_or_else(|| sym.get_symbol_type().name().to_owned()),
             source: source_display(sym.get_source()),
             primary: sym.is_primary(),
+            id: sym.get_id(),
         })
         .collect();
     symbols.sort_by(|a, b| a.address.cmp(&b.address).then_with(|| a.name.cmp(&b.name)));

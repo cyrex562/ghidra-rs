@@ -560,7 +560,7 @@ mod tests {
                 MemoryBlockSnapshot::initialized(0x402000, vec![0xc3]),
             ],
             vec![InstructionSnapshot { start: 0x401000, len: 3, mnemonic: "PUSH".into(), operands: String::new(), references: vec![] }],
-            vec![LabelSnapshot { address: 0x401000, name: "f".into(), primary: true }],
+            vec![LabelSnapshot { address: 0x401000, name: "f".into(), primary: true, id: 0 }],
         ))
     }
 
@@ -612,7 +612,7 @@ mod tests {
                 MemoryBlockSnapshot::initialized(0x402000, vec![0xc3]),
             ],
             vec![],
-            vec![LabelSnapshot { address: 0x401000, name: "f".into(), primary: true }],
+            vec![LabelSnapshot { address: 0x401000, name: "f".into(), primary: true, id: 0 }],
         ))
     }
 

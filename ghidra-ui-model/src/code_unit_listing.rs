@@ -42,6 +42,8 @@ pub struct LabelSnapshot {
     pub name: String,
     /// The address's primary symbol (shown first).
     pub primary: bool,
+    /// The symbol's id (0 when it has none, as in fixtures).
+    pub id: i64,
 }
 
 /// What a memory block's start header shows (Java `MemoryBlockStartFieldFactory`).
@@ -68,7 +70,10 @@ pub struct CodeUnitListing {
 
 #[derive(Debug, Clone)]
 enum SegKind {
-    Label(String),
+    /// A label row: the symbol's name and id.
+    Label { name: String, id: i64 },
+    /// A block-start `//` header line.
+    Header(String),
     Instruction { len: u64, mnemonic: String, operands: String, references: Vec<OperandRef> },
     /// `rows` undefined bytes from `address`.
     Undefined,
@@ -87,7 +92,7 @@ impl Segment {
     /// End of the address span this segment covers (a label covers none).
     fn end(&self) -> u64 {
         match &self.kind {
-            SegKind::Label(_) => self.address,
+            SegKind::Label { .. } | SegKind::Header(_) => self.address,
             SegKind::Instruction { len, .. } => self.address + len,
             SegKind::Undefined => self.address + self.rows as u64,
         }
@@ -149,7 +154,7 @@ impl CodeUnitListing {
                 lines.push(format!("// {range}"));
                 lines.push("//".to_owned());
                 for line in lines {
-                    push(&mut segments, 1, start, bi, SegKind::Label(line));
+                    push(&mut segments, 1, start, bi, SegKind::Header(line));
                 }
             }
             let mut cursor = start;
@@ -180,11 +185,11 @@ impl CodeUnitListing {
                 // offcuts before the code unit's own symbols)
                 let unit_end = p + len.unwrap_or(0);
                 while li < labels.len() && labels[li].address < unit_end {
-                    push(&mut segments, 1, p, bi, SegKind::Label(labels[li].name.clone()));
+                    push(&mut segments, 1, p, bi, SegKind::Label { name: labels[li].name.clone(), id: labels[li].id });
                     li += 1;
                 }
                 for l in labels[at..].iter().take_while(|l| l.address == p) {
-                    push(&mut segments, 1, p, bi, SegKind::Label(l.name.clone()));
+                    push(&mut segments, 1, p, bi, SegKind::Label { name: l.name.clone(), id: l.id });
                 }
                 if let Some(len) = len {
                     let insn = &instructions[ii];
@@ -241,7 +246,7 @@ impl CodeUnitListing {
         let xs = self.field_xs();
         let block = &self.blocks[s.block];
         let fields = match &s.kind {
-            SegKind::Label(name) => {
+            SegKind::Label { name, .. } | SegKind::Header(name) => {
                 let width = xs[1].1 + xs[2].1 + xs[3].1;
                 vec![self.field(xs[1].0, width, name.clone())]
             }
@@ -289,6 +294,12 @@ pub fn operand_index_at(text: &str, col: usize) -> i32 {
 }
 
 impl ListingViewModel for CodeUnitListing {
+    fn label_at(&self, index: u128) -> Option<(i64, String)> {
+        match &self.segment(index)?.kind {
+            SegKind::Label { name, id } => Some((*id, name.clone())),
+            _ => None,
+        }
+    }
     fn reference_target(&self, c: CursorPos) -> Option<u64> {
         const OPERANDS: usize = 3;
         let s = self.segment(c.index)?;
@@ -425,7 +436,7 @@ mod tests {
     }
 
     fn label(address: u64, name: &str, primary: bool) -> LabelSnapshot {
-        LabelSnapshot { address, name: name.into(), primary }
+        LabelSnapshot { address, name: name.into(), primary, id: 0 }
     }
 
     fn listing(instructions: Vec<InstructionSnapshot>, labels: Vec<LabelSnapshot>) -> CodeUnitListing {
@@ -525,6 +536,27 @@ mod tests {
         assert_eq!(at(3, 0), None, "operand 0 (RAX) has no reference");
         assert_eq!(at(2, 0), None, "the mnemonic");
         assert_eq!(l.reference_target(CursorPos { index: 0, field: 0, col: 0 }), None, "the label row");
+    }
+
+    #[test]
+    fn label_rows_know_their_symbol_and_headers_are_not_labels() {
+        let mut f = label(0x1000, "f", true);
+        f.id = 7;
+        let mut mid = label(0x1002, "mid", true);
+        mid.id = 9;
+        let mut l = CodeUnitListing::with_headers(
+            32,
+            vec![MemoryBlockSnapshot::initialized(0x1000, vec![0x90; 8])],
+            vec![insn(0x1000, 4, "NOP4", "")],
+            vec![f, mid],
+            vec![BlockHeader { start: 0x1000, name: ".text".into(), comment: String::new(), space: "ram".into() }],
+        );
+        l.set_metrics(FontMetrics::monospace(7, 11, 3));
+        // 4 header rows, offcut "mid", "f", the instruction
+        assert_eq!(l.label_at(0), None, "a header row");
+        assert_eq!(l.label_at(4), Some((9, "mid".to_string())), "the offcut label keeps its own symbol");
+        assert_eq!(l.label_at(5), Some((7, "f".to_string())));
+        assert_eq!(l.label_at(6), None, "the instruction row");
     }
 
     #[test]

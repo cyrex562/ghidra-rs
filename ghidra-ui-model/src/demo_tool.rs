@@ -302,7 +302,7 @@ fn code_unit_listing(p: &ImportedProgram, instructions: Vec<crate::code_unit_lis
         instructions,
         p.symbols
             .iter()
-            .map(|s| crate::code_unit_listing::LabelSnapshot { address: s.address, name: s.name.clone(), primary: s.primary })
+            .map(|s| crate::code_unit_listing::LabelSnapshot { address: s.address, name: s.name.clone(), primary: s.primary, id: s.id })
             .collect(),
         p.block_headers.clone(),
     )
@@ -706,8 +706,8 @@ mod tests {
             block_names: vec!["segment_1".into(), ".bss".into()],
             block_starts: vec![0x10_0000, 0x12_0000],
             symbols: vec![
-                crate::program_import::ImportedSymbol { name: "_start".into(), address: 0x10_0001, kind: "Label".into(), source: "Imported".into(), primary: true },
-                crate::program_import::ImportedSymbol { name: "free".into(), address: 0x12_0002, kind: "Label".into(), source: "Imported".into(), primary: true },
+                crate::program_import::ImportedSymbol { name: "_start".into(), address: 0x10_0001, kind: "Label".into(), source: "Imported".into(), primary: true, id: 0 },
+                crate::program_import::ImportedSymbol { name: "free".into(), address: 0x12_0002, kind: "Label".into(), source: "Imported".into(), primary: true, id: 0 },
             ],
             block_headers: vec![crate::code_unit_listing::BlockHeader {
                 start: 0x10_0000,
