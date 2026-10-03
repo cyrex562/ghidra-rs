@@ -1,6 +1,8 @@
 use crate::framework::db::DBHandle;
 use crate::framework::model::DomainObject;
-use crate::program::database::code::listing_store::{CodeUnitSummary, ListingStore};
+use crate::program::database::code::listing_store::{CodeUnitSummary, DefinedData, ListingStore};
+use crate::program::model::data::data_type::DataType;
+use crate::program::util::CodeUnitInsertionException;
 use crate::program::database::map::AddressMapDB;
 use crate::program::database::mem::MemoryMapDB;
 use crate::program::database::references::{ReferenceRecord, ReferenceStore};
@@ -128,8 +130,8 @@ impl ProgramDB {
         self.references.read().unwrap_or_else(|p| p.into_inner()).references_to(to)
     }
 
-    /// The code units intersecting `[start, end]`, in address order: instructions, and an
-    /// undefined byte at every other memory address (see [`ListingStore::code_units`]). Takes
+    /// The code units intersecting `[start, end]`, in address order: instructions, defined data,
+    /// and an undefined byte at every other memory address (see [`ListingStore::code_units`]). Takes
     /// the listing and memory read locks for the duration of the call.
     pub fn code_units(&self, start: &Address, end: &Address) -> Vec<CodeUnitSummary> {
         let listing = self.listing.read().unwrap_or_else(|p| p.into_inner());
@@ -144,6 +146,40 @@ impl ProgramDB {
         let listing = self.listing.read().unwrap_or_else(|p| p.into_inner());
         let memory = self.memory.read().unwrap_or_else(|p| p.into_inner());
         listing.instruction_summaries(&*memory, start, end).collect()
+    }
+
+    /// The defined data starting in `[start, end]`, in address order (see
+    /// [`ListingStore::data_summaries`]): each with [`CodeUnitKind::Data`], the data type's
+    /// mnemonic (`addr`, `dq`, ...) and its default value representation as the one operand.
+    /// Takes the listing and memory read locks for the duration of the call.
+    ///
+    /// [`CodeUnitKind::Data`]: crate::program::database::code::listing_store::CodeUnitKind::Data
+    pub fn data_summaries(&self, start: &Address, end: &Address) -> Vec<CodeUnitSummary> {
+        let listing = self.listing.read().unwrap_or_else(|p| p.into_inner());
+        let memory = self.memory.read().unwrap_or_else(|p| p.into_inner());
+        listing.data_summaries(&*memory, start, end).collect()
+    }
+
+    /// Creates data of `data_type` at `address` (see [`ListingStore::create_data`]): Java's
+    /// `Listing.createData(Address, DataType)`. Takes the listing write lock (and, for pointer
+    /// data, the reference write lock under it) and the memory read lock.
+    ///
+    /// # Errors
+    /// As [`ListingStore::create_data`].
+    pub fn create_data(
+        &self,
+        address: &Address,
+        data_type: Arc<dyn DataType>,
+    ) -> Result<DefinedData, CodeUnitInsertionException> {
+        let mut listing = self.listing.write().unwrap_or_else(|p| p.into_inner());
+        let memory = self.memory.read().unwrap_or_else(|p| p.into_inner());
+        listing.create_data(&*memory, address.clone(), data_type, -1)
+    }
+
+    /// The defined data starting at `address`, if any (a copy; see
+    /// [`ListingStore::defined_data_at`]). Takes the listing read lock for the call.
+    pub fn defined_data_at(&self, address: &Address) -> Option<DefinedData> {
+        self.listing.read().unwrap_or_else(|p| p.into_inner()).defined_data_at(address).cloned()
     }
 }
 
@@ -263,6 +299,16 @@ impl Program for ProgramDB {
     /// holding the reference store's lock, nor take the listing lock while holding it.
     fn get_reference_manager(&self) -> Option<ManagerGuard<'_, dyn ReferenceManager>> {
         Some(ManagerGuard::write(&*self.references))
+    }
+
+    /// Answers from the listing store (takes its read lock for the call).
+    fn has_defined_data_at(&self, addr: &Address) -> bool {
+        self.listing.read().unwrap_or_else(|p| p.into_inner()).defined_data_at(addr).is_some()
+    }
+
+    /// [`ProgramDB::create_data`] through the program seam.
+    fn create_data(&self, addr: &Address, data_type: Arc<dyn DataType>) -> Result<(), CodeUnitInsertionException> {
+        ProgramDB::create_data(self, addr, data_type).map(|_| ())
     }
 
     /// The program's memory, write-locked for the life of the returned handle. Stands in for
@@ -420,6 +466,37 @@ mod tests {
         assert_eq!(units.iter().map(|u| u.operand_text.as_str()).collect::<Vec<_>>(), vec!["6Ah", "00h"]);
         assert!(units.iter().all(|u| !u.is_instruction() && u.mnemonic == "??"));
         assert_eq!(program.get_listing_store().read().unwrap().num_instructions(), 0);
+    }
+
+    #[test]
+    fn data_created_through_the_program_seam_is_answered_from_the_listing_store() {
+        let (program, addr) = test_program();
+        program
+            .get_memory()
+            .write()
+            .unwrap()
+            .create_initialized_block("b", &addr, Some(&mut &[0x00, 0x00, 0x10, 0x00, 0x6a][..]), 5, None, false)
+            .unwrap();
+        let pointer: Arc<dyn DataType> = Arc::new(
+            crate::program::model::data::pointer_data_type::PointerDataType::new_with(None::<Arc<dyn DataType>>, 4, None)
+                .unwrap(),
+        );
+        let seam: &dyn Program = &program;
+        assert!(!seam.has_defined_data_at(&addr));
+        seam.create_data(&addr, pointer.clone()).unwrap();
+        assert!(seam.has_defined_data_at(&addr));
+        assert!(!seam.has_defined_data_at(&addr.add_wrap(1)));
+        assert_eq!(
+            seam.create_data(&addr.add_wrap(2), pointer).unwrap_err().message(),
+            "Insufficent memory at address ram:0x1002 (length: 4 bytes)"
+        );
+        let units = program.code_units(&addr, &addr.add_wrap(4));
+        assert_eq!(units.len(), 2);
+        assert!(units[0].is_defined_data());
+        assert_eq!(program.data_summaries(&addr, &addr.add_wrap(4)), units[..1].to_vec());
+        assert_eq!(program.defined_data_at(&addr).map(|d| d.length()), Some(4));
+        // the pointer's default reference (to 0x1000, itself)
+        assert_eq!(program.references_from(&addr).len(), 1);
     }
 
     #[test]

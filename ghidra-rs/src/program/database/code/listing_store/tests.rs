@@ -259,3 +259,144 @@ fn a_stored_instruction_answers_through_the_instruction_trait() {
     let short = f.store.create_instruction(&*mem, f.at(0x1000), proto, None, 1).unwrap();
     assert!(f.store.to_instruction(short, &*mem, None, factory).is_none());
 }
+
+// ---- defined data (CodeManager.createCodeUnit(Address, DataType, int)) ----
+
+/// Pointers and integers at 0x3000: a pointer to 0x1006, a null pointer, then 0x12345678.
+const DATA: [u8; 12] = [0x00, 0x00, 0x10, 0x06, 0x00, 0x00, 0x00, 0x00, 0x12, 0x34, 0x56, 0x78];
+
+impl Fixture {
+    fn with_data() -> Self {
+        let f = Fixture::new();
+        {
+            let mut mem = f.memory.write().unwrap();
+            mem.create_initialized_block("data", &f.at(0x3000), Some(&mut &DATA[..]), DATA.len() as i64, None, false)
+                .unwrap();
+        }
+        f
+    }
+
+    fn create_data(&mut self, offset: i64, dt: Arc<dyn DataType>) -> Result<DefinedData, CodeUnitInsertionException> {
+        let memory = Arc::clone(&self.memory);
+        let mem = memory.read().unwrap();
+        let at = self.at(offset);
+        self.store.create_data(&*mem, at, dt, -1)
+    }
+}
+
+fn pointer32() -> Arc<dyn DataType> {
+    Arc::new(crate::program::model::data::pointer_data_type::PointerDataType::new_with(None::<Arc<dyn DataType>>, 4, None).unwrap())
+}
+
+fn dword() -> Arc<dyn DataType> {
+    Arc::new(crate::program::model::data::dword_data_type::DWordDataType::new(None))
+}
+
+#[test]
+fn created_data_is_found_at_and_within_its_range() {
+    let mut f = Fixture::with_data();
+    let data = f.create_data(0x3000, pointer32()).unwrap();
+    assert_eq!((data.address().clone(), data.length(), data.max_address()), (f.at(0x3000), 4, f.at(0x3003)));
+    assert!(data.is_pointer());
+    assert_eq!(f.store.defined_data_at(&f.at(0x3000)).map(|d| d.address().clone()), Some(f.at(0x3000)));
+    assert!(f.store.defined_data_at(&f.at(0x3001)).is_none());
+    assert_eq!(f.store.defined_data_containing(&f.at(0x3003)).map(|d| d.address().clone()), Some(f.at(0x3000)));
+    assert!(f.store.defined_data_containing(&f.at(0x3004)).is_none());
+    assert_eq!(f.store.num_defined_data(), 1);
+    assert_eq!(f.store.num_instructions(), 0);
+    assert!(!f.store.is_undefined(&f.at(0x3002), &f.at(0x3002)));
+    assert!(f.store.is_undefined(&f.at(0x3004), &f.at(0x3007)));
+}
+
+#[test]
+fn pointer_data_gets_a_default_data_reference_to_its_value() {
+    let mut f = Fixture::with_data();
+    let data = f.create_data(0x3000, pointer32()).unwrap();
+    let mem = f.memory.read().unwrap();
+    assert_eq!(data.pointer_value(&*mem, true), Some(f.at(0x1006)));
+    drop(mem);
+    let refs = f.store.references().read().unwrap().references_from(&f.at(0x3000));
+    assert_eq!(refs.len(), 1);
+    use crate::program::model::symbol::Reference;
+    assert_eq!((refs[0].to_address(), refs[0].reference_type(), refs[0].source(), refs[0].operand_index()), (f.at(0x1006), RefType::Data, SourceType::Default, 0));
+    // a null pointer gets none (Java treats 0 and all f's as an uninitialized pointer value)
+    f.create_data(0x3004, pointer32()).unwrap();
+    assert!(f.store.references().read().unwrap().references_from(&f.at(0x3004)).is_empty());
+    // nor does non-pointer data
+    f.create_data(0x3008, dword()).unwrap();
+    assert!(f.store.references().read().unwrap().references_from(&f.at(0x3008)).is_empty());
+}
+
+#[test]
+fn data_conflicts_with_instructions_and_other_data_with_javas_messages() {
+    let mut f = Fixture::with_data();
+    f.create(0x1000).unwrap();
+    assert_eq!(
+        f.create_data(0x0fff + 1, dword()).unwrap_err().message(),
+        "Conflicting instruction exists at address ram:0x1000 to ram:0x1001"
+    );
+    assert_eq!(
+        f.create_data(0x1001, dword()).unwrap_err().message(),
+        "Conflicting instruction exists at address ram:0x1000 to ram:0x1001"
+    );
+    f.create_data(0x1002, dword()).unwrap();
+    assert_eq!(
+        f.create(0x1004).unwrap_err().message(),
+        "Conflicting data exists at address ram:0x1002 to ram:0x1005"
+    );
+    assert_eq!(f.create(0x1002).unwrap_err().message(), "Conflicting data exists at address ram:0x1002 to ram:0x1005");
+    assert_eq!(
+        f.create_data(0x1003, pointer32()).unwrap_err().message(),
+        "Conflicting data exists at address ram:0x1002 to ram:0x1005"
+    );
+    assert_eq!(
+        f.create_data(0x300a, dword()).unwrap_err().message(),
+        "Insufficent memory at address ram:0x300a (length: 4 bytes)"
+    );
+}
+
+#[test]
+fn data_reads_as_its_types_mnemonic_and_value_among_the_code_units() {
+    let mut f = Fixture::with_data();
+    f.create_data(0x3000, pointer32()).unwrap();
+    f.create_data(0x3008, dword()).unwrap();
+    let units = f.units(0x3001, 0x300b);
+    let shown: Vec<(&str, &str, usize)> =
+        units.iter().map(|u| (u.mnemonic.as_str(), u.operand_text.as_str(), u.length)).collect();
+    assert_eq!(
+        shown,
+        vec![
+            ("addr", "ram:0x1006", 4), // the data containing the range's start
+            ("??", "00h", 1),
+            ("??", "00h", 1),
+            ("??", "00h", 1),
+            ("??", "00h", 1),
+            ("ddw", "12345678h", 4), // DWordDataType's assembly mnemonic
+        ]
+    );
+    assert!(units[0].is_defined_data() && units[0].kind == CodeUnitKind::Data);
+    assert_eq!(units[0].bytes, DATA[..4].to_vec());
+    assert_eq!(units[0].operands, vec!["ram:0x1006".to_string()]);
+    let mem = f.memory.read().unwrap();
+    let only_data: Vec<Address> =
+        f.store.data_summaries(&*mem, &f.at(0x3000), &f.at(0x3fff)).map(|u| u.address).collect();
+    assert_eq!(only_data, vec![f.at(0x3000), f.at(0x3008)]);
+    let mut set = AddressSet::new();
+    set.add_range(&f.at(0x3000), &f.at(0x300b));
+    let undefined = f.store.undefined_ranges(&*mem, &set);
+    assert_eq!(undefined.num_addresses(), 4);
+}
+
+#[test]
+fn clearing_removes_data_and_its_references() {
+    let mut f = Fixture::with_data();
+    f.create_data(0x3000, pointer32()).unwrap();
+    f.create_data(0x3008, dword()).unwrap();
+    f.store.clear_code_units(&f.at(0x3002), &f.at(0x3002));
+    assert!(f.store.defined_data_at(&f.at(0x3000)).is_none());
+    assert!(f.store.references().read().unwrap().references_from(&f.at(0x3000)).is_empty());
+    assert_eq!(f.store.num_defined_data(), 1);
+    // the cleared bytes are free again
+    f.create(0x1000).unwrap();
+    f.create_data(0x3000, pointer32()).unwrap();
+}

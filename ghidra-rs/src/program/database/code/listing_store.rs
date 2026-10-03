@@ -19,9 +19,11 @@
 //! `createCodeUnit(Address, InstructionPrototype, MemBuffer, ProcessorContextView, int)` with its
 //! `checkValidAddressRange` conflict checks and messages, `getInstructionAt` /
 //! `getInstructionContaining` / `getInstructionAfter` / `getInstructionBefore`,
-//! `getNumInstructions`, `isUndefined`, and `clearCodeUnits` for instructions. Defined data
-//! (`createCodeUnit(Address, DataType, int)`), comments, properties, and the change events
-//! Java fires through the program are not in this store yet; the [`CodeManager`] trait remains the
+//! `getNumInstructions`, `isUndefined`, and `clearCodeUnits`. Defined data of fixed-length types
+//! (`createCodeUnit(Address, DataType, int)`, `getDefinedDataAt` / `getDefinedDataContaining`,
+//! pointer data references from `addDataReferences`) shares the address space with the
+//! instructions. Comments, properties, and the change events Java fires through the program are
+//! not in this store yet; the [`CodeManager`] trait remains the
 //! full Java surface.
 //!
 //! [`CodeManager`]: super::code_manager::CodeManager
@@ -49,6 +51,10 @@ use crate::program::model::listing::program::Program;
 use crate::program::model::listing::FlowOverride;
 use crate::program::model::mem::{ByteMemBufferImpl, MemBuffer, Memory, MemoryAccessException};
 use crate::program::util::CodeUnitInsertionException;
+use crate::docking::settings::settings::Settings;
+use crate::program::model::data::data_type::DataType;
+use crate::program::model::data::pointer_data_type;
+use crate::program::model::symbol::{RefType, SourceType};
 
 /// Names an instruction in a [`ListingStore`]: the record key, assigned in creation order and
 /// never reused.
@@ -69,6 +75,9 @@ pub struct ListingStore {
     next_id: u64,
     records: HashMap<InstructionId, StoredInstruction>,
     by_address: BTreeMap<Address, InstructionId>,
+    /// The defined data, by minimum address (Java's data table). Never overlaps an instruction
+    /// or other data.
+    data: BTreeMap<Address, DefinedData>,
     /// The program's references (Java's `CodeManager.refManager`): default references are added
     /// as instructions are created and removed as code units are cleared. Lock order: the
     /// listing before the references.
@@ -84,7 +93,14 @@ impl ListingStore {
     /// An empty listing for a program in `language` that maintains the default references of
     /// its instructions in `references` (the program's reference store).
     pub fn with_references(language: Arc<SleighLanguage>, references: Arc<RwLock<ReferenceStore>>) -> Self {
-        ListingStore { language, next_id: 1, records: HashMap::new(), by_address: BTreeMap::new(), references }
+        ListingStore {
+            language,
+            next_id: 1,
+            records: HashMap::new(),
+            by_address: BTreeMap::new(),
+            data: BTreeMap::new(),
+            references,
+        }
     }
 
     /// The reference store this listing maintains default references in.
@@ -199,7 +215,121 @@ impl ListingStore {
                 Self::max_address(record)
             )));
         }
+        let conflict = self
+            .data
+            .range(start.clone()..=end.clone())
+            .next()
+            .map(|(_, d)| d)
+            .or_else(|| self.defined_data_containing(start));
+        if let Some(data) = conflict {
+            return Err(CodeUnitInsertionException::new(format!(
+                "Conflicting data exists at address {} to {}",
+                data.address(),
+                data.max_address()
+            )));
+        }
         Ok(())
+    }
+
+    /// Creates data of `data_type` at `address`. Port of `CodeManager.createCodeUnit(Address,
+    /// DataType, int)` for fixed-length data types: the length is the data type's (`length` is
+    /// ignored, as Java ignores it for a fixed-length type); the default data type
+    /// (`DataType.DEFAULT`, undefined) stores nothing and answers an undefined 1-byte unit.
+    /// Pointer data gets its default reference, as `addDataReferences` lays it down: a DATA
+    /// reference (source DEFAULT, operand 0) from the data to the pointer's value, unless the
+    /// value is not a loaded memory address, or is 0 or all ones.
+    ///
+    /// Not here: factory, dynamic (strings), function-definition and bit-field data types,
+    /// pointer-typedef offset references, and Java's 64-bit address-segment limit on pointer
+    /// references.
+    ///
+    /// # Errors
+    /// A [`CodeUnitInsertionException`], with Java's messages, when the data type has no
+    /// length or is zero-length, the data would run off its address space or out of `memory`,
+    /// or it would overlap an instruction or other data.
+    pub fn create_data(
+        &mut self,
+        memory: &dyn Memory,
+        address: Address,
+        data_type: Arc<dyn DataType>,
+        length: i32,
+    ) -> Result<DefinedData, CodeUnitInsertionException> {
+        let _ = length;
+        let length = data_type.get_length();
+        if length < 0 {
+            return Err(CodeUnitInsertionException::new(format!(
+                "Failed to resolve data length for {}",
+                data_type.get_name()
+            )));
+        }
+        if length == 0 || data_type.is_zero_length() {
+            return Err(CodeUnitInsertionException::new(format!(
+                "Zero-length data not allowed {}",
+                data_type.get_name()
+            )));
+        }
+        let end = address
+            .add_no_wrap(i64::from(length) - 1)
+            .map_err(|_| CodeUnitInsertionException::new("Code unit would extend beyond Address space"))?;
+        self.check_valid_address_range(memory, &address, &end)?;
+        let data = DefinedData { address: address.clone(), length: length as usize, data_type };
+        if data.data_type.is_default_data_type() {
+            return Ok(data);
+        }
+        self.data.insert(address, data.clone());
+        self.add_data_references(&data, memory);
+        Ok(data)
+    }
+
+    /// Port of `CodeManager.addDataReferences` / `createReference` for pointer data.
+    fn add_data_references(&self, data: &DefinedData, memory: &dyn Memory) {
+        let Some(to) = data.pointer_value(memory, self.language.is_big_endian()) else { return };
+        if !to.is_loaded_memory_address() {
+            return;
+        }
+        let offset = to.offset();
+        if offset == 0 || offset == to.space().max_address().offset() {
+            return; // treat 0 and all f's as uninitialized pointer value
+        }
+        let mut references = self.references.write().unwrap_or_else(|p| p.into_inner());
+        let _ = references.add_memory_reference(data.address.clone(), to, RefType::Data, SourceType::Default, 0);
+    }
+
+    /// The defined data starting at `address`. Port of `CodeManager.getDefinedDataAt`.
+    pub fn defined_data_at(&self, address: &Address) -> Option<&DefinedData> {
+        self.data.get(address)
+    }
+
+    /// The defined data whose range contains `address`. Port of
+    /// `CodeManager.getDefinedDataContaining`.
+    pub fn defined_data_containing(&self, address: &Address) -> Option<&DefinedData> {
+        let (start, data) = self.data.range(..=address.clone()).next_back()?;
+        if !start.same_address_space(address) {
+            return None;
+        }
+        (data.max_address() >= *address).then_some(data)
+    }
+
+    /// The defined data starting in `[start, end]`, in address order.
+    pub fn defined_data_in<'a>(&'a self, start: &Address, end: &Address) -> impl Iterator<Item = &'a DefinedData> + 'a {
+        self.data.range(start.clone()..=end.clone()).map(|(_, d)| d)
+    }
+
+    /// The number of defined data units. Port of `CodeManager.getNumDefinedDataUnits`.
+    pub fn num_defined_data(&self) -> usize {
+        self.data.len()
+    }
+
+    /// The summaries of the defined data starting in `[start, end]`, in address order (the
+    /// data counterpart of [`ListingStore::instruction_summaries`]).
+    pub fn data_summaries<'a>(
+        &'a self,
+        memory: &'a dyn Memory,
+        start: &Address,
+        end: &Address,
+    ) -> impl Iterator<Item = CodeUnitSummary> + 'a {
+        let big_endian = self.language.is_big_endian();
+        self.defined_data_in(start, end).map(move |d| d.summary(memory, big_endian))
     }
 
     fn max_address(record: &InstructionRecord) -> Address {
@@ -248,16 +378,18 @@ impl ListingStore {
         self.records.len()
     }
 
-    /// Whether no instruction intersects `[start, end]`. Port of `CodeManager.isUndefined` (the
-    /// store has no defined data).
+    /// Whether no instruction or defined data intersects `[start, end]`. Port of
+    /// `CodeManager.isUndefined`.
     pub fn is_undefined(&self, start: &Address, end: &Address) -> bool {
         self.by_address.range(start.clone()..=end.clone()).next().is_none()
             && self.instruction_containing(start).is_none()
+            && self.data.range(start.clone()..=end.clone()).next().is_none()
+            && self.defined_data_containing(start).is_none()
     }
 
-    /// The addresses of `set` in initialized memory that no instruction covers. Port of
-    /// `CodeManager.getUndefinedRanges(AddressSetView, boolean initializedMemoryOnly = true,
-    /// TaskMonitor)` (the store has no defined data).
+    /// The addresses of `set` in initialized memory that no instruction or defined data covers.
+    /// Port of `CodeManager.getUndefinedRanges(AddressSetView, boolean initializedMemoryOnly =
+    /// true, TaskMonitor)`.
     pub fn undefined_ranges(&self, memory: &dyn Memory, set: &dyn AddressSetView) -> AddressSet {
         let mut undefined = set.intersect(&*memory.get_all_initialized_address_set());
         for range in set.address_ranges() {
@@ -267,22 +399,35 @@ impl ListingStore {
                 let record = &self.records[&id].record;
                 undefined.delete_range(record.address(), &Self::max_address(record));
             }
+            let first = self.defined_data_containing(min).into_iter();
+            for data in first.chain(self.defined_data_in(min, max)) {
+                undefined.delete_range(data.address(), &data.max_address());
+            }
         }
         undefined
     }
 
-    /// Removes every instruction intersecting `[start, end]`, and every reference from
-    /// `[start, end]` widened to the start of the instruction containing `start` (default and
+    /// Removes every instruction and defined data intersecting `[start, end]`, and every
+    /// reference from `[start, end]` widened to the start of the code unit containing `start`
+    /// (default and
     /// user references alike, as Java's `refManager.removeAllReferencesFrom(start, end)`). Port
-    /// of `CodeManager.clearCodeUnits(Address, Address, boolean, TaskMonitor)` for instructions,
-    /// without clearing context or delay-slot range adjustment.
+    /// of `CodeManager.clearCodeUnits(Address, Address, boolean, TaskMonitor)` without clearing
+    /// context or delay-slot range adjustment.
     pub fn clear_code_units(&mut self, start: &Address, end: &Address) {
         let mut doomed: Vec<Address> =
             self.by_address.range(start.clone()..=end.clone()).map(|(a, _)| a.clone()).collect();
+        let mut doomed_data: Vec<Address> =
+            self.data.range(start.clone()..=end.clone()).map(|(a, _)| a.clone()).collect();
         let mut refs_start = start.clone();
         if let Some(id) = self.instruction_containing(start) {
             refs_start = self.records[&id].record.address().clone();
             doomed.push(refs_start.clone());
+        } else if let Some(data) = self.defined_data_containing(start) {
+            refs_start = data.address().clone();
+            doomed_data.push(refs_start.clone());
+        }
+        for addr in doomed_data {
+            self.data.remove(&addr);
         }
         self.references
             .write()
@@ -385,8 +530,8 @@ impl ListingStore {
     }
 
     /// The code units intersecting `[start, end]` of `memory`, in address order: each
-    /// instruction (the one containing `start` included), and an undefined 1-byte unit at every
-    /// other memory address. Addresses outside memory are skipped. See [`CodeUnitSummary`].
+    /// instruction and defined data (the one containing `start` included), and an undefined
+    /// 1-byte unit at every other memory address. Addresses outside memory are skipped. See [`CodeUnitSummary`].
     pub fn code_units<'a>(&'a self, memory: &'a dyn Memory, start: &Address, end: &Address) -> CodeUnits<'a> {
         let mut blocks: Vec<(Address, Address, bool)> = memory
             .get_blocks()
@@ -398,6 +543,7 @@ impl ListingStore {
         let first = self
             .instruction_containing(start)
             .map(|id| self.records[&id].record.address().clone())
+            .or_else(|| self.defined_data_containing(start).map(|d| d.address().clone()))
             .unwrap_or_else(|| start.clone());
         CodeUnits { store: self, memory, blocks, cursor: Some(first), end: end.clone() }
     }
@@ -447,6 +593,99 @@ impl ListingStore {
             mnemonic,
             operands,
             operand_text,
+        }
+    }
+}
+
+/// A defined data unit of a [`ListingStore`]: its address, length and data type (Java's data
+/// record, resolved).
+#[derive(Clone)]
+pub struct DefinedData {
+    address: Address,
+    length: usize,
+    data_type: Arc<dyn DataType>,
+}
+
+impl std::fmt::Debug for DefinedData {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("DefinedData")
+            .field("address", &self.address)
+            .field("length", &self.length)
+            .field("data_type", &self.data_type.get_name())
+            .finish()
+    }
+}
+
+/// The settings of a data unit with none of its own: every definition's default.
+struct DefaultSettings;
+impl Settings for DefaultSettings {}
+
+impl DefinedData {
+    /// The data's (minimum) address.
+    pub fn address(&self) -> &Address {
+        &self.address
+    }
+
+    /// The data's last address.
+    pub fn max_address(&self) -> Address {
+        self.address.add_wrap(self.length as i64 - 1)
+    }
+
+    /// The data's length in bytes.
+    pub fn length(&self) -> usize {
+        self.length
+    }
+
+    /// The data's type.
+    pub fn data_type(&self) -> &Arc<dyn DataType> {
+        &self.data_type
+    }
+
+    /// Whether the data is a pointer (Java: its value class is `Address`).
+    pub fn is_pointer(&self) -> bool {
+        self.data_type.as_pointer().is_some()
+    }
+
+    fn read_bytes(&self, memory: &dyn Memory) -> Vec<u8> {
+        let mut bytes = vec![0u8; self.length];
+        let read = memory.get_bytes(&self.address, &mut bytes);
+        bytes.truncate(read);
+        bytes
+    }
+
+    fn buffer(&self, memory: &dyn Memory, big_endian: bool) -> ByteMemBufferImpl {
+        ByteMemBufferImpl::new(self.address.clone(), self.read_bytes(memory), big_endian)
+    }
+
+    /// A pointer's value read from `memory` now (`Data.getValue` of pointer data); `None` for
+    /// other data or an unreadable or invalid value.
+    pub fn pointer_value(&self, memory: &dyn Memory, big_endian: bool) -> Option<Address> {
+        if !self.is_pointer() {
+            return None;
+        }
+        let buf = self.buffer(memory, big_endian);
+        pointer_data_type::get_address_value_default(&buf, self.length as i32, &DefaultSettings)
+    }
+
+    /// The data as a [`CodeUnitSummary`]: the data type's mnemonic and default value
+    /// representation, over its bytes read from `memory` now.
+    pub fn summary(&self, memory: &dyn Memory, big_endian: bool) -> CodeUnitSummary {
+        let bytes = self.read_bytes(memory);
+        let buf = ByteMemBufferImpl::new(self.address.clone(), bytes.clone(), big_endian);
+        let mnemonic = self.data_type.get_mnemonic(&DefaultSettings);
+        let value = if bytes.len() < self.length {
+            "??".to_string()
+        } else {
+            self.data_type.get_representation(&buf, &DefaultSettings, self.length as i32)
+        };
+        CodeUnitSummary {
+            address: self.address.clone(),
+            length: self.length,
+            bytes,
+            kind: CodeUnitKind::Data,
+            mnemonic,
+            operands: vec![value.clone()],
+            operand_text: value,
         }
     }
 }
@@ -512,6 +751,9 @@ pub enum CodeUnitKind {
     Instruction(InstructionId),
     /// An undefined byte (Java's `DefaultDataType`, mnemonic `??`).
     Undefined,
+    /// Defined data in the store (see [`ListingStore::defined_data_at`] at the summary's
+    /// address).
+    Data,
 }
 
 /// One code unit, flattened for display.
@@ -523,12 +765,15 @@ pub struct CodeUnitSummary {
     pub length: usize,
     /// Its bytes; shorter than `length` (empty for uninitialized memory) where unreadable.
     pub bytes: Vec<u8>,
-    /// Instruction or undefined.
+    /// Instruction, defined data or undefined.
     pub kind: CodeUnitKind,
-    /// The mnemonic: the instruction's, or `??` for undefined data.
+    /// The mnemonic: the instruction's, the data type's for defined data
+    /// (`DataType.getMnemonic`: `addr` for a pointer, `dq` for a qword), or `??` for undefined
+    /// data.
     pub mnemonic: String,
-    /// Each operand's default representation (`getDefaultOperandRepresentation`); for undefined
-    /// data, the one value representation (`6Ah`, or `??` if unreadable).
+    /// Each operand's default representation (`getDefaultOperandRepresentation`); for data, the
+    /// one default value representation (`Data.getDefaultValueRepresentation`: `6Ah` for an
+    /// undefined byte, `00bc06b8` for a pointer, `??` if unreadable).
     pub operands: Vec<String>,
     /// Everything after the mnemonic as Java's `toString` lays it out, separators included
     /// (`RAX,qword ptr [0x1000]`).
@@ -539,6 +784,11 @@ impl CodeUnitSummary {
     /// Whether this is an instruction.
     pub fn is_instruction(&self) -> bool {
         matches!(self.kind, CodeUnitKind::Instruction(_))
+    }
+
+    /// Whether this is defined data.
+    pub fn is_defined_data(&self) -> bool {
+        self.kind == CodeUnitKind::Data
     }
 
     fn undefined(address: Address, byte: Option<u8>) -> Self {
@@ -585,6 +835,11 @@ impl Iterator for CodeUnits<'_> {
             let block_end = block_end.clone();
             if let Some(id) = self.store.instruction_at(&cur) {
                 let summary = self.store.instruction_summary(id, self.memory);
+                self.cursor = cur.add_no_wrap(summary.length as i64).ok();
+                return Some(summary);
+            }
+            if let Some(data) = self.store.defined_data_at(&cur) {
+                let summary = data.summary(self.memory, self.store.language.is_big_endian());
                 self.cursor = cur.add_no_wrap(summary.length as i64).ok();
                 return Some(summary);
             }

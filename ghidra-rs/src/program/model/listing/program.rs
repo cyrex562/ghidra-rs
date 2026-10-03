@@ -85,6 +85,31 @@ pub trait Program: DomainObject + Send + Sync {
         None
     }
 
+    /// Whether defined data starts at `addr`: `getListing().getDefinedDataAt(addr) != null`.
+    ///
+    /// A narrow seam for callers that only ask that question (`CodeUnitFormat` following a
+    /// reference to a pointer). The default asks [`Program::get_listing`]; a program whose code
+    /// units live in a store rather than a full [`Listing`] (`ProgramDB`) answers from it.
+    fn has_defined_data_at(&self, addr: &Address) -> bool {
+        self.get_listing().is_some_and(|listing| listing.get_defined_data_at(addr).is_some())
+    }
+
+    /// Creates data of `data_type` at `addr`: `getListing().createData(addr, dataType)`, for
+    /// fixed-length data types. A narrow seam beside [`Program::get_listing`] for loaders that
+    /// lay down data (an ELF loader's GOT pointers); the default has no listing to create in.
+    ///
+    /// # Errors
+    /// A [`CodeUnitInsertionException`] when the data cannot be created (Java's messages:
+    /// conflicting code units, insufficient memory), or when the program cannot create data.
+    fn create_data(
+        &self,
+        addr: &Address,
+        data_type: Arc<dyn crate::program::model::data::data_type::DataType>,
+    ) -> Result<(), crate::program::util::CodeUnitInsertionException> {
+        let _ = (addr, data_type);
+        Err(crate::program::util::CodeUnitInsertionException::new("program has no listing to create data in"))
+    }
+
     /// The size, in bytes, of a pointer in this program's default address space.
     ///
     /// Stands in for `Program.getDefaultPointerSize()`. Grown (defaulted, so existing

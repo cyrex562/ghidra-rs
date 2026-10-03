@@ -1309,9 +1309,7 @@ fn get_extended_pointer_reference_markup(
 ) -> Option<LabelString> {
     let to_address = reference.to_address();
 
-    let has_defined_data =
-        with_program(cu, |p| p.get_listing().and_then(|l| l.get_defined_data_at(&to_address))).is_some();
-    if !has_defined_data {
+    if !cu.get_program().has_defined_data_at(&to_address) {
         return None;
     }
 
