@@ -14,6 +14,7 @@ use crate::program::model::address::factory::AddressFactory;
 use crate::program::model::address::Address;
 use crate::program::model::mem::Memory;
 use crate::program::database::symbol::DynamicSymbolSource;
+use crate::program::database::symbol::dynamic_symbol::{DataLabelPrefix, DynamicDataLabel};
 use crate::program::model::listing::code_unit_format::{CodeUnitFormat, DefaultCodeUnitFormat};
 use crate::program::model::listing::Instruction;
 use crate::program::model::symbol::{ReferenceManager, SymbolTable};
@@ -199,7 +200,7 @@ pub struct OperandDisplay {
 }
 
 /// What [`SymbolManagerDB`] asks the program for dynamic symbols: the reference store's
-/// reference levels and the listing's instructions. Each answer takes one store's read lock.
+/// reference levels and the listing's instructions and defined data. Each answer takes one store's read lock.
 struct ProgramDynamicSymbols {
     listing: Arc<RwLock<ListingStore>>,
     references: Arc<RwLock<ReferenceStore>>,
@@ -213,6 +214,29 @@ impl DynamicSymbolSource for ProgramDynamicSymbols {
     fn instruction_containing(&self, addr: &Address) -> Option<Address> {
         let listing = self.listing.read().unwrap_or_else(|p| p.into_inner());
         listing.instruction_containing(addr).map(|id| listing.record(id).address().clone())
+    }
+
+    /// The listing's defined data (its read lock, released), then its primary operand-0
+    /// memory reference (the reference read lock).
+    fn defined_data_containing(&self, addr: &Address) -> Option<DynamicDataLabel> {
+        let (start, prefix) = {
+            let listing = self.listing.read().unwrap_or_else(|p| p.into_inner());
+            let data = listing.defined_data_containing(addr)?;
+            let prefix = if data.is_pointer() {
+                DataLabelPrefix::Pointer
+            } else {
+                DataLabelPrefix::Fixed(data.data_type().get_default_label_prefix())
+            };
+            (data.address().clone(), prefix)
+        };
+        let reference_target = self
+            .references
+            .read()
+            .unwrap_or_else(|p| p.into_inner())
+            .primary_reference_from(&start, 0)
+            .map(|r| crate::program::model::symbol::Reference::to_address(&r))
+            .filter(|to| to.is_memory_address());
+        Some(DynamicDataLabel { start, prefix, reference_target })
     }
 }
 
@@ -537,6 +561,44 @@ mod tests {
             .unwrap();
         assert_eq!(program.operand_display(&addr).unwrap().operands, vec!["target".to_string()]);
         assert!(program.operand_display(&addr.add_wrap(1)).is_none());
+    }
+
+    #[test]
+    fn referenced_data_is_named_as_javas_dynamic_data_names() {
+        use crate::program::model::symbol::RefType;
+        let (program, addr) = test_program();
+        // 0x1000: pointer -> 0x1008 ; 0x1004: pointer -> itself ; 0x1008: dword
+        let bytes = [0x08, 0x10, 0, 0, 0x04, 0x10, 0, 0, 0x2a, 0, 0, 0];
+        program.get_memory().write().unwrap().create_initialized_block("b", &addr, Some(&mut &bytes[..]), 12, None, false).unwrap();
+        let pointer: Arc<dyn DataType> = Arc::new(
+            crate::program::model::data::pointer_data_type::PointerDataType::new_with(None::<Arc<dyn DataType>>, 4, None)
+                .unwrap(),
+        );
+        let dword: Arc<dyn DataType> = Arc::new(crate::program::model::data::dword_data_type::DWordDataType::new(None));
+        program.create_data(&addr, pointer.clone()).unwrap();
+        program.create_data(&addr.add_wrap(4), pointer).unwrap();
+        program.create_data(&addr.add_wrap(8), dword).unwrap();
+        // something (in the dword, but not at its start) reads the first pointer, and two bytes
+        // into it
+        for to in [addr.clone(), addr.add_wrap(2)] {
+            program
+                .get_reference_store()
+                .write()
+                .unwrap()
+                .add_memory_reference(addr.add_wrap(11), to, RefType::Read, SourceType::UserDefined, 0)
+                .unwrap();
+        }
+        let name = |offset: i64| {
+            program.get_symbol_table().read().unwrap().get_primary_symbol(&addr.add_wrap(offset)).unwrap().map(|s| s.get_name().to_string())
+        };
+        assert_eq!(name(8).as_deref(), Some("DWORD_00001008"), "the dword the first pointer reaches");
+        assert_eq!(name(0).as_deref(), Some("PTR_DWORD_00001000"));
+        assert_eq!(name(2).as_deref(), Some("PTR_DWORD_00001000+2"));
+        assert_eq!(name(4).as_deref(), Some("PTR_LOOP_00001004"));
+        program.get_symbol_table().write().unwrap().create_label(&addr.add_wrap(8), "answer", SourceType::UserDefined).unwrap();
+        assert_eq!(name(0).as_deref(), Some("PTR_answer_00001000"));
+        program.get_symbol_table().write().unwrap().create_label(&addr, "table", SourceType::UserDefined).unwrap();
+        assert_eq!(name(2).as_deref(), Some("table+2"));
     }
 
     #[test]

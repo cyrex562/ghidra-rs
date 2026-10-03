@@ -562,7 +562,7 @@ fn operand_display_shows_referenced_addresses_by_symbol() {
 /// `_start`'s call reads `CALL qword ptr [->__libc_start_main]` (milestone C5): the ELF import
 /// defines a pointer at the GOT slot, and `CodeUnitFormat` follows a READ reference to a
 /// pointer whose single data reference reaches a non-dynamic symbol. References to other
-/// defined data (Java names it `PTR_...`) are not checked here. Skipped when the distribution
+/// defined data read as its dynamic `PTR_...` name. Skipped when the distribution
 /// or an x86-64 `/bin/ls` is absent.
 #[test]
 fn bin_ls_operands_read_as_ghidras_listing_shows_them() {
@@ -633,9 +633,13 @@ fn bin_ls_operands_read_as_ghidras_listing_shows_them() {
         let to = refs[0].to_address();
         let name = match through_pointer(&to, refs[0].reference_type()) {
             Some(name) => name,
-            // a reference to other defined data reads in Java as the data's dynamic name
-            // (`PTR_...` for a pointer), which dynamic symbols do not answer yet
-            None if program.defined_data_at(&to).is_some() => continue,
+            // a reference to other defined data reads as the data's dynamic name (`PTR_...`
+            // for a pointer: SymbolUtilities.getDynamicDataName)
+            None if program.defined_data_at(&to).is_some() => {
+                let symbol = program.get_symbol_table().read().unwrap().get_primary_symbol(&to).unwrap().unwrap();
+                assert!(symbol.get_name().starts_with("PTR_"), "{u:?} {}", symbol.get_name());
+                symbol.get_name().to_string()
+            }
             None => name_of(&to),
         };
         let expected = u.operand_text.replacen(&format!("0x{:x}", to.offset()), &name, 1);
@@ -695,6 +699,10 @@ fn bin_ls_start_calls_libc_start_main_through_a_got_pointer() {
     let pointers = program.data_summaries(&got_start, &got_end);
     assert_eq!(pointers.len() as i64, (got_end.subtract(&got_start) + 1) / 8);
     assert!(pointers.iter().all(|p| p.mnemonic == "addr" && p.length == 8));
+
+    // the slot's own (dynamic) label, as Java names a pointer to a named symbol
+    let label = program.get_symbol_table().read().unwrap().get_primary_symbol(&slot).unwrap().unwrap();
+    assert_eq!(label.get_name(), format!("PTR___libc_start_main_{:08x}", slot.offset()));
 
     let summary = program.data_summaries(&slot, &slot).pop().unwrap();
     assert_eq!((summary.mnemonic.as_str(), summary.operand_text.clone()), ("addr", target.to_string()));

@@ -33,7 +33,44 @@ pub trait DynamicSymbolSource: Send + Sync {
         let _ = addr;
         false
     }
+
+    /// The defined data containing `addr`, described for naming (Java's
+    /// `listing.getCodeUnitContaining(addr)` being a defined `Data`); `None` for undefined
+    /// data and instructions. The default: the program has no defined data.
+    fn defined_data_containing(&self, addr: &Address) -> Option<DynamicDataLabel> {
+        let _ = addr;
+        None
+    }
 }
+
+/// What dynamic naming needs to know about a defined data unit: see
+/// [`DynamicSymbolSource::defined_data_containing`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DynamicDataLabel {
+    /// The data's (minimum) address.
+    pub start: Address,
+    /// How its data type prefixes its label (`Data.getDefaultLabelPrefix`).
+    pub prefix: DataLabelPrefix,
+    /// The destination of the data's primary memory reference on operand 0, if any.
+    pub reference_target: Option<Address>,
+}
+
+/// A data type's label prefix, as `getDefaultLabelPrefix(MemBuffer, Settings, int,
+/// DataTypeDisplayOptions)` answers it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DataLabelPrefix {
+    /// A pointer's prefix depends on what it points to (`PointerDataType.getLabelString`:
+    /// `PTR_<target>`), which the symbol manager names.
+    Pointer,
+    /// Any other type's fixed prefix (`DWORD`, `QWORD`, ...), or `None` for a type without one
+    /// (the reference level's prefix is used instead).
+    Fixed(Option<String>),
+}
+
+/// `PointerDataType.POINTER_LABEL_PREFIX`.
+pub const POINTER_LABEL_PREFIX: &str = "PTR";
+/// `PointerDataType.POINTER_LOOP_LABEL`.
+pub const POINTER_LOOP_LABEL: &str = "PTR_LOOP";
 
 /// Java's `SymbolUtilities.getAddressString(Address)`: `addr.toString()` -- at least 8 hex
 /// digits, no `0x`, the space name only for a space that shows it (not RAM) -- with `:` made

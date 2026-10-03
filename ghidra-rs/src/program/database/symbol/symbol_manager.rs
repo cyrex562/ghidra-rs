@@ -3,7 +3,10 @@ use crate::framework::db::{DBHandle, Field, FieldType, Schema};
 use crate::program::database::map::AddressMapDB;
 use crate::program::database::symbol::namespace_manager::NamespaceManagerDB;
 use crate::program::database::symbol::symbol_db::SymbolDB;
-use crate::program::database::symbol::dynamic_symbol::{dynamic_name, DynamicSymbol, DynamicSymbolSource};
+use crate::program::database::symbol::dynamic_symbol::{
+    dynamic_name, label_address_string, DataLabelPrefix, DynamicDataLabel, DynamicSymbol, DynamicSymbolSource,
+    POINTER_LABEL_PREFIX, POINTER_LOOP_LABEL,
+};
 use crate::program::model::symbol::Reference;
 use crate::program::database::symbol::variable_storage_manager::VariableStorageManager;
 use crate::program::database::ManagerDB;
@@ -112,6 +115,13 @@ impl SymbolManagerDB {
         }
         let Some(level) = source.reference_level(addr) else { return Ok(None) };
         let start = source.instruction_containing(addr);
+        if start.is_none() {
+            if let Some(data) = source.defined_data_containing(addr) {
+                let name = self.dynamic_data_name(addr, level, &data)?;
+                let id = i64::MIN | self.addr_map.read().unwrap().get_key(addr, false);
+                return Ok(Some(Arc::new(DynamicSymbol::new(id, name, addr.clone()))));
+            }
+        }
         let mut start_label = None;
         let mut is_function = false;
         if let Some(start) = start.as_ref() {
@@ -124,6 +134,75 @@ impl SymbolManagerDB {
         let name = dynamic_name(addr, level, start.as_ref(), start_label.as_deref(), is_function);
         let id = i64::MIN | self.addr_map.read().unwrap().get_key(addr, false);
         Ok(Some(Arc::new(DynamicSymbol::new(id, name, addr.clone()))))
+    }
+
+    /// Port of `SymbolUtilities.getDynamicDataName` for non-composite, non-string data:
+    /// `<prefix>_<address>` at the data's start, `<label>+<offset>` (or
+    /// `<prefix>_<start>+<offset>`) within it, the reference level's prefix for a type without
+    /// a label prefix.
+    fn dynamic_data_name(&self, addr: &Address, level: i8, data: &DynamicDataLabel) -> io::Result<String> {
+        let prefix = match &data.prefix {
+            DataLabelPrefix::Fixed(prefix) => prefix.clone(),
+            DataLabelPrefix::Pointer => Some(self.pointer_label(&data.start, data.reference_target.as_ref())?),
+        };
+        let diff = addr.subtract(&data.start);
+        if diff == 0 {
+            return Ok(match prefix {
+                Some(prefix) => format!("{prefix}_{}", label_address_string(addr)),
+                None => dynamic_name(addr, level, None, None, false),
+            });
+        }
+        // generateOffcutDataName (getDefaultOffcutLabelPrefix is the label prefix)
+        let offcut = format!("+{}", crate::program::model::symbol::symbol_utilities::DefaultSymbolUtilities.get_diff_string(diff));
+        if let Some(symbol) = self.stored_primary_symbol(&data.start)? {
+            return Ok(format!("{}{offcut}", symbol.get_name()));
+        }
+        Ok(match prefix {
+            Some(prefix) => format!("{prefix}_{}{offcut}", label_address_string(&data.start)),
+            None => format!("{}{offcut}", dynamic_name(&data.start, level, None, None, false)),
+        })
+    }
+
+    /// Port of `PointerDataType.getLabelString` / `getPointerClassification`: the label prefix
+    /// of a pointer at `from` whose primary reference reaches `target`.
+    fn pointer_label(&self, from: &Address, target: Option<&Address>) -> io::Result<String> {
+        let Some(to) = target else { return Ok(POINTER_LABEL_PREFIX.to_string()) };
+        let stored = self.stored_primary_symbol(to)?;
+        if let Some(symbol) = stored.as_ref() {
+            if symbol.get_source() != SourceType::Default {
+                return Ok(format!("{POINTER_LABEL_PREFIX}_{}", symbol.get_name()));
+            }
+        }
+        // check for deep pointers or recursive conditions before naming a default target
+        if from == to {
+            return Ok(POINTER_LOOP_LABEL.to_string());
+        }
+        let source = self.dynamic_source.as_ref().expect("pointer labels are asked for with a dynamic source");
+        let mut seen = vec![from.clone()];
+        let mut next = Some(to.clone());
+        let mut depth = 1;
+        while let Some(to_addr) = next {
+            if seen.contains(&to_addr) {
+                return Ok(POINTER_LOOP_LABEL.to_string());
+            }
+            depth += 1;
+            if depth > 2 {
+                return Ok(format!("{POINTER_LABEL_PREFIX}_{POINTER_LABEL_PREFIX}"));
+            }
+            next = source.defined_data_containing(&to_addr).and_then(|d| d.reference_target);
+            seen.push(to_addr);
+        }
+        let name = match stored {
+            Some(symbol) => symbol.get_name().to_string(),
+            None => match self.dynamic_symbol(to)? {
+                Some(symbol) => symbol.get_name().to_string(),
+                None => return Ok(POINTER_LABEL_PREFIX.to_string()),
+            },
+        };
+        // SymbolUtilities.getCleanSymbolName: drop a trailing `_<address>`
+        let suffix = format!("_{}", label_address_string(to));
+        let name = name.strip_suffix(&suffix).filter(|base| !base.is_empty()).unwrap_or(&name);
+        Ok(format!("{POINTER_LABEL_PREFIX}_{}", name.replace(crate::program::model::symbol::DELIMITER, "_")))
     }
 
     /// The stored (non-dynamic) primary symbol at the memory address `addr`.
