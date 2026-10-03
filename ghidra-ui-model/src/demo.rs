@@ -10,13 +10,15 @@ pub struct VecTable {
     rows: Vec<Vec<CellValue>>,
     view: Vec<usize>,
     filter: String,
+    /// The last sort (column, ascending), re-applied after edits.
+    sorted: Option<(usize, bool)>,
 }
 
 impl VecTable {
     /// A table with these columns and rows.
     pub fn new(columns: Vec<String>, rows: Vec<Vec<CellValue>>) -> Self {
         let view = (0..rows.len()).collect();
-        Self { columns, rows, view, filter: String::new() }
+        Self { columns, rows, view, filter: String::new(), sorted: None }
     }
 
     fn refilter(&mut self) {
@@ -64,6 +66,7 @@ impl TableModel for VecTable {
         self.view.get(row).and_then(|&i| self.rows[i].get(column)).cloned().unwrap_or(CellValue::Empty)
     }
     fn sort(&mut self, column: usize, ascending: bool) {
+        self.sorted = Some((column, ascending));
         let mut order = self.view_order();
         order.sort_by(|&a, &b| {
             let o = cmp_cells(
@@ -83,10 +86,13 @@ impl TableModel for VecTable {
 
 impl VecTable {
     /// Edits rows in place (all of them, filtered or not), then re-applies
-    /// the filter.
+    /// the last sort and the filter.
     pub fn update_rows(&mut self, mut f: impl FnMut(&mut Vec<CellValue>)) {
         self.rows.iter_mut().for_each(&mut f);
-        self.refilter();
+        match self.sorted {
+            Some((column, ascending)) => self.sort(column, ascending),
+            None => self.refilter(),
+        }
     }
 }
 
@@ -272,6 +278,22 @@ impl FormModel for MapForm {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn updated_rows_keep_the_last_sort() {
+        let t = SharedTable::new(VecTable::new(
+            vec!["Name".into()],
+            vec![vec![CellValue::Text("a_foo".into())], vec![CellValue::Text("m".into())]],
+        ));
+        let mut view = t.clone();
+        view.sort(0, true);
+        t.update_rows(|row| {
+            if row[0] == CellValue::Text("a_foo".into()) {
+                row[0] = CellValue::Text("z_foo".into());
+            }
+        });
+        assert_eq!((view.cell(0, 0), view.cell(1, 0)), (CellValue::Text("m".into()), CellValue::Text("z_foo".into())));
+    }
 
     #[test]
     fn a_shared_table_updates_every_view_and_refilters() {

@@ -84,6 +84,11 @@ void RustTableModel::setFilter(const QString& text) {
     endResetModel();
 }
 
+void RustTableModel::reload() {
+    beginResetModel();
+    endResetModel();
+}
+
 // ---------------------------------------------------------------- tree
 RustTreeModel::RustTreeModel(uint64_t pid, QStatusBar* status, QObject* parent)
     : QAbstractItemModel(parent), m_pid(pid), m_status(status) {}

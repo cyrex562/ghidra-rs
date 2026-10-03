@@ -22,6 +22,8 @@ public:
     bool setData(const QModelIndex& index, const QVariant& value, int role = Qt::EditRole) override;
     void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override;
     void setFilter(const QString& text);
+    /// Re-reads rows after Rust changed them (row count, order, cells).
+    void reload();
 
 private:
     uint64_t m_pid;

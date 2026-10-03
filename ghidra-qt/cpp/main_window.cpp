@@ -10,6 +10,7 @@
 #include <QCloseEvent>
 #include <QContextMenuEvent>
 #include <QLineEdit>
+#include <QTableView>
 #include <QMenu>
 #include <QMenuBar>
 #include <QProgressBar>
@@ -112,9 +113,14 @@ void MainWindow::viewChanged(int64_t pid) {
         if (it.value() != pid || !it.key()->widget()) continue;
         if (auto* listing = dynamic_cast<ListingView*>(it.key()->widget())) {
             listing->refresh();
-        } else {
-            it.key()->widget()->update();
+            continue;
         }
+        // A table's rows may have changed count or order (an edit under a
+        // filter or sort): the model re-reads them.
+        for (auto* table : it.key()->widget()->findChildren<QTableView*>()) {
+            if (auto* model = dynamic_cast<RustTableModel*>(table->model())) model->reload();
+        }
+        it.key()->widget()->update();
     }
 }
 

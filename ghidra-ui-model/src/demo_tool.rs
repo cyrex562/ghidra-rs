@@ -412,7 +412,19 @@ impl ListingEditor {
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .set_symbol_name(id, name, SourceType::UserDefined)
             .map_err(|e| e.to_string())?;
-        let source = SourceType::UserDefined.display_string().to_owned();
+        // the program's source after the rename (an unchanged name keeps it)
+        let source = self
+            .live
+            .program()
+            .get_symbol_table()
+            .read()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .get_symbol(id)
+            .ok()
+            .flatten()
+            .map_or(SourceType::UserDefined, |s| s.get_source())
+            .display_string()
+            .to_owned();
         let renamed = {
             let mut base = self.base.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
             let sym = base.symbols.iter_mut().find(|s| s.id == id);
@@ -1319,6 +1331,25 @@ mod tests {
         assert!(rows.contains(&("my_label".to_string(), "User Defined".to_string())), "{rows:?}");
         let events = s.events().drain();
         assert!(events.contains(&UiEvent::ViewChanged(id.0)) && events.contains(&UiEvent::ViewChanged(symbols.0)), "{events:?}");
+    }
+
+    #[test]
+    fn renaming_a_label_to_its_own_name_changes_nothing() {
+        let Some((program, _)) = bin_ls_with_undefined_code() else { return };
+        let Some(sym) = program.symbols.iter().find(|s| s.source == "Imported" && !s.kind.starts_with("External")).cloned() else { return };
+        let mut s = build_session_for(Some(&program));
+        let (id, h) = listing(&s);
+        cursor_to_label(&h, sym.address, sym.id);
+        s.tool_mut().dispatch_key(KeyStroke::new(vk::L, 0), Some(id));
+        let dialog = take_dialog(&s);
+        assert!(matches!(s.events().dialog_ok(dialog, &sym.name, &[]), Ok(crate::dialogs::DialogReply::Close)));
+        let symbols = s.tool().find_provider("Demo", "Symbols").unwrap();
+        let Some(ViewModelBox::Table(t)) = s.model(symbols) else { panic!("table") };
+        let sources: Vec<String> = (0..t.row_count())
+            .filter(|&r| t.cell(r, 1) == CellValue::Address(sym.address) && t.cell(r, 0).to_string() == sym.name)
+            .map(|r| t.cell(r, 3).to_string())
+            .collect();
+        assert_eq!(sources, vec!["Imported".to_string()], "SymbolDB.setName keeps the source when the name is unchanged");
     }
 
     #[test]
