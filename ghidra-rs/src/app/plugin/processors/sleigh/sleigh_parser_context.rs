@@ -86,6 +86,7 @@ pub struct ContextSet {
 /// All the recovered context for a single instruction. See the module docs.
 ///
 /// Port of `ghidra.app.plugin.processors.sleigh.SleighParserContext`.
+#[derive(Clone)]
 pub struct SleighParserContext {
     mem_buffer: Option<Arc<dyn MemBuffer>>,
     /// Address of start of instruction (`inst_start`).

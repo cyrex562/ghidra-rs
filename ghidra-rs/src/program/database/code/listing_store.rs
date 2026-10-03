@@ -29,6 +29,7 @@
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 
+use crate::app::plugin::processors::sleigh::sleigh_parser_context::SleighParserContext;
 use crate::app::util::pseudo_instruction::byte_cache_size;
 use crate::program::disassemble::DisassemblerInstructionContext;
 use crate::program::model::address::{Address, AddressSet, AddressSetView};
@@ -42,7 +43,7 @@ use crate::program::model::lang::unknown_context_exception::UnknownContextExcept
 use crate::program::model::listing::instruction_record::{
     InstructionRecord, InstructionSnapshot, InstructionView, SharedPrototype,
 };
-use crate::program::model::mem::{ByteMemBufferImpl, MemBuffer, Memory};
+use crate::program::model::mem::{ByteMemBufferImpl, MemBuffer, Memory, MemoryAccessException};
 use crate::program::util::CodeUnitInsertionException;
 
 /// Names an instruction in a [`ListingStore`]: the record key, assigned in creation order and
@@ -272,6 +273,7 @@ impl ListingStore {
         ProgramInstructionSnapshot {
             mem: ByteMemBufferImpl::new(address, bytes, self.language.is_big_endian()),
             context: DisassemblerInstructionContext::new(Arc::clone(&self.language), entry.context.clone()),
+            own_context: std::cell::OnceCell::new(),
         }
     }
 
@@ -347,11 +349,29 @@ impl ListingStore {
 pub struct ProgramInstructionSnapshot {
     mem: ByteMemBufferImpl,
     context: DisassemblerInstructionContext,
+    /// The instruction's own parser context, built on first use: every prototype query asks
+    /// for it, and building it dominates the cost of describing an instruction.
+    own_context: std::cell::OnceCell<Option<SleighParserContext>>,
 }
 
 impl InstructionSnapshot for ProgramInstructionSnapshot {
     fn mem_buffer(&self) -> &dyn MemBuffer {
         &self.mem
+    }
+
+    /// Built once per snapshot and handed out as copies (a sleigh context is plain data); a
+    /// prototype whose context is not a [`SleighParserContext`] builds it on every call.
+    fn own_parser_context(&self, record: &InstructionRecord) -> Result<Box<dyn ParserContext>, MemoryAccessException> {
+        if let Some(cached) = self.own_context.get() {
+            if let Some(context) = cached {
+                return Ok(Box::new(SleighParserContext::clone(context)));
+            }
+            return record.prototype().get_parser_context(&self.mem, &self.context);
+        }
+        let built = record.prototype().get_parser_context(&self.mem, &self.context)?;
+        let sleigh = built.as_any().and_then(|any| any.downcast_ref::<SleighParserContext>()).cloned();
+        let _ = self.own_context.set(sleigh);
+        Ok(built)
     }
 
     fn processor_context(&self) -> &dyn ProcessorContextView {

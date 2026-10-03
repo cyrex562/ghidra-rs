@@ -286,6 +286,16 @@ pub trait InstructionSnapshot {
         record: &InstructionRecord,
         address: &Address,
     ) -> Result<Box<dyn ParserContext>, InstructionContextError>;
+
+    /// The parser context of `record`'s own instruction over this snapshot: by default the
+    /// prototype builds it afresh (`getParserContext(MemBuffer, ProcessorContextView)`). A
+    /// snapshot may cache it, since every query on an instruction rebuilds it.
+    ///
+    /// # Errors
+    /// The bytes cannot be read.
+    fn own_parser_context(&self, record: &InstructionRecord) -> Result<Box<dyn ParserContext>, MemoryAccessException> {
+        record.prototype().get_parser_context(self.mem_buffer(), self.processor_context())
+    }
 }
 
 /// A record resolved against a snapshot: the queries every instruction backing answers the same
@@ -541,9 +551,7 @@ impl<S: InstructionSnapshot + ?Sized> InstructionContext for InstructionView<'_,
 
     /// The prototype's parser context over this view's bytes and context.
     fn get_parser_context(&self) -> Result<Box<dyn ParserContext>, MemoryAccessException> {
-        self.record
-            .prototype
-            .get_parser_context(self.snapshot.mem_buffer(), self.snapshot.processor_context())
+        self.snapshot.own_parser_context(self.record)
     }
 
     /// This instruction's own parser context at its address; any other address is the

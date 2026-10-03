@@ -214,3 +214,18 @@ fn undefined_ranges_are_initialized_memory_without_instructions() {
     expected.add_range(&f.at(0x1004), &f.at(0x1007));
     assert_eq!(undefined, expected);
 }
+
+#[test]
+fn a_snapshot_answers_repeated_queries_from_its_cached_parser_context() {
+    let mut f = Fixture::new();
+    let id = f.create(0x1004).unwrap();
+    let mem = f.memory.read().unwrap();
+    let snapshot = f.store.snapshot(id, &*mem);
+    assert!(snapshot.own_context.get().is_none());
+    let view = InstructionView::new(f.store.record(id), &snapshot);
+    assert_eq!(view.display_string(), "jmp 0x100b");
+    assert!(matches!(snapshot.own_context.get(), Some(Some(_))), "the sleigh context is cached");
+    // answered again from the cache, identically
+    assert_eq!(view.display_string(), "jmp 0x100b");
+    assert_eq!(view.operand_address(0).unwrap().offset(), 0x100b);
+}
