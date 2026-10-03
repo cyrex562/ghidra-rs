@@ -120,7 +120,13 @@ fn an_instruction_must_lie_in_memory() {
     let mem = f.memory.read().unwrap();
     let err = f.store.create_instruction(&*mem, f.at(0x1007), proto.clone(), None, 0).unwrap_err();
     assert_eq!(err.message(), "Insufficent memory at address ram:0x1007 (length: 2 bytes)");
-    assert!(f.store.create_instruction(&*mem, f.at(0x1006), proto.clone(), None, 3).is_err());
+    // longer than the prototype: no override, but the longer range must lie in memory (Java)
+    let err = f.store.create_instruction(&*mem, f.at(0x1006), proto.clone(), None, 3).unwrap_err();
+    assert_eq!(err.message(), "Insufficent memory at address ram:0x1006 (length: 3 bytes)");
+    assert_eq!(
+        f.store.create_instruction(&*mem, f.at(0x1006), proto.clone(), None, -1).unwrap_err().message(),
+        "Negative length not permitted"
+    );
     let id = f.store.create_instruction(&*mem, f.at(0x1006), proto, None, 1).unwrap();
     assert_eq!((f.store.record(id).length(), f.store.record(id).parsed_length()), (1, 2));
 }

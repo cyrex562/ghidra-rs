@@ -39,6 +39,7 @@ use crate::program::model::lang::processor_context_view::ProcessorContextView;
 use crate::program::model::lang::register_value::RegisterValue;
 use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::program::model::lang::unknown_context_exception::UnknownContextException;
+use crate::program::model::listing::instruction::MAX_LENGTH_OVERRIDE;
 use crate::program::model::listing::instruction_record::{
     InstructionRecord, InstructionSnapshot, InstructionView, SharedPrototype,
 };
@@ -92,12 +93,7 @@ impl ListingStore {
         length: i32,
     ) -> Result<InstructionId, CodeUnitInsertionException> {
         let parsed_length = prototype.get_length();
-        if length < 0 || length > parsed_length {
-            // InstructionDB.checkLengthOverride
-            return Err(CodeUnitInsertionException::new(format!(
-                "Invalid length override {length} for instruction of length {parsed_length}"
-            )));
-        }
+        let forced_length_override = Self::check_length_override(length, &prototype)?;
         let length = if length == 0 { parsed_length } else { length };
         let end = address
             .add_no_wrap(i64::from(length) - 1)
@@ -105,14 +101,40 @@ impl ListingStore {
         self.check_valid_address_range(memory, &address, &end)?;
 
         let mut record = InstructionRecord::new(address.clone(), prototype);
-        if length != parsed_length {
-            record.set_length_override(length);
+        if forced_length_override != 0 {
+            record.set_length_override(forced_length_override);
         }
         let id = InstructionId(self.next_id);
         self.next_id += 1;
         self.records.insert(id, StoredInstruction { record, context });
         self.by_address.insert(address, id);
         Ok(id)
+    }
+
+    /// Port of `InstructionDB.checkLengthOverride(int, InstructionPrototype)`: the length override
+    /// a requested `length` forces, 0 for none (0, the prototype's length, or longer).
+    ///
+    /// # Errors
+    /// A negative `length` (Java's `IllegalArgumentException`), one that is not a multiple of the
+    /// instruction alignment, or one above [`MAX_LENGTH_OVERRIDE`].
+    fn check_length_override(length: i32, prototype: &SharedPrototype) -> Result<i32, CodeUnitInsertionException> {
+        if length < 0 {
+            return Err(CodeUnitInsertionException::new("Negative length not permitted"));
+        }
+        let instr_proto_length = prototype.get_length();
+        if length == 0 || length >= instr_proto_length {
+            return Ok(0);
+        }
+        let align = prototype.get_language().get_instruction_alignment();
+        if align > 0 && length % align != 0 {
+            return Err(CodeUnitInsertionException::new(format!(
+                "Length({length}) override must be a multiple of {align} bytes"
+            )));
+        }
+        if length > MAX_LENGTH_OVERRIDE {
+            return Err(CodeUnitInsertionException::new(format!("Unsupported length override: {length}")));
+        }
+        Ok(length)
     }
 
     /// Port of the private `CodeManager.checkValidAddressRange` for instructions.
