@@ -1157,6 +1157,11 @@ impl Disassembler {
                     }
                 }
             }
+            // Clear accumulated temporary program context which should have been written to
+            // the program (Java: after listing.addInstructions). Without this the map grows by
+            // one range per instruction for the life of the disassembler.
+            self.disassembler_context.program_context_mut().clear_temporary_context();
+
             if let Some(error) = block.get_instruction_conflict() {
                 let message = error.get_conflict_message().to_string();
                 self.report_message(&message);
