@@ -399,10 +399,21 @@ impl ConfigState for ToolOptionsState {
     fn read_config_state(&mut self, state: &ghidra_rs::framework::options::SaveState) {
         let Some(e) = state.get_xml_element(&self.options.get_name()) else { return };
         let saved = ToolOptions::from_xml(e);
+        // Every saved value, cleared ones and ones whose owner registers later
+        // included (Java rebuilds the options from XML); listeners see each.
         for name in saved.get_option_names() {
-            if let (Some(_), Ok(Some(value))) = (self.options.find_option(&name), saved.get_object(&name, None)) {
-                let _ = self.options.put_object(&name, Some(value)); // listeners see the restored value
-            }
+            let Ok(value) = saved.get_object(&name, None) else { continue };
+            let is_trigger = matches!(value, Some(OptionValue::ActionTrigger(_)))
+                || saved.find_option(&name).is_some_and(|o| o.option_type() == ghidra_rs::framework::options::option_type::OptionType::ActionTrigger);
+            let _ = if is_trigger {
+                let trigger = match value {
+                    Some(OptionValue::ActionTrigger(t)) => Some(t),
+                    _ => None,
+                };
+                self.options.set_action_trigger(&name, trigger)
+            } else {
+                self.options.put_object(&name, value)
+            };
         }
     }
 }
@@ -639,6 +650,56 @@ mod tests {
         assert!(g_like(&mut s2, KeyStroke::new(vk::J, CTRL_DOWN_MASK)));
         assert!(!g_like(&mut s2, KeyStroke::new(vk::G, 0)));
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_cleared_key_binding_stays_cleared_after_a_restart() {
+        let dir = std::env::temp_dir().join(format!("ghidra-ui-model-kbclear-{}", std::process::id()));
+        let path = dir.join("tool.xml");
+        let mut s = build_demo_session();
+        rebind_go_to(&mut s, "");
+        assert!(!g_like(&mut s, KeyStroke::new(vk::G, 0)));
+        s.save_tool_config(&path).unwrap();
+        let mut s2 = build_demo_session();
+        s2.load_tool_config(&path).unwrap();
+        assert!(!g_like(&mut s2, KeyStroke::new(vk::G, 0)), "G must stay unbound");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn a_saved_binding_reaches_an_action_registered_after_loading() {
+        use ghidra_rs::framework::options::action_trigger::ActionTrigger;
+        let dir = std::env::temp_dir().join(format!("ghidra-ui-model-kblate-{}", std::process::id()));
+        let path = dir.join("tool.xml");
+        let mut s = build_demo_session();
+        s.tool()
+            .key_binding_options()
+            .set_action_trigger("Later (Demo)", ActionTrigger::new(Some(KeyStroke::new(vk::K, CTRL_DOWN_MASK)), None).ok())
+            .unwrap();
+        s.save_tool_config(&path).unwrap();
+        let mut s2 = build_demo_session();
+        s2.load_tool_config(&path).unwrap();
+        let mut later = ClosureAction::new("Later", OWNER, |_| {});
+        later.state_mut().set_key_binding_data(Some(KeyBindingData::new(KeyStroke::new(vk::L, CTRL_DOWN_MASK))));
+        let id = s2.tool_mut().add_action(Box::new(later));
+        let key = s2.tool().actions().get(id).unwrap().state().key_binding_data().and_then(|k| k.key_binding());
+        assert_eq!(key, Some(KeyStroke::new(vk::K, CTRL_DOWN_MASK)));
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn rebinding_refreshes_menus() {
+        let mut s = build_demo_session();
+        let d = edit_options_dialog(&mut s);
+        select_options(&mut s, d, "Key Bindings");
+        let table = s.dialog_pane_ids(d).unwrap().table.unwrap();
+        let Some(ViewModelBox::Table(t)) = s.model_mut(table) else { panic!("table") };
+        let row = (0..t.row_count()).find(|&r| t.cell(r, 0) == crate::view_models::CellValue::Text("Go To Address/Label".into())).unwrap();
+        t.edit(row, 1, "ctrl J").unwrap();
+        s.events().dialog_button(d, "apply").unwrap();
+        s.events().drain();
+        s.apply_tool_requests();
+        assert!(s.events().drain().contains(&UiEvent::ActionsChanged), "menus show the new shortcut");
     }
 
     #[test]

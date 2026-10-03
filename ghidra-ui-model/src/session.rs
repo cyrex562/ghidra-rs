@@ -194,6 +194,9 @@ impl UiSession {
         for (i, id) in self.tool.apply_requests().into_iter().enumerate() {
             self.events.post(UiEvent::ProviderShown { id: id.0, focus: i == 0 });
         }
+        if self.tool.take_rebound() {
+            self.events.post(UiEvent::ActionsChanged); // menus show the new shortcuts
+        }
     }
 
     /// Makes listing provider `id` the target of [`Self::go_to`] (Java's

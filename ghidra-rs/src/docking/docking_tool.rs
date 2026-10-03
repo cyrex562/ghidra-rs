@@ -36,6 +36,7 @@ pub struct DockingTool {
     requests: ToolRequests,
     window_actions: Vec<ActionId>,
     key_binding_options: Arc<ToolOptions>,
+    rebound: bool,
     /// ToolOptions holds listeners weakly; the tool keeps its own alive.
     _key_binding_listener: SharedOptionsListener,
 }
@@ -83,6 +84,7 @@ impl DockingTool {
             requests: requests.clone(),
             window_actions: Vec::new(),
             key_binding_options,
+            rebound: false,
             _key_binding_listener: listener,
         }
     }
@@ -269,6 +271,11 @@ impl DockingTool {
         self.actions.set_key_binding(id, KeyBindingData::update(existing.as_ref(), trigger.as_ref()));
     }
 
+    /// Whether key bindings changed since the last call (menus show them).
+    pub fn take_rebound(&mut self) -> bool {
+        std::mem::take(&mut self.rebound)
+    }
+
     fn set_action_trigger(&mut self, full_name: &str, trigger: Option<&ActionTrigger>) {
         let ids: Vec<ActionId> = self
             .actions
@@ -332,8 +339,9 @@ impl DockingTool {
         }
     }
 
-    /// Applies show requests made by actions since the last call; returns the
-    /// providers that were shown, in request order.
+    /// Applies requests made by actions and option listeners since the last
+    /// call; returns the providers that were shown, in request order. Whether
+    /// any key binding changed is reported by [`Self::take_rebound`].
     pub fn apply_requests(&mut self) -> Vec<ProviderId> {
         let mut shown = Vec::new();
         for request in self.requests.take() {
@@ -343,7 +351,10 @@ impl DockingTool {
                     shown.push(id);
                 }
                 ToolRequest::Show(_) => {}
-                ToolRequest::SetActionTrigger(name, trigger) => self.set_action_trigger(&name, trigger.as_ref()),
+                ToolRequest::SetActionTrigger(name, trigger) => {
+                    self.set_action_trigger(&name, trigger.as_ref());
+                    self.rebound = true;
+                }
             }
         }
         shown
