@@ -121,6 +121,8 @@ pub mod ffi {
         pub invoke_menu: String,
         /// At quit, print the clipboard's lines prefixed "clipboard: ".
         pub print_clipboard: bool,
+        /// At quit, print "palette: base=#rrggbb".
+        pub print_palette: bool,
     }
 
     /// A provider as the shell needs it.
@@ -282,7 +284,7 @@ pub mod ffi {
         /// 0 status, 1 task progress, 2 task done, 3 actions changed, 4 domain changed, 5 other,
         /// 6 prompt (task = prompt id, text = title), 7 view changed (task = provider id),
         /// 8 provider shown (task = provider id, progress = 1 to focus it),
-        /// 9 dialog (task = dialog id), 10 clipboard (text)
+        /// 9 dialog (task = dialog id), 10 clipboard (text), 11 theme (progress = 1 dark)
         pub kind: u8,
         pub text: String,
         pub task: u64,
@@ -893,6 +895,10 @@ fn drain_events() -> Result<Vec<EventInfo>, String> {
                     }
                     UiEvent::Prompt { id, title, label, initial } => {
                         (i.kind, i.task, i.text, i.label, i.initial) = (6, id, title, label, initial);
+                    }
+                    UiEvent::ThemeChanged { dark } => {
+                        i.kind = 11;
+                        i.progress = u64::from(dark);
                     }
                     UiEvent::Clipboard(text) => {
                         i.kind = 10;

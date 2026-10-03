@@ -399,6 +399,22 @@ fn ctrl_c_copies_the_listing_selection_to_the_clipboard() {
 }
 
 #[test]
+fn switching_to_the_dark_theme_applies_and_persists() {
+    let dir = tmp("config-theme");
+    let _ = std::fs::remove_dir_all(&dir);
+    let run = |extra: &[&str]| {
+        let out = shell_with_config(&dir).args(extra).args(["--print-palette", "--quit-after-ms", "2000"]).output().expect("spawn");
+        assert!(out.status.success(), "stderr {}", String::from_utf8_lossy(&out.stderr));
+        String::from_utf8_lossy(&out.stdout).to_string()
+    };
+    let first = run(&["--invoke-menu", "Switch...", "--prompt-answer", "Flat Dark Theme", "--press", "Escape"]);
+    assert!(first.lines().any(|l| l == "dialog: Change Theme"), "{first}");
+    assert!(first.lines().any(|l| l == "palette: base=#2a2a2a"), "{first}");
+    let second = run(&[]);
+    assert!(second.lines().any(|l| l == "palette: base=#2a2a2a"), "dark after restart: {second}");
+}
+
+#[test]
 fn listing_dock_renders_undefined_bytes() {
     let out = shell().args(["--dump-listing", "3"]).output().expect("spawn");
     assert!(out.status.success(), "stderr {}", String::from_utf8_lossy(&out.stderr));

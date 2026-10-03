@@ -62,6 +62,10 @@ pub struct Args {
     #[arg(long = "float", hide = true, value_name = "TITLE")]
     pub float_dock: Option<String>,
 
+    /// At quit, print the palette's base color (smoke tests).
+    #[arg(long, hide = true)]
+    pub print_palette: bool,
+
     /// At quit, print the clipboard text (smoke tests).
     #[arg(long, hide = true)]
     pub print_clipboard: bool,

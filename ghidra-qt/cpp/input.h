@@ -42,6 +42,7 @@ public:
 private:
     void showPrompt(uint64_t id, const QString& title, const QString& label, const QString& initial);
     void showDialog(uint64_t id);
+    void applyTheme(bool dark);
 
 public:
 

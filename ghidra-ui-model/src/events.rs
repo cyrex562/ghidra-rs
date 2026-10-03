@@ -55,6 +55,11 @@ pub enum UiEvent {
         /// Initial text.
         initial: String,
     },
+    /// The theme changed: apply the light or dark palette.
+    ThemeChanged {
+        /// Dark theme.
+        dark: bool,
+    },
     /// Put this text on the system clipboard (Edit > Copy).
     Clipboard(String),
     /// Show open dialog `id` (its spec via [`UiEventQueue::dialog_spec`]).

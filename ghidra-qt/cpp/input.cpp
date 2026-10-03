@@ -4,6 +4,9 @@
 
 #include <QClipboard>
 #include <QGuiApplication>
+#include <QPalette>
+#include <QStyle>
+#include <QStyleFactory>
 #include <QInputDialog>
 #include <QItemSelectionModel>
 #include <QFormLayout>
@@ -115,6 +118,43 @@ EventPump::EventPump(MainWindow* window, bool echoStatus) : QObject(window), m_w
     if (bridgeCall(window->statusBar(), [&] { fd = wake_fd(); }) && fd >= 0) {
         m_notifier = new QSocketNotifier(fd, QSocketNotifier::Read, this);
         QObject::connect(m_notifier, &QSocketNotifier::activated, this, [this] { pump(); });
+    }
+}
+
+// The palette for Rust's theme choice: Fusion dark, or the style's own light
+// palette. Pure presentation; which theme applies is decided in Rust.
+void EventPump::applyTheme(bool dark) {
+    static const QString originalStyle = QApplication::style()->name();
+    if (dark) {
+        QApplication::setStyle(QStyleFactory::create(QStringLiteral("Fusion")));
+        QPalette p;
+        const QColor window(53, 53, 53), base(42, 42, 42), text(220, 220, 220), accent(42, 130, 218);
+        p.setColor(QPalette::Window, window);
+        p.setColor(QPalette::WindowText, text);
+        p.setColor(QPalette::Base, base);
+        p.setColor(QPalette::AlternateBase, QColor(66, 66, 66));
+        p.setColor(QPalette::ToolTipBase, window);
+        p.setColor(QPalette::ToolTipText, text);
+        p.setColor(QPalette::Text, text);
+        p.setColor(QPalette::Button, window);
+        p.setColor(QPalette::ButtonText, text);
+        p.setColor(QPalette::BrightText, Qt::red);
+        p.setColor(QPalette::Link, accent);
+        p.setColor(QPalette::Highlight, accent);
+        p.setColor(QPalette::HighlightedText, Qt::black);
+        // bevel roles (splitters, frames) — left at their light defaults they glare
+        p.setColor(QPalette::Light, QColor(75, 75, 75));
+        p.setColor(QPalette::Midlight, QColor(62, 62, 62));
+        p.setColor(QPalette::Mid, QColor(45, 45, 45));
+        p.setColor(QPalette::Dark, QColor(35, 35, 35));
+        p.setColor(QPalette::Shadow, QColor(20, 20, 20));
+        p.setColor(QPalette::Disabled, QPalette::Text, QColor(127, 127, 127));
+        p.setColor(QPalette::Disabled, QPalette::ButtonText, QColor(127, 127, 127));
+        p.setColor(QPalette::Disabled, QPalette::WindowText, QColor(127, 127, 127));
+        QApplication::setPalette(p);
+    } else {
+        QApplication::setStyle(QStyleFactory::create(originalStyle));
+        QApplication::setPalette(QApplication::style()->standardPalette());
     }
 }
 
@@ -482,6 +522,10 @@ void EventPump::pump() {
                 break;
             case 10:
                 QGuiApplication::clipboard()->setText(qs(e.text));
+                break;
+            case 11:
+                applyTheme(e.progress != 0);
+                m_window->applyDockTheme(e.progress != 0);
                 break;
             case 8:
                 m_window->showProvider(static_cast<int64_t>(e.task), e.progress != 0);

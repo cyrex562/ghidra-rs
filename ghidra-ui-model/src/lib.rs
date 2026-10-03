@@ -15,6 +15,7 @@ pub mod listing_controller;
 pub mod listing_scroll;
 pub mod listing_selection;
 pub mod program_import;
+pub mod theme;
 pub mod menus;
 pub mod options_dialog;
 mod session;

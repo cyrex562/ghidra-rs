@@ -6,6 +6,7 @@
 #include <functional>
 #include <QClipboard>
 #include <QGuiApplication>
+#include <QPalette>
 #include <QFont>
 #include <QFile>
 #include <QPixmap>
@@ -180,7 +181,12 @@ int32_t run_app(const UiSession& session, const AppOptions& options) {
         const QString shot = toQString(options.screenshot_path);
         const bool printListing = options.print_listing_state;
         const bool printClipboard = options.print_clipboard;
-        QTimer::singleShot(static_cast<int>(options.quit_after_ms), &app, [&app, &window, shot, printListing, printClipboard]() {
+        const bool printPalette = options.print_palette;
+        QTimer::singleShot(static_cast<int>(options.quit_after_ms), &app, [&app, &window, shot, printListing, printClipboard, printPalette]() {
+            if (printPalette) {
+                std::printf("palette: base=%s\n", QApplication::palette().color(QPalette::Base).name().toUtf8().constData());
+                std::fflush(stdout);
+            }
             if (printClipboard) {
                 for (const QString& line : QGuiApplication::clipboard()->text().split(QLatin1Char('\n'), Qt::SkipEmptyParts)) {
                     std::printf("clipboard: %s\n", line.toUtf8().constData());

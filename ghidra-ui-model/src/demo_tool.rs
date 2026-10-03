@@ -17,6 +17,7 @@ use ghidra_rs::framework::options::options_change_listener::OptionsChangeListene
 use ghidra_rs::framework::options::{SharedOptionsListener, ToolOptions};
 use crate::program_import::ImportedProgram;
 use crate::session::ConfigState;
+use crate::theme::{ChangeThemeDialog, SharedTheme, ThemeConfig, ThemedIcons, UiTheme};
 use std::sync::{Arc, Mutex};
 use crate::listing_controller::{lock, parse_address, ListingController, ListingHandle};
 use crate::session::{UiSession, ViewModelBox};
@@ -248,9 +249,18 @@ pub fn build_session_for(program: Option<&ImportedProgram>) -> UiSession {
 
     s.set_central_provider(listing_id);
     s.set_goto_target(listing_id);
-    if let Some(theme) = crate::icons::load_default_theme() {
-        s.set_icon_resolver(theme);
+    // Theme (Java ThemeManagerPlugin): Flat Light by default; icons follow it.
+    let theme: SharedTheme = Arc::new(Mutex::new(UiTheme::FlatLight));
+    if let Some(icons) = crate::icons::default_theme_root().and_then(|root| ThemedIcons::load(&root, theme.clone()).ok()) {
+        s.set_icon_resolver(Box::new(icons));
     }
+    s.add_config_state("THEME", Box::new(ThemeConfig { theme: theme.clone(), events: s.events().clone() }));
+    let ev = s.events().clone();
+    let mut switch = ClosureAction::new("Switch Theme", OWNER, move |_| {
+        ev.open_dialog(Box::new(ChangeThemeDialog::new(theme.clone(), ev.clone())));
+    });
+    switch.state_mut().set_menu_bar_data(MenuData::full(&["&Edit", "Theme", "Switch..."], None, Some("theme"), None, Some("1")).ok());
+    s.tool_mut().add_action(Box::new(switch));
     let mut config = Vec::new();
     let go_to = add_navigation_actions(s.tool_mut(), &events, listing, listing_id, &mut config);
     add_tool_options(s.tool_mut(), &events, go_to, &mut config);
@@ -756,6 +766,30 @@ mod tests {
         let symbols = s.tool().find_provider("Demo", "Symbols").unwrap();
         s.tool_mut().dispatch_key(KeyStroke::new(vk::C, CTRL_DOWN_MASK), Some(symbols));
         assert_eq!(s.events().drain(), vec![UiEvent::Status("Copy".into())]);
+    }
+
+    #[test]
+    fn switch_theme_turns_the_tool_dark_and_persists() {
+        let dir = std::env::temp_dir().join(format!("ghidra-ui-model-theme-{}", std::process::id()));
+        let path = dir.join("tool.xml");
+        let mut s = build_demo_session();
+        let action = s.tool().actions().global_actions().find(|&id| s.tool().actions().get(id).is_some_and(|a| a.state().name() == "Switch Theme")).unwrap();
+        let md = s.tool().actions().get(action).unwrap().state().menu_bar_data().unwrap().clone();
+        assert_eq!(md.menu_path(), &["&Edit".to_string(), "Theme".to_string(), "Switch...".to_string()]);
+        let ctx = ghidra_rs::docking::DefaultActionContext::new();
+        s.tool_mut().actions_mut().get_mut(action).unwrap().action_performed(&ctx);
+        let d = take_dialog(&s);
+        assert_eq!(s.events().dialog_ok(d, "Flat Dark Theme", &[]).unwrap(), crate::dialogs::DialogReply::Close);
+        assert!(s.events().drain().contains(&UiEvent::ThemeChanged { dark: true }));
+        if crate::icons::default_theme_root().is_some() {
+            assert!(s.icon_path("icon.plugin.symboltree.node.namespace").unwrap().ends_with("Namespace.dark.gif"));
+        }
+        s.save_tool_config(&path).unwrap();
+        let mut s2 = build_demo_session();
+        s2.events().drain();
+        s2.load_tool_config(&path).unwrap();
+        assert!(s2.events().drain().contains(&UiEvent::ThemeChanged { dark: true }));
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

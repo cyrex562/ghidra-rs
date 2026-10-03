@@ -118,6 +118,11 @@ void MainWindow::viewChanged(int64_t pid) {
     }
 }
 
+void MainWindow::applyDockTheme(bool dark) {
+    static const QString adsLight = m_dockManager->styleSheet();
+    m_dockManager->setStyleSheet(dark ? QString() : adsLight);
+}
+
 void MainWindow::showProvider(int64_t pid, bool focus) {
     for (auto it = m_providers.cbegin(); it != m_providers.cend(); ++it) {
         if (it.value() != pid) continue;

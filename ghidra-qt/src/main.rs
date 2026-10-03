@@ -54,6 +54,7 @@ fn main() {
         float_dock: args.float_dock.unwrap_or_default(),
         invoke_menu: args.invoke_menu.unwrap_or_default(),
         print_clipboard: args.print_clipboard,
+        print_palette: args.print_palette,
     };
     std::process::exit(bridge::ffi::run_app(&session, &options));
 }

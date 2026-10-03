@@ -160,7 +160,11 @@ void ListingView::paintEvent(QPaintEvent*) {
     bold.setBold(true);
     const QColor highlight(255, 255, 0, 140);  // Ghidra's middle-mouse highlight is yellow
     for (const FrameRowInfo& row : f.rows) {
-        if (row.selected) p.fillRect(QRect(0, row.y, viewport()->width(), row.height), palette().highlight().color().lighter(170));
+        if (row.selected) {
+            QColor selection = palette().highlight().color();
+            selection.setAlpha(90);  // readable over light and dark bases alike
+            p.fillRect(QRect(0, row.y, viewport()->width(), row.height), selection);
+        }
         for (const SpanInfo& s : row.highlights) p.fillRect(QRect(s.x + kTextInset, row.y, s.width, row.height), highlight);
         p.setPen(palette().text().color());
         for (const RunPosInfo& run : row.runs) {
