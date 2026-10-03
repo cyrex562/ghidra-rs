@@ -9,7 +9,8 @@
 
 use std::sync::{Arc, Mutex, PoisonError};
 
-use crate::docking::action::{DockingAction, DockingActionIf, MenuData};
+use crate::docking::action::{DockingAction, DockingActionIf, KeyBindingType, MenuData};
+use crate::framework::options::action_trigger::ActionTrigger;
 use crate::docking::{ActionContext, ProviderId};
 
 /// Owner name of the generated actions (Java `DOCKING_WINDOWS_OWNER`).
@@ -18,18 +19,32 @@ pub const DOCKING_WINDOWS_OWNER: &str = "DockingWindows";
 pub const MENU_WINDOW: &str = "&Window";
 const MAX_LENGTH: usize = 40;
 
-/// Provider show requests made by actions, applied by the tool.
+/// A change an action or listener asks of the tool that owns it.
+#[derive(Clone)]
+pub enum ToolRequest {
+    /// Show this provider.
+    Show(ProviderId),
+    /// The key-binding option `full_name` changed (Java `ToolActions.optionsChanged`).
+    SetActionTrigger(String, Option<ActionTrigger>),
+}
+
+/// Requests made by actions and option listeners, applied by the tool.
 #[derive(Clone, Default)]
-pub struct ToolRequests(Arc<Mutex<Vec<ProviderId>>>);
+pub struct ToolRequests(Arc<Mutex<Vec<ToolRequest>>>);
 
 impl ToolRequests {
     /// Asks the tool to show `id`.
     pub fn request_show(&self, id: ProviderId) {
-        self.0.lock().unwrap_or_else(PoisonError::into_inner).push(id);
+        self.push(ToolRequest::Show(id));
+    }
+
+    /// Queues a request.
+    pub fn push(&self, request: ToolRequest) {
+        self.0.lock().unwrap_or_else(PoisonError::into_inner).push(request);
     }
 
     /// Takes the pending requests in order.
-    pub fn take(&self) -> Vec<ProviderId> {
+    pub fn take(&self) -> Vec<ToolRequest> {
         std::mem::take(&mut *self.0.lock().unwrap_or_else(PoisonError::into_inner))
     }
 }
@@ -61,7 +76,8 @@ impl ShowComponentAction {
         id: ProviderId,
         requests: ToolRequests,
     ) -> Self {
-        let mut state = DockingAction::new(name, DOCKING_WINDOWS_OWNER);
+        // Java createKeyBindingType: SHARED (with the provider's show action)
+        let mut state = DockingAction::with_key_binding_type(name, DOCKING_WINDOWS_OWNER, KeyBindingType::Shared);
         let path: Vec<&str> = match sub_menu {
             Some(sub) => vec![MENU_WINDOW, sub, "temporary_placeholder"],
             None => vec![MENU_WINDOW, "temporary_placeholder"],
@@ -75,7 +91,7 @@ impl ShowComponentAction {
 
     /// `Window > sub_menu > Show All` (Java `ShowAllComponentsAction`, group "Z").
     pub fn show_all(sub_menu: &str, ids: Vec<ProviderId>, requests: ToolRequests) -> Self {
-        let mut state = DockingAction::new("Show All", DOCKING_WINDOWS_OWNER);
+        let mut state = DockingAction::with_key_binding_type("Show All", DOCKING_WINDOWS_OWNER, KeyBindingType::Unsupported);
         state.set_menu_bar_data(MenuData::full(&[MENU_WINDOW, sub_menu, "Show All"], None, Some("Z"), None, None).ok());
         Self { state, targets: ids, requests }
     }
@@ -135,7 +151,8 @@ mod tests {
         let r = ToolRequests::default();
         let mut all = ShowComponentAction::show_all("G", vec![ProviderId(2), ProviderId(3)], r.clone());
         all.action_performed(&crate::docking::DefaultActionContext::new());
-        assert_eq!(r.take(), vec![ProviderId(2), ProviderId(3)]);
+        let shown: Vec<ProviderId> = r.take().into_iter().filter_map(|q| if let ToolRequest::Show(p) = q { Some(p) } else { None }).collect();
+        assert_eq!(shown, vec![ProviderId(2), ProviderId(3)]);
         assert!(r.take().is_empty());
     }
 }

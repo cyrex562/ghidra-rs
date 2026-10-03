@@ -9,7 +9,17 @@ use crate::docking::action_context::ActionContext;
 use crate::docking::actions::ToolActions;
 use crate::docking::dock_layout::{DockLayout, LayoutEntry};
 use crate::docking::menu::MenuGroupMap;
-use crate::docking::show_component_action::{ShowComponentAction, ToolRequests, MENU_WINDOW};
+use crate::docking::action::{KeyBindingData, KeyBindingType};
+use crate::docking::show_component_action::{ShowComponentAction, ToolRequest, ToolRequests, MENU_WINDOW};
+use crate::framework::options::option_type::OptionType;
+use crate::framework::options::SharedOptionsListener;
+use crate::framework::options::option_type::OptionValue;
+use crate::framework::options::ToolOptions;
+use crate::framework::options::action_trigger::ActionTrigger;
+use std::sync::Arc;
+
+/// Java `DockingToolConstants.KEY_BINDINGS`.
+pub const KEY_BINDINGS: &str = "Key Bindings";
 use crate::docking::{ComponentProvider, DefaultActionContext, ProviderId};
 use crate::framework::options::SaveState;
 use crate::util::awt::KeyStroke;
@@ -25,6 +35,30 @@ pub struct DockingTool {
     default_contexts: HashMap<TypeId, DefaultContextFactory>,
     requests: ToolRequests,
     window_actions: Vec<ActionId>,
+    key_binding_options: Arc<ToolOptions>,
+    /// ToolOptions holds listeners weakly; the tool keeps its own alive.
+    _key_binding_listener: SharedOptionsListener,
+}
+
+/// Java `ToolActions.optionsChanged`: a key-binding option changed — queue
+/// the re-binding for the tool (listeners cannot reach it).
+struct KeyBindingListener(ToolRequests);
+
+impl crate::framework::options::options_change_listener::OptionsChangeListener for KeyBindingListener {
+    fn options_changed(
+        &mut self,
+        _options: &dyn crate::framework::seam_stubs::ToolOptions,
+        option_name: &str,
+        _old_value: Option<&dyn std::any::Any>,
+        new_value: Option<&dyn std::any::Any>,
+    ) -> Result<(), Box<dyn crate::framework::seam_stubs::OptionsVetoException>> {
+        let trigger = match new_value.and_then(|v| v.downcast_ref::<OptionValue>()) {
+            Some(OptionValue::ActionTrigger(t)) => Some(t.clone()),
+            _ => None,
+        };
+        self.0.push(ToolRequest::SetActionTrigger(option_name.to_owned(), trigger));
+        Ok(())
+    }
 }
 
 /// Builds the tool's default context for one context type
@@ -34,6 +68,10 @@ pub type DefaultContextFactory = Box<dyn Fn() -> Box<dyn ActionContext> + Send>;
 impl DockingTool {
     /// An empty tool.
     pub fn new(name: impl Into<String>) -> Self {
+        let requests = ToolRequests::default();
+        let key_binding_options = Arc::new(ToolOptions::new(KEY_BINDINGS));
+        let listener: SharedOptionsListener = Arc::new(std::sync::Mutex::new(KeyBindingListener(requests.clone())));
+        key_binding_options.add_options_change_listener(&listener);
         Self {
             name: name.into(),
             next_provider: 0,
@@ -42,8 +80,10 @@ impl DockingTool {
             layout: DockLayout::default(),
             menu_groups: MenuGroupMap::default(),
             default_contexts: HashMap::new(),
-            requests: ToolRequests::default(),
+            requests: requests.clone(),
             window_actions: Vec::new(),
+            key_binding_options,
+            _key_binding_listener: listener,
         }
     }
 
@@ -126,12 +166,16 @@ impl DockingTool {
 
     /// Adds a global action.
     pub fn add_action(&mut self, action: Box<dyn DockingActionIf>) -> ActionId {
-        self.actions.add_global(action)
+        let id = self.actions.add_global(action);
+        self.register_key_binding(id);
+        id
     }
 
     /// Adds an action local to `provider`.
     pub fn add_local_action(&mut self, provider: ProviderId, action: Box<dyn DockingActionIf>) -> ActionId {
-        self.actions.add_local(provider, action)
+        let id = self.actions.add_local(provider, action);
+        self.register_key_binding(id);
+        id
     }
 
     /// The action registry.
@@ -192,6 +236,55 @@ impl DockingTool {
         KeyBindingsManager::dispatch(&mut self.actions, ks, focused, &ctx_for, &default_ctx)
     }
 
+    /// The tool's "Key Bindings" options: one `ActionTrigger` option per
+    /// action with an individual key binding (Java `ToolActions` +
+    /// `DockingToolConstants.KEY_BINDINGS`).
+    pub fn key_binding_options(&self) -> &Arc<ToolOptions> {
+        &self.key_binding_options
+    }
+
+    /// Java `ToolActions.loadKeyBindingFromOptions`: an individual-binding
+    /// action registers its option and takes the option's value.
+    fn register_key_binding(&mut self, id: ActionId) {
+        let Some(a) = self.actions.get(id) else { return };
+        if a.state().key_binding_type() != KeyBindingType::Individual {
+            return;
+        }
+        let full = a.state().full_name();
+        let default = a.state().key_binding_data().map(|k| k.action_trigger());
+        let _ = self.key_binding_options.register_option_with_type(
+            &full,
+            OptionType::ActionTrigger,
+            default.clone().map(OptionValue::ActionTrigger),
+            None,
+            Some(&format!("Key Binding for {full}")),
+            None,
+        );
+        let trigger = match self.key_binding_options.get_object(&full, default.clone().map(OptionValue::ActionTrigger)) {
+            Ok(Some(OptionValue::ActionTrigger(t))) => Some(t),
+            Ok(_) => None,
+            Err(_) => default,
+        };
+        let existing = self.actions.get(id).and_then(|a| a.state().key_binding_data().cloned());
+        self.actions.set_key_binding(id, KeyBindingData::update(existing.as_ref(), trigger.as_ref()));
+    }
+
+    fn set_action_trigger(&mut self, full_name: &str, trigger: Option<&ActionTrigger>) {
+        let ids: Vec<ActionId> = self
+            .actions
+            .all_actions()
+            .filter(|&id| {
+                self.actions
+                    .get(id)
+                    .is_some_and(|a| a.state().key_binding_type() == KeyBindingType::Individual && a.state().full_name() == full_name)
+            })
+            .collect();
+        for id in ids {
+            let existing = self.actions.get(id).and_then(|a| a.state().key_binding_data().cloned());
+            self.actions.set_key_binding(id, KeyBindingData::update(existing.as_ref(), trigger));
+        }
+    }
+
     /// Recreates the Window menu: one [`ShowComponentAction`] per provider,
     /// sub-menus for window menu groups with two or more providers (single
     /// ones are promoted), plus "Show All" per sub-menu
@@ -243,10 +336,14 @@ impl DockingTool {
     /// providers that were shown, in request order.
     pub fn apply_requests(&mut self) -> Vec<ProviderId> {
         let mut shown = Vec::new();
-        for id in self.requests.take() {
-            if self.providers.contains_key(&id) {
-                self.show_provider(id, true);
-                shown.push(id);
+        for request in self.requests.take() {
+            match request {
+                ToolRequest::Show(id) if self.providers.contains_key(&id) => {
+                    self.show_provider(id, true);
+                    shown.push(id);
+                }
+                ToolRequest::Show(_) => {}
+                ToolRequest::SetActionTrigger(name, trigger) => self.set_action_trigger(&name, trigger.as_ref()),
             }
         }
         shown
@@ -300,6 +397,61 @@ impl DockingTool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn bound(name: &str, key: KeyStroke) -> Box<dyn DockingActionIf> {
+        let mut a = crate::docking::action::ClosureAction::new(name, "Owner", |_| {});
+        a.state_mut().set_key_binding_data(Some(crate::docking::action::KeyBindingData::new(key)));
+        Box::new(a)
+    }
+
+    fn trigger(key: &str) -> OptionValue {
+        OptionValue::ActionTrigger(ActionTrigger::new(KeyStroke::parse(key), None).unwrap())
+    }
+
+    fn binding(t: &DockingTool, id: ActionId) -> Option<String> {
+        t.actions().get(id).unwrap().state().key_binding_data().and_then(|k| k.key_binding()).map(|k| format!("{k:?}"))
+    }
+
+    #[test]
+    fn individual_actions_get_a_key_binding_option() {
+        let mut t = DockingTool::new("T");
+        t.add_action(bound("Find", KeyStroke::parse("ctrl F").unwrap()));
+        let o = t.key_binding_options();
+        assert_eq!(o.get_name(), KEY_BINDINGS);
+        let e = o.find_option("Find (Owner)").expect("Find (Owner) registered");
+        assert_eq!(e.description(), "Key Binding for Find (Owner)");
+        assert!(matches!(e.default_value(), Some(OptionValue::ActionTrigger(_))));
+    }
+
+    #[test]
+    fn changing_the_option_rebinds_every_action_with_that_name() {
+        let mut t = DockingTool::new("T");
+        let p = t.add_provider(p("A", WindowPosition::Left), true);
+        let g = t.add_action(bound("Find", KeyStroke::parse("ctrl F").unwrap()));
+        let l = t.add_local_action(p, bound("Find", KeyStroke::parse("ctrl F").unwrap()));
+        t.key_binding_options().put_object("Find (Owner)", Some(trigger("ctrl J"))).unwrap();
+        t.apply_requests();
+        assert_eq!(binding(&t, g), binding(&t, l));
+        assert_eq!(binding(&t, g).unwrap(), format!("{:?}", KeyStroke::parse("ctrl J").unwrap()));
+        t.key_binding_options().set_action_trigger("Find (Owner)", None).unwrap(); // cleared (Java KeyBindingsModel)
+        t.apply_requests();
+        assert_eq!(binding(&t, g), None);
+    }
+
+    #[test]
+    fn a_stored_binding_applies_when_its_action_registers() {
+        let mut t = DockingTool::new("T");
+        t.key_binding_options().put_object("Late (Owner)", Some(trigger("ctrl K"))).unwrap();
+        let id = t.add_action(bound("Late", KeyStroke::parse("ctrl L").unwrap()));
+        assert_eq!(binding(&t, id).unwrap(), format!("{:?}", KeyStroke::parse("ctrl K").unwrap()));
+    }
+
+    #[test]
+    fn window_menu_entries_get_no_key_binding_option() {
+        let mut t = DockingTool::new("T");
+        t.add_provider(p("A", WindowPosition::Left), true);
+        assert!(t.key_binding_options().get_option_names().iter().all(|n| !n.ends_with("(DockingWindows)")), "{:?}", t.key_binding_options().get_option_names());
+    }
 
     fn window_menu(t: &DockingTool) -> Vec<String> {
         let mut paths: Vec<String> = t

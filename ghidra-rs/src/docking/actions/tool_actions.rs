@@ -87,6 +87,11 @@ impl ToolActions {
         self.entries.iter().filter(|(_, e)| e.action.key_binding() == Some(ks)).map(|(id, _)| *id).collect()
     }
 
+    /// Every action, global and local.
+    pub fn all_actions(&self) -> impl Iterator<Item = ActionId> + '_ {
+        self.entries.keys().copied()
+    }
+
     /// All global actions.
     pub fn global_actions(&self) -> impl Iterator<Item = ActionId> + '_ {
         self.entries.iter().filter(|(_, e)| e.scope == ActionScope::Global).map(|(id, _)| *id)
