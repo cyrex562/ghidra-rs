@@ -726,7 +726,7 @@ mod tests {
         use ghidra_rs::framework::options::action_trigger::ActionTrigger;
         let dir = std::env::temp_dir().join(format!("ghidra-ui-model-kblate-{}", std::process::id()));
         let path = dir.join("tool.xml");
-        let mut s = build_demo_session();
+        let s = build_demo_session();
         s.tool()
             .key_binding_options()
             .set_action_trigger("Later (Demo)", ActionTrigger::new(Some(KeyStroke::new(vk::K, CTRL_DOWN_MASK)), None).ok())

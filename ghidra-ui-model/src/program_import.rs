@@ -6,7 +6,7 @@
 
 use std::path::{Path, PathBuf};
 
-use crate::code_unit_listing::BlockHeader;
+use crate::code_unit_listing::{BlockHeader, InstructionSnapshot};
 use crate::listing::MemoryBlockSnapshot;
 use ghidra_rs::program::model::mem::memory_block_type::MemoryBlockType;
 
@@ -88,10 +88,11 @@ pub fn import_elf(path: &Path, dist: &Path) -> Result<ImportedProgram, String> {
         IMAGE32_BASE_DEFAULT, IMAGE64_BASE_DEFAULT, IMAGE_BASE_OPTION_NAME,
     };
     use ghidra_rs::format::elf::elf_header::ElfHeader;
-    use ghidra_rs::pcode::utils::sla_format::build_decoder;
+    use ghidra_rs::app::plugin::processors::sleigh::sleigh_language_provider::SleighLanguageProvider;
+    use ghidra_rs::program::model::lang::LanguageID;
+    use ghidra_rs::program::util::default_language_service::DefaultLanguageService;
     use ghidra_rs::program::database::program_db::ProgramDB;
-    use ghidra_rs::program::model::address::DefaultAddressFactory;
-    use ghidra_rs::program::model::lang::sleigh::SleighLanguage;
+    use ghidra_rs::program::disassemble::disassembler::Disassembler;
     use ghidra_rs::program::model::listing::Program;
     use ghidra_rs::util::task::DummyMonitor;
     use std::rc::Rc;
@@ -110,10 +111,14 @@ pub fn import_elf(path: &Path, dist: &Path) -> Result<ImportedProgram, String> {
             sla.display()
         ));
     }
-    let decoder = build_decoder(&sla, Arc::new(DefaultAddressFactory::new(vec![]))).map_err(|e| format!("{}: {e:?}", sla.display()))?;
-    let lang = SleighLanguage::decode(&decoder, language.to_string()).map_err(|e| format!("{language}: {e:?}"))?;
+    // The language service applies the .ldefs/.pspec context and shares the
+    // language, as the disassembler needs.
+    let service = DefaultLanguageService::from_sleigh_provider(SleighLanguageProvider::from_ghidra_installation(dist));
+    let id = LanguageID::new(language).map_err(|e| format!("{language}: {e:?}"))?;
+    let lang = service.get_sleigh_language(&id).map_err(|e| format!("{language}: {e:?}"))?;
     let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
-    let program: Arc<dyn Program> = Arc::new(ProgramDB::new(name.clone(), Arc::new(lang)).map_err(|e| e.to_string())?);
+    let db = Arc::new(ProgramDB::new(name.clone(), lang).map_err(|e| e.to_string())?);
+    let program: Arc<dyn Program> = db.clone();
 
     // The image base Ghidra's ELF options pick (ElfLoaderOptionsFactory).
     let provider = || -> Rc<dyn ByteProvider> { Rc::new(ByteArrayProvider::new(bytes.clone())) };
@@ -129,9 +134,33 @@ pub fn import_elf(path: &Path, dist: &Path) -> Result<ImportedProgram, String> {
         .load(provider(), &program, &options, &log, &DummyMonitor)
         .map_err(|e| format!("ELF load failed: {e}"))?;
 
+    // Disassemble from the entry points (the start of Ghidra's auto-analysis).
+    let entries: Vec<_> = program
+        .get_symbol_table()
+        .map(|t| t.get_external_entry_point_iterator().collect())
+        .unwrap_or_default();
+    let mut disassembler = Disassembler::get_program_disassembler(&db, Arc::new(DummyMonitor), None);
+    for entry in &entries {
+        // errors stay local to their flow; the rest still disassembles
+        let _ = disassembler.disassemble_program(&db, entry, None, true);
+    }
+
     let memory = program.get_memory().ok_or_else(|| "program has no memory".to_string())?;
     let handles = memory.get_block_handles();
     let (address_bits, blocks) = crate::listing::snapshot_blocks(&handles);
+    let mut instructions: Vec<InstructionSnapshot> = handles
+        .iter()
+        .filter_map(|h| h.read().ok())
+        .filter(|b| b.get_start().space().is_loaded_memory_space())
+        .flat_map(|b| db.instruction_summaries(&b.get_start(), &b.get_end()))
+        .map(|u| InstructionSnapshot {
+            start: u.address.offset() as u64,
+            len: u32::try_from(u.length).unwrap_or(u32::MAX),
+            mnemonic: u.mnemonic,
+            operands: u.operand_text,
+        })
+        .collect();
+    instructions.sort_by_key(|i| i.start);
     let mut block_headers: Vec<BlockHeader> = handles
         .iter()
         .filter_map(|h| h.read().ok())
@@ -192,7 +221,7 @@ pub fn import_elf(path: &Path, dist: &Path) -> Result<ImportedProgram, String> {
         block_starts,
         symbols,
         block_headers,
-        instructions: Vec::new(),
+        instructions,
     })
 }
 
@@ -295,5 +324,23 @@ mod tests {
         assert!(p.symbols.windows(2).all(|w| w[0].address <= w[1].address));
         assert!(p.symbols.iter().all(|s| p.blocks.iter().any(|b| b.start <= s.address && s.address < b.start + b.len())));
         assert!(p.blocks.iter().all(|b| b.start >= 0x10_0000), "image base 0x100000");
+    }
+
+    #[test]
+    fn bin_ls_is_disassembled_from_its_entry_point() {
+        let Some(dist) = default_ghidra_dist() else { return };
+        let Ok(bytes) = std::fs::read("/bin/ls") else { return };
+        if bytes.len() < 64 || bytes[..4] != *b"\x7fELF" || bytes[4] != 2 || bytes[5] != 1 || bytes[18] != 62 {
+            return;
+        }
+        let e_entry = u64::from_le_bytes(bytes[0x18..0x20].try_into().unwrap());
+        let entry = if u16::from_le_bytes([bytes[16], bytes[17]]) == 3 { e_entry + 0x10_0000 } else { e_entry };
+        let p = import_elf(Path::new("/bin/ls"), &dist).unwrap();
+        assert!(p.instructions.len() >= 10, "{} instructions", p.instructions.len());
+        assert!(p.instructions.windows(2).all(|w| w[0].start + u64::from(w[0].len) <= w[1].start));
+        let first = p.instructions.iter().find(|i| i.start == entry).expect("an instruction at the entry");
+        if bytes.windows(4).any(|w| w == [0xf3, 0x0f, 0x1e, 0xfa]) && first.len == 4 {
+            assert_eq!(first.mnemonic, "ENDBR64");
+        }
     }
 }
