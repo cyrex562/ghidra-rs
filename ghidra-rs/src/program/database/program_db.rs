@@ -1,5 +1,6 @@
 use crate::framework::db::DBHandle;
 use crate::framework::model::DomainObject;
+use crate::program::database::code::listing_store::{CodeUnitSummary, ListingStore};
 use crate::program::database::map::AddressMapDB;
 use crate::program::database::mem::MemoryMapDB;
 use crate::program::database::symbol::namespace_manager::NamespaceManagerDB;
@@ -21,6 +22,8 @@ pub struct ProgramDB {
     memory: Arc<RwLock<MemoryMapDB>>,
     namespace_mgr: Arc<RwLock<NamespaceManagerDB>>,
     symbol_mgr: Arc<RwLock<SymbolManagerDB>>,
+    /// The program's code units (Java's `CodeManager` store).
+    listing: Arc<RwLock<ListingStore>>,
     /// The program's image base (Java keeps it in `AddressMapDB` and the program's stored
     /// options). A new program's image base is address 0 of the default space.
     image_base: RwLock<Address>,
@@ -61,6 +64,7 @@ impl ProgramDB {
             .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "language has no default address space"))?;
 
         Ok(Self {
+            listing: Arc::new(RwLock::new(ListingStore::new(language.clone()))),
             image_base: RwLock::new(image_base),
             db_handle,
             name,
@@ -82,6 +86,21 @@ impl ProgramDB {
 
     pub fn get_language(&self) -> &Arc<SleighLanguage> {
         &self.language
+    }
+
+    /// The program's code-unit store, shared: lock it for writing to create or clear
+    /// instructions, for reading to query them (with [`ProgramDB::get_memory`] for their bytes).
+    pub fn get_listing_store(&self) -> Arc<RwLock<ListingStore>> {
+        self.listing.clone()
+    }
+
+    /// The code units intersecting `[start, end]`, in address order: instructions, and an
+    /// undefined byte at every other memory address (see [`ListingStore::code_units`]). Takes
+    /// the listing and memory read locks for the duration of the call.
+    pub fn code_units(&self, start: &Address, end: &Address) -> Vec<CodeUnitSummary> {
+        let listing = self.listing.read().unwrap_or_else(|p| p.into_inner());
+        let memory = self.memory.read().unwrap_or_else(|p| p.into_inner());
+        listing.code_units(&*memory, start, end).collect()
     }
 }
 
@@ -267,6 +286,21 @@ mod tests {
             .unwrap();
         let program = ProgramDB::new("test_prog".to_string(), language).unwrap();
         (program, Address::new(space, 0x1000))
+    }
+
+    #[test]
+    fn a_new_programs_memory_is_all_undefined_code_units() {
+        let (program, addr) = test_program();
+        program
+            .get_memory()
+            .write()
+            .unwrap()
+            .create_initialized_block("b", &addr, Some(&mut &[0x6a, 0x00][..]), 2, None, false)
+            .unwrap();
+        let units = program.code_units(&addr, &addr.add_wrap(5));
+        assert_eq!(units.iter().map(|u| u.operand_text.as_str()).collect::<Vec<_>>(), vec!["6Ah", "00h"]);
+        assert!(units.iter().all(|u| !u.is_instruction() && u.mnemonic == "??"));
+        assert_eq!(program.get_listing_store().read().unwrap().num_instructions(), 0);
     }
 
     #[test]

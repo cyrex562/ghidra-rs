@@ -21,6 +21,7 @@ pub mod data_key_iterator;
 pub mod data_record_iterator;
 pub mod inst_db_adapter;
 pub mod instruction_db;
+pub mod listing_store;
 pub mod instruction_record_iterator;
 pub mod inst_db_adapter_v0;
 pub mod inst_db_adapter_v1;
