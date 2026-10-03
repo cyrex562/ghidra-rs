@@ -17,7 +17,9 @@
 //!   blocks, jump-assist and segment p-code payloads, and the segmented address space.
 //!
 //! # What is not (yet) ported
-//! * Reading the `.sla` file itself (`SlaFormat.buildDecoder`): callers hand in a decoder.
+//! * Reading the `.sla` file itself: the decode functions take a decoder;
+//!   [`SleighLanguageProvider`](crate::app::plugin::processors::sleigh::sleigh_language_provider::SleighLanguageProvider)
+//!   builds it from the file (`SlaFormat.buildDecoder`) when it loads a language.
 //! * [`Language::parse`] builds a [`SleighInstructionPrototype`] but does not cache prototypes
 //!   by hash (Java's `instructProtoMap`), and cannot apply the instruction's global context
 //!   commits: Java only applies them when the processor context is a `DisassemblerContext`,
@@ -126,7 +128,7 @@ fn sleigh_error(e: crate::app::plugin::processors::sleigh::sleigh_exception::Sle
 
 /// The language description a [`SleighLanguage`] is built from, shared so that
 /// [`Language::get_language_description`] can hand out the same description on every call.
-pub type SharedSleighLanguageDescription = Arc<dyn SleighLanguageDescription + Send + Sync>;
+pub type SharedSleighLanguageDescription = Arc<SleighLanguageDescription>;
 
 /// A [`Language`] backed by a compiled SLEIGH specification. See the module docs for what is and
 /// is not yet ported.
@@ -191,9 +193,8 @@ impl fmt::Display for SleighLanguage {
     /// Port of `SleighLanguage.toString()`, which is `description.toString()`
     /// (`BasicLanguageDescription.toString()`); falls back to the language id without one.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        use crate::program::model::lang::basic_language_description::BasicLanguageDescription;
         match &self.description {
-            Some(d) => f.write_str(&d.to_display_string()),
+            Some(d) => fmt::Display::fmt(d.as_ref(), f),
             None => f.write_str(&self._id),
         }
     }
@@ -470,7 +471,7 @@ impl SleighLanguage {
     fn parse_spaces(
         decoder: &dyn Decoder,
         id: &str,
-        description: Option<&(dyn SleighLanguageDescription + Send + Sync)>,
+        description: Option<&SleighLanguageDescription>,
         segmented_space: &str,
         segment_type: &str,
     ) -> Result<
@@ -810,6 +811,15 @@ impl SleighLanguage {
             lang.self_ref = weak.clone();
             lang
         })
+    }
+
+    /// The shared handle to this language, if it was shared through
+    /// [`SleighLanguage::into_shared`] and is still alive. Lets code holding only a
+    /// `&SleighLanguage` (e.g. from [`Language::as_sleigh`] on a `Box<dyn Language>`) recover the
+    /// `Arc<SleighLanguage>` that APIs such as `ProgramDB::new` take, as Java code casts its
+    /// `Language` reference to `SleighLanguage`.
+    pub fn shared(&self) -> Option<Arc<SleighLanguage>> {
+        self.self_ref.upgrade()
     }
 
     /// The constant address space.
@@ -1534,7 +1544,6 @@ mod tests {
 #[cfg(test)]
 mod language_tests {
     use super::*;
-    use crate::app::plugin::processors::sleigh::sleigh_language_file::SleighLanguageFile;
     use crate::generic::jar::resource_file::ResourceFile;
     use crate::program::model::address::AddressSpaceType;
     use crate::program::model::lang::compiler_spec_description::CompilerSpecDescription;
@@ -1663,13 +1672,6 @@ mod language_tests {
         SleighLanguage::decode(&decoder(sla(cfg)), "toy:LE:32:default".to_string()).unwrap()
     }
 
-    struct MockProcessor;
-    impl Processor for MockProcessor {
-        fn name(&self) -> String {
-            "toy".to_string()
-        }
-    }
-
     struct MockCompilerSpecDescription;
     impl CompilerSpecDescription for MockCompilerSpecDescription {
         fn get_compiler_spec_id(&self) -> CompilerSpecID {
@@ -1700,82 +1702,32 @@ mod language_tests {
                 manual_index_file: None,
             }
         }
-    }
 
-    impl LanguageDescription for MockDescription {
-        fn get_language_id(&self) -> LanguageID {
-            LanguageID::new("toy:BE:32:v2").unwrap()
+        /// The real description these settings describe: `toy:BE:32:v2`, version 3.7, one
+        /// compiler spec (`default`).
+        fn build(self) -> SleighLanguageDescription {
+            let mut d = SleighLanguageDescription::new(
+                LanguageID::new("toy:BE:32:v2").unwrap(),
+                "toy processor",
+                crate::program::model::lang::processor::Processor::find_or_possibly_create_processor("toy"),
+                self.endian,
+                self.inst_endian,
+                32,
+                "v2",
+                3,
+                7,
+                false,
+                (!self.truncated.is_empty()).then_some(self.truncated),
+                vec![Arc::new(MockCompilerSpecDescription)],
+                None,
+            );
+            d.set_manual_index_file(self.manual_index_file);
+            d
         }
-        fn get_processor(&self) -> Box<dyn Processor> {
-            Box::new(MockProcessor)
-        }
-        fn get_endian(&self) -> Endian {
-            self.endian
-        }
-        fn get_instruction_endian(&self) -> Endian {
-            self.inst_endian
-        }
-        fn get_size(&self) -> i32 {
-            32
-        }
-        fn get_variant(&self) -> String {
-            "v2".to_string()
-        }
-        fn get_version(&self) -> i32 {
-            3
-        }
-        fn get_minor_version(&self) -> i32 {
-            7
-        }
-        fn get_description(&self) -> String {
-            "toy processor".to_string()
-        }
-        fn is_deprecated(&self) -> bool {
-            false
-        }
-        fn get_compatible_compiler_spec_descriptions(&self) -> Vec<Box<dyn CompilerSpecDescription>> {
-            vec![Box::new(MockCompilerSpecDescription)]
-        }
-        fn get_compiler_spec_description_by_id(
-            &self,
-            compiler_spec_id: &CompilerSpecID,
-        ) -> Result<Box<dyn CompilerSpecDescription>, CompilerSpecNotFoundException> {
-            Err(CompilerSpecNotFoundException::new(&self.get_language_id(), compiler_spec_id))
-        }
-        fn get_external_names(&self, _external_tool: &str) -> Option<Vec<String>> {
-            None
-        }
-    }
-
-    impl SleighLanguageDescription for MockDescription {
-        fn get_truncated_space_names(&self) -> HashSet<String> {
-            self.truncated.keys().cloned().collect()
-        }
-        fn get_truncated_space_size(&self, space_name: &str) -> Option<i32> {
-            self.truncated.get(space_name).copied()
-        }
-        fn get_defs_file(&self) -> Option<&ResourceFile> {
-            None
-        }
-        fn set_defs_file(&mut self, _defs_file: Option<ResourceFile>) {}
-        fn get_spec_file(&self) -> Option<&ResourceFile> {
-            None
-        }
-        fn set_spec_file(&mut self, _spec_file: Option<ResourceFile>) {}
-        fn get_manual_index_file(&self) -> Option<&ResourceFile> {
-            self.manual_index_file.as_ref()
-        }
-        fn set_manual_index_file(&mut self, manual_index_file: Option<ResourceFile>) {
-            self.manual_index_file = manual_index_file;
-        }
-        fn get_language_file(&self) -> Option<&dyn SleighLanguageFile> {
-            None
-        }
-        fn set_language_file(&mut self, _language_file: Option<Box<dyn SleighLanguageFile>>) {}
     }
 
     fn with_description(cfg: &Sla, d: MockDescription) -> Result<SleighLanguage, DecoderError> {
-        SleighLanguage::decode_with_description(&decoder(sla(cfg)), Arc::new(d))
+        SleighLanguage::decode_with_description(&decoder(sla(cfg)), Arc::new(d.build()))
     }
 
     fn name(r: &RegisterRef) -> String {

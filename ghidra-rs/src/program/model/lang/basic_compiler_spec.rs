@@ -1677,87 +1677,30 @@ mod tests {
     /// read from `cspec` (as Java's `SleighLanguage` gets it from its `.ldefs` description).
     fn language_with_gcc_cspec(cspec: std::path::PathBuf) -> Arc<SleighLanguage> {
         use crate::app::plugin::processors::sleigh::sleigh_language_description::SleighLanguageDescription;
-        use crate::app::plugin::processors::sleigh::sleigh_language_file::SleighLanguageFile;
         use crate::program::model::lang::endian::Endian;
-        use crate::program::model::lang::language_description::LanguageDescription;
         use crate::program::model::lang::language_id::LanguageID;
+        use crate::program::model::lang::processor::Processor;
 
-        struct Description {
-            cspec: ResourceFile,
-        }
-        impl LanguageDescription for Description {
-            fn get_language_id(&self) -> LanguageID {
-                LanguageID::new("x86:LE:64:default").unwrap()
-            }
-            fn get_processor(&self) -> Box<dyn crate::program::seam_stubs::Processor> {
-                unimplemented!("not needed to load a compiler spec")
-            }
-            fn get_endian(&self) -> Endian {
-                Endian::Little
-            }
-            fn get_instruction_endian(&self) -> Endian {
-                Endian::Little
-            }
-            fn get_size(&self) -> i32 {
-                64
-            }
-            fn get_variant(&self) -> String {
-                "default".to_string()
-            }
-            fn get_version(&self) -> i32 {
-                1
-            }
-            fn get_minor_version(&self) -> i32 {
-                0
-            }
-            fn get_description(&self) -> String {
-                "x86-64".to_string()
-            }
-            fn is_deprecated(&self) -> bool {
-                false
-            }
-            fn get_compatible_compiler_spec_descriptions(&self) -> Vec<Box<dyn CompilerSpecDescription>> {
-                vec![Box::new(SleighCompilerSpecDescription::new(CompilerSpecID::new(Some("gcc")), "gcc", self.cspec.clone()))]
-            }
-            fn get_compiler_spec_description_by_id(
-                &self,
-                compiler_spec_id: &CompilerSpecID,
-            ) -> Result<Box<dyn CompilerSpecDescription>, CompilerSpecNotFoundException> {
-                self.get_compatible_compiler_spec_descriptions()
-                    .into_iter()
-                    .find(|d| &d.get_compiler_spec_id() == compiler_spec_id)
-                    .ok_or_else(|| CompilerSpecNotFoundException::new(&self.get_language_id(), compiler_spec_id))
-            }
-            fn get_external_names(&self, _external_tool: &str) -> Option<Vec<String>> {
-                None
-            }
-        }
-        impl SleighLanguageDescription for Description {
-            fn get_truncated_space_names(&self) -> HashSet<String> {
-                HashSet::new()
-            }
-            fn get_truncated_space_size(&self, _space_name: &str) -> Option<i32> {
-                None
-            }
-            fn get_defs_file(&self) -> Option<&ResourceFile> {
-                None
-            }
-            fn set_defs_file(&mut self, _defs_file: Option<ResourceFile>) {}
-            fn get_spec_file(&self) -> Option<&ResourceFile> {
-                None
-            }
-            fn set_spec_file(&mut self, _spec_file: Option<ResourceFile>) {}
-            fn get_manual_index_file(&self) -> Option<&ResourceFile> {
-                None
-            }
-            fn set_manual_index_file(&mut self, _manual_index_file: Option<ResourceFile>) {}
-            fn get_language_file(&self) -> Option<&dyn SleighLanguageFile> {
-                None
-            }
-            fn set_language_file(&mut self, _language_file: Option<Box<dyn SleighLanguageFile>>) {}
-        }
-
-        sleigh_x86_64_language(Some(Arc::new(Description { cspec: ResourceFile::new(cspec) })))
+        let description = SleighLanguageDescription::new(
+            LanguageID::new("x86:LE:64:default").unwrap(),
+            "x86-64",
+            Processor::find_or_possibly_create_processor("x86"),
+            Endian::Little,
+            Endian::Little,
+            64,
+            "default",
+            1,
+            0,
+            false,
+            None,
+            vec![Arc::new(SleighCompilerSpecDescription::new(
+                CompilerSpecID::new(Some("gcc")),
+                "gcc",
+                ResourceFile::new(cspec),
+            ))],
+            None,
+        );
+        sleigh_x86_64_language(Some(Arc::new(description)))
     }
 
     /// A temporary directory holding `X86_64_GCC` as `x86-64-gcc.cspec`, and that file's path.

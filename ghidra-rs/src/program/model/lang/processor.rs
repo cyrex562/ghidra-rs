@@ -91,6 +91,15 @@ impl fmt::Display for Processor {
     }
 }
 
+/// The real processor satisfies the `seam_stubs::Processor` placeholder that
+/// [`LanguageDescription::get_processor`](crate::program::model::lang::language_description::LanguageDescription::get_processor)
+/// still returns, so concrete descriptions hand out this value.
+impl crate::program::seam_stubs::Processor for Processor {
+    fn name(&self) -> String {
+        self.name.to_string()
+    }
+}
+
 impl PartialEq for Processor {
     /// Port of `Processor.equals(Object)`: structural equality by name (not merely registry
     /// identity, though in practice every `Processor` with a given name is the same registry

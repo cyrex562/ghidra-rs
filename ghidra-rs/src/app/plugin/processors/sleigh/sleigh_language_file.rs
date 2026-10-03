@@ -5,18 +5,14 @@
 //! a dependency-cycle cut-point, so its instance surface is promoted to the [`SleighLanguageFile`]
 //! trait here.
 //!
-//! Java's three static factories (`getLanguageResourceFile`, `fromSlaFilename`,
-//! `fromSlaFilename_UserDir`) are not ported: they all bottom out in `ghidra.framework.Application`
-//! (module/installation discovery) and `utilities.util.FileUtilities.existsAndIsCaseDependent`,
-//! neither of which exist in this crate yet (mirroring the same scope decision already made for
-//! `SleighPreprocessor`'s `@include` handling -- see the `TODO(sleigh-frontend)` note in
-//! [`crate::sleigh::grammar::frontend::preprocessor`]). Likewise, [`SleighLanguageFile::sla_version`]
-//! (needs `ghidra.pcode.utils.SlaFormat.getSlaFormat`) and
-//! [`SleighLanguageFile::compile_sla_file`]/[`SleighLanguageFile::with_lock`] (need
-//! `ghidra.pcodeCPort.slgh_compile.SleighCompileOptions` and `SleighCompile.run_compilation`,
-//! explicitly marked "not ported" in [`crate::decompiler::slgh_compile::sleigh_compile`]) are left
-//! as required trait methods rather than given a half-real default body: a future concrete
-//! implementation backed by those types can supply them.
+//! Two of Java's static factories are ported as free functions: [`get_language_resource_file`]
+//! and [`from_sla_filename`], which returns the one concrete implementation here,
+//! [`LocatedSleighLanguageFile`]. Since the SLEIGH compiler (`SleighCompile.run_compilation`) is
+//! not ported, that implementation never creates a lock file and cannot compile: it is Java's
+//! "cannot lock" mode, in which languages load from the existing `.sla`. Not ported:
+//! `fromSlaFilename_UserDir`, the lock-file protocol (`withLock`, lock-holder info) and
+//! `compileSlaFile` (the [`SleighLanguageFile::compile_sla_file`]/[`SleighLanguageFile::with_lock`]
+//! trait methods stay required so a future compiling implementation can supply them).
 //!
 //! [`SleighLanguageFile::needs_compilation`], [`SleighLanguageFile::is_sla_file_stale`], and
 //! [`SleighLanguageFile::describe`] (`toString`) do get real default bodies, since they only
@@ -191,6 +187,295 @@ impl From<TimeoutException> for WithLockError {
         WithLockError::Timeout(e)
     }
 }
+
+/// A `.sla`/`.slaspec` pair located by [`from_sla_filename`], in Java's "no lock file" mode.
+///
+/// Java's `fromSlaFilename` tries to create a `<sla>.lock` file next to the `.sla` and, when it
+/// can, recompiles stale `.sla` files under that lock (`SleighLanguage.initialize`). The SLEIGH
+/// compiler (`SleighCompile`) is not ported, so this port never creates the lock file: every
+/// located file behaves as Java's single-jar/read-only-directory case (`canLock()` is `false`),
+/// in which `SleighLanguage` decodes the `.sla` as it is, without a freshness check.
+#[derive(Clone)]
+pub struct LocatedSleighLanguageFile {
+    sla: ResourceFile,
+    sla_spec: ResourceFile,
+}
+
+impl LocatedSleighLanguageFile {
+    /// A file pair for an explicit `.sla` and `.slaspec` (neither has to exist).
+    pub fn new(sla: ResourceFile, sla_spec: ResourceFile) -> Self {
+        Self { sla, sla_spec }
+    }
+}
+
+impl SleighLanguageFile for LocatedSleighLanguageFile {
+    fn sla_file(&self) -> &ResourceFile {
+        &self.sla
+    }
+
+    fn sla_spec_file(&self) -> &ResourceFile {
+        &self.sla_spec
+    }
+
+    fn can_lock(&self) -> bool {
+        false
+    }
+
+    fn lock_file(&self) -> Option<&Path> {
+        None
+    }
+
+    /// Port of `getSlaVersion()`: the format version in the `.sla` header, or -1 if the file is
+    /// missing or has no header.
+    fn sla_version(&self) -> i32 {
+        let Ok(mut stream) = self.sla.get_input_stream() else {
+            return -1;
+        };
+        crate::pcode::utils::sla_format::get_sla_format(&mut stream).unwrap_or(-1)
+    }
+
+    /// Always fails: compiling needs the SLEIGH compiler, which is not ported (and Java never
+    /// compiles a file that cannot be locked).
+    fn compile_sla_file(&self, _monitor: &dyn TaskMonitor) -> Result<(), SleighException> {
+        Err(SleighException::with_message(format!(
+            "Cannot compile {}: the SLEIGH compiler is not available",
+            self.sla_spec.absolute_path()
+        )))
+    }
+
+    /// Always fails with an I/O error: this file has no lock file ([`Self::can_lock`] is
+    /// `false`), as Java's `withLock` does for a `SleighLanguageFile` without one.
+    fn with_lock(
+        &self,
+        _timeout: Duration,
+        _monitor: &dyn TaskMonitor,
+        _r: &mut dyn FnMut() -> Result<(), Box<dyn std::error::Error + Send + Sync>>,
+    ) -> Result<(), WithLockError> {
+        Err(WithLockError::Io(io::Error::other(format!(
+            "No lock file for {}",
+            self.sla.absolute_path()
+        ))))
+    }
+}
+
+/// `FilenameUtils.removeExtension`: `name` without its last `.ext` (if the dot is in the final
+/// path component).
+fn remove_extension(name: &str) -> &str {
+    let file_start = name.rfind(['/', '\\']).map_or(0, |i| i + 1);
+    match name[file_start..].rfind('.') {
+        Some(dot) => &name[..file_start + dot],
+        None => name,
+    }
+}
+
+/// Port of `SleighLanguageFile.getLanguageResourceFile(ResourceFile, String, String)`: the
+/// existing file `filename` (a name or relative path) relative to `dir`.
+///
+/// When it is not there, Java searches the whole application for files with
+/// `expected_extension` named like `filename` (`findFile`/`findFiles`); here that search covers
+/// the directory trees `search_roots` (pass none to disable it). A unique match is used; with
+/// several, Java's check of the *requested* path against the relative path (which passes for any
+/// relative name) makes it use the first match, and so does this port.
+///
+/// # Errors
+/// [`SleighFileException`](super::sleigh_file_exception::SleighFileException) if the file is
+/// missing or its name does not match the file system's case exactly.
+pub fn get_language_resource_file(
+    dir: &ResourceFile,
+    filename: &str,
+    expected_extension: &str,
+    search_roots: &[std::path::PathBuf],
+) -> Result<ResourceFile, super::sleigh_file_exception::SleighFileException> {
+    use super::sleigh_file_exception::SleighFileException;
+    let Some(f) = find_file(dir, filename, expected_extension, search_roots) else {
+        return Err(SleighFileException::new(format!(
+            "Missing sleigh file({expected_extension}): {}",
+            dir.join(filename).absolute_path()
+        )));
+    };
+    let result = crate::program::model::lang::sleigh::manual::exists_and_is_case_dependent(&f);
+    if !result.is_ok() {
+        return Err(SleighFileException::new(format!(
+            "Sleigh file {} is not properly case dependent: {}",
+            f.absolute_path(),
+            result.message()
+        )));
+    }
+    Ok(f)
+}
+
+/// Port of the private `findFile(ResourceFile, String, String)`. Java returns the canonical
+/// file; the file is returned as named here so that the case check above sees the requested
+/// spelling (a canonical path would always match the file system's case).
+fn find_file(
+    parent_dir: &ResourceFile,
+    file_name_or_relative_path: &str,
+    extension: &str,
+    search_roots: &[std::path::PathBuf],
+) -> Option<ResourceFile> {
+    let file = parent_dir.join(file_name_or_relative_path);
+    if file.exists() {
+        return Some(file);
+    }
+    let file_name = std::path::Path::new(file_name_or_relative_path).file_name()?.to_str()?;
+    let mut files = Vec::new();
+    for root in search_roots {
+        find_files(root, file_name, extension, &mut files);
+    }
+    files.into_iter().next().map(ResourceFile::new)
+}
+
+/// Port of the private `findFiles(String, String)`, over `dir`'s tree (sorted, so the "first"
+/// match is deterministic).
+fn find_files(dir: &std::path::Path, file_name: &str, extension: &str, out: &mut Vec<std::path::PathBuf>) {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
+    let mut paths: Vec<std::path::PathBuf> = entries.filter_map(|e| e.ok().map(|e| e.path())).collect();
+    paths.sort();
+    for path in paths {
+        if path.is_dir() {
+            find_files(&path, file_name, extension, out);
+        } else if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+            if name == file_name && name.ends_with(extension) {
+                out.push(path);
+            }
+        }
+    }
+}
+
+/// Port of `SleighLanguageFile.fromSlaFilename(ResourceFile, String)`: locates the `.slaspec`
+/// named after `sla_filename` (with or without `.sla`) in `dir` and pairs it with the `.sla` next
+/// to it; when there is no `.slaspec`, falls back to the `.sla` and assumes the `.slaspec` is next
+/// to it. See [`LocatedSleighLanguageFile`] for why no lock file is created.
+///
+/// # Errors
+/// [`SleighFileException`](super::sleigh_file_exception::SleighFileException) if neither file can
+/// be found (reporting the missing `.slaspec`, as Java does).
+pub fn from_sla_filename(
+    dir: &ResourceFile,
+    sla_filename: &str,
+    search_roots: &[std::path::PathBuf],
+) -> Result<LocatedSleighLanguageFile, super::sleigh_file_exception::SleighFileException> {
+    let base_name = if sla_filename.ends_with(SLA_EXT) {
+        remove_extension(sla_filename)
+    } else {
+        sla_filename
+    };
+    let sibling = |file: &ResourceFile, ext: &str| -> ResourceFile {
+        let name = file.name();
+        let stem = remove_extension(&name).to_string();
+        match file.get_parent_file() {
+            Some(parent) => parent.join(&format!("{stem}{ext}")),
+            None => ResourceFile::new(std::path::PathBuf::from(format!("{stem}{ext}"))),
+        }
+    };
+    match get_language_resource_file(dir, &format!("{base_name}{SLASPEC_EXT}"), SLASPEC_EXT, search_roots) {
+        Ok(sla_spec) => {
+            let sla = sibling(&sla_spec, SLA_EXT);
+            Ok(LocatedSleighLanguageFile::new(sla, sla_spec))
+        }
+        Err(original) => match get_language_resource_file(dir, &format!("{base_name}{SLA_EXT}"), SLA_EXT, search_roots) {
+            Ok(sla) => {
+                let sla_spec = sibling(&sla, SLASPEC_EXT);
+                Ok(LocatedSleighLanguageFile::new(sla, sla_spec))
+            }
+            Err(_) => Err(original),
+        },
+    }
+}
+
+#[cfg(test)]
+mod located_tests {
+    use super::*;
+
+    fn dir_with(files: &[&str]) -> tempfile::TempDir {
+        let dir = tempfile::tempdir().unwrap();
+        for f in files {
+            std::fs::write(dir.path().join(f), b"sla\x04rest").unwrap();
+        }
+        dir
+    }
+
+    #[test]
+    fn from_sla_filename_pairs_slaspec_with_sibling_sla() {
+        let dir = dir_with(&["mylang.slaspec", "mylang.sla"]);
+        let root = ResourceFile::new(dir.path().to_path_buf());
+        for name in ["mylang.sla", "mylang"] {
+            let f = from_sla_filename(&root, name, &[]).unwrap();
+            assert_eq!(f.sla_file().name(), "mylang.sla");
+            assert_eq!(f.sla_spec_file().name(), "mylang.slaspec");
+            assert!(!f.can_lock());
+            assert!(f.lock_file().is_none());
+        }
+        // No lock file is created next to the .sla.
+        assert!(!dir.path().join("mylang.sla.lock").exists());
+    }
+
+    #[test]
+    fn from_sla_filename_falls_back_to_sla_without_slaspec() {
+        let dir = dir_with(&["only.sla"]);
+        let root = ResourceFile::new(dir.path().to_path_buf());
+        let f = from_sla_filename(&root, "only.sla", &[]).unwrap();
+        assert!(f.sla_file().exists());
+        assert_eq!(f.sla_spec_file().name(), "only.slaspec");
+        assert!(!f.sla_spec_file().exists());
+    }
+
+    #[test]
+    fn from_sla_filename_reports_missing_slaspec() {
+        let dir = dir_with(&[]);
+        let root = ResourceFile::new(dir.path().to_path_buf());
+        let err = from_sla_filename(&root, "nothing.sla", &[]).err().unwrap();
+        assert!(err.message().contains("Missing sleigh file(.slaspec)"), "{}", err.message());
+    }
+
+    #[test]
+    fn get_language_resource_file_rejects_wrong_case() {
+        let dir = dir_with(&["Upper.pspec"]);
+        let root = ResourceFile::new(dir.path().to_path_buf());
+        assert!(get_language_resource_file(&root, "Upper.pspec", ".pspec", &[]).is_ok());
+        // On a case-sensitive file system the file is simply missing; on a case-insensitive one it
+        // is found but not properly case dependent. Either way it is an error.
+        assert!(get_language_resource_file(&root, "upper.pspec", ".pspec", &[]).is_err());
+    }
+
+    #[test]
+    fn get_language_resource_file_falls_back_to_searching_the_roots_by_name() {
+        let dir = dir_with(&[]);
+        std::fs::create_dir_all(dir.path().join("old")).unwrap();
+        std::fs::write(dir.path().join("shared.cspec"), b"").unwrap();
+        let old = ResourceFile::new(dir.path().join("old"));
+        assert!(get_language_resource_file(&old, "shared.cspec", ".cspec", &[]).is_err());
+        let found =
+            get_language_resource_file(&old, "shared.cspec", ".cspec", &[dir.path().to_path_buf()]).unwrap();
+        assert_eq!(found.absolute_path(), dir.path().join("shared.cspec").to_string_lossy());
+        // Only files with the expected extension are candidates.
+        assert!(get_language_resource_file(&old, "shared.cspec", ".pspec", &[dir.path().to_path_buf()]).is_err());
+    }
+
+    #[test]
+    fn sla_version_reads_the_header_and_compile_is_unavailable() {
+        let dir = dir_with(&["v.sla"]);
+        let sla = ResourceFile::new(dir.path().join("v.sla"));
+        let f = LocatedSleighLanguageFile::new(sla, ResourceFile::new(dir.path().join("v.slaspec")));
+        assert_eq!(f.sla_version(), 4);
+        let missing = LocatedSleighLanguageFile::new(
+            ResourceFile::new(dir.path().join("none.sla")),
+            ResourceFile::new(dir.path().join("none.slaspec")),
+        );
+        assert_eq!(missing.sla_version(), -1);
+        assert!(f.compile_sla_file(&crate::util::task::DummyMonitor).is_err());
+    }
+
+    #[test]
+    fn remove_extension_only_strips_the_last_component_extension() {
+        assert_eq!(remove_extension("x86-64.sla"), "x86-64");
+        assert_eq!(remove_extension("a.b/c"), "a.b/c");
+        assert_eq!(remove_extension("noext"), "noext");
+    }
+}
+
 
 #[cfg(test)]
 mod tests {

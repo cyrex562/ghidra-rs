@@ -533,12 +533,8 @@ fn parse_context_value(s: &str) -> u128 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::app::plugin::processors::sleigh::sleigh_language_description::SleighLanguageDescription;
-    use crate::app::plugin::processors::sleigh::sleigh_language_file::SleighLanguageFile;
     use crate::program::model::address::{AddressSpaceType, DefaultAddressFactory};
-    use crate::program::model::lang::compiler_spec_description::CompilerSpecDescription;
     use crate::program::model::lang::compiler_spec_id::CompilerSpecID;
-    use crate::program::model::lang::compiler_spec_not_found_exception::CompilerSpecNotFoundException;
     use crate::program::model::lang::language_description::LanguageDescription;
     use crate::program::model::lang::language_id::LanguageID;
     use crate::program::model::lang::register_value::RegisterValue;
@@ -547,7 +543,6 @@ mod tests {
     use crate::program::model::pcode::encoder::Encoder;
     use crate::program::model::pcode::ids::*;
     use crate::program::model::pcode::{DecoderError, PackedDecode, PackedEncode};
-    use crate::program::seam_stubs::Processor;
     use std::collections::HashSet;
     use std::path::PathBuf;
 
@@ -655,93 +650,15 @@ mod tests {
         e.into_inner()
     }
 
-    struct MockProcessor;
-    impl Processor for MockProcessor {}
-
-    /// A `.ldefs` description naming `spec_file` as its `.pspec`.
-    struct Description {
-        id: &'static str,
-        endian: Endian,
-        spec_file: ResourceFile,
-    }
-
-    impl LanguageDescription for Description {
-        fn get_language_id(&self) -> LanguageID {
-            LanguageID::new(self.id).unwrap()
-        }
-        fn get_processor(&self) -> Box<dyn Processor> {
-            Box::new(MockProcessor)
-        }
-        fn get_endian(&self) -> Endian {
-            self.endian
-        }
-        fn get_instruction_endian(&self) -> Endian {
-            self.endian
-        }
-        fn get_size(&self) -> i32 {
-            32
-        }
-        fn get_variant(&self) -> String {
-            "default".to_string()
-        }
-        fn get_version(&self) -> i32 {
-            1
-        }
-        fn get_minor_version(&self) -> i32 {
-            0
-        }
-        fn get_description(&self) -> String {
-            String::new()
-        }
-        fn is_deprecated(&self) -> bool {
-            false
-        }
-        fn get_compatible_compiler_spec_descriptions(&self) -> Vec<Box<dyn CompilerSpecDescription>> {
-            Vec::new()
-        }
-        fn get_compiler_spec_description_by_id(
-            &self,
-            compiler_spec_id: &CompilerSpecID,
-        ) -> Result<Box<dyn CompilerSpecDescription>, CompilerSpecNotFoundException> {
-            Err(CompilerSpecNotFoundException::new(&self.get_language_id(), compiler_spec_id))
-        }
-        fn get_external_names(&self, _external_tool: &str) -> Option<Vec<String>> {
-            None
-        }
-    }
-
-    impl SleighLanguageDescription for Description {
-        fn get_truncated_space_names(&self) -> HashSet<String> {
-            HashSet::new()
-        }
-        fn get_truncated_space_size(&self, _space_name: &str) -> Option<i32> {
-            None
-        }
-        fn get_defs_file(&self) -> Option<&ResourceFile> {
-            None
-        }
-        fn set_defs_file(&mut self, _defs_file: Option<ResourceFile>) {}
-        fn get_spec_file(&self) -> Option<&ResourceFile> {
-            Some(&self.spec_file)
-        }
-        fn set_spec_file(&mut self, _spec_file: Option<ResourceFile>) {}
-        fn get_manual_index_file(&self) -> Option<&ResourceFile> {
-            None
-        }
-        fn set_manual_index_file(&mut self, _manual_index_file: Option<ResourceFile>) {}
-        fn get_language_file(&self) -> Option<&dyn SleighLanguageFile> {
-            None
-        }
-        fn set_language_file(&mut self, _language_file: Option<Box<dyn SleighLanguageFile>>) {}
-    }
-
     fn pspec(path: &str) -> PathBuf {
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../orig_src/Ghidra/Processors").join(path)
     }
 
     fn load_file(id: &'static str, spec_file: PathBuf, f: &Fixture) -> Result<SleighLanguage, DecoderError> {
         let endian = if f.big_endian { Endian::Big } else { Endian::Little };
-        let description = Description { id, endian, spec_file: ResourceFile::new(spec_file) };
+        let mut description =
+            crate::app::plugin::processors::sleigh::sleigh_language_description::test_description(id, endian);
+        description.set_spec_file(Some(ResourceFile::new(spec_file)));
         let decoder = PackedDecode::new(Arc::new(DefaultAddressFactory::new(vec![])), sla(f));
         SleighLanguage::decode_with_description(&decoder, Arc::new(description))
     }

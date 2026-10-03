@@ -15,7 +15,10 @@ use crate::program::seam_stubs::Processor;
 /// This trait was promoted from a minimal placeholder (see `seam_stubs.rs`) that declared no
 /// methods; the placeholder's (empty) surface is retained here as part of the full trait, so
 /// existing mock implementations continue to compile.
-pub trait LanguageDescription {
+///
+/// `Send + Sync`: descriptions are immutable and shared by language services and languages
+/// across threads (Java hands out the same description object everywhere).
+pub trait LanguageDescription: Send + Sync {
     /// Returns the `LanguageID` for this language.
     fn get_language_id(&self) -> LanguageID;
 
@@ -66,16 +69,16 @@ pub trait LanguageDescription {
     /// if there are no results.
     fn get_external_names(&self, external_tool: &str) -> Option<Vec<String>>;
 
-    /// Stands in for `instanceof SleighLanguageDescription sld`, used by
-    /// [`dwarf_util`](crate::format::dwarf::dwarf_util)'s port of
-    /// `DWARFUtil.getLanguageDefinitionDirectory`/`getLanguageExternalNameValue` before a real
-    /// concrete `SleighLanguageDescription` implementation exists in this crate. Default `None`,
-    /// following this trait's established downcast convention (compare
+    /// This description as a
+    /// [`SleighLanguageDescription`](crate::app::plugin::processors::sleigh::sleigh_language_description::SleighLanguageDescription),
+    /// if it is one: the stand-in for Java's `instanceof SleighLanguageDescription sld` (used, e.g.,
+    /// by [`dwarf_util`](crate::format::dwarf::dwarf_util)). Default `None`, following this
+    /// trait's downcast convention (compare
     /// [`DataType::as_composite`](crate::program::model::data::data_type::DataType::as_composite));
-    /// a concrete Sleigh-backed implementor should override this to return `Some(self)`.
+    /// only `SleighLanguageDescription` returns `Some(self)`.
     fn as_sleigh(
         &self,
-    ) -> Option<&dyn crate::app::plugin::processors::sleigh::sleigh_language_description::SleighLanguageDescription>
+    ) -> Option<&crate::app::plugin::processors::sleigh::sleigh_language_description::SleighLanguageDescription>
     {
         None
     }
@@ -134,7 +137,7 @@ impl<L: LanguageDescription + ?Sized> LanguageDescription for std::sync::Arc<L> 
     }
     fn as_sleigh(
         &self,
-    ) -> Option<&dyn crate::app::plugin::processors::sleigh::sleigh_language_description::SleighLanguageDescription>
+    ) -> Option<&crate::app::plugin::processors::sleigh::sleigh_language_description::SleighLanguageDescription>
     {
         (**self).as_sleigh()
     }
