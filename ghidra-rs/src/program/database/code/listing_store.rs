@@ -301,16 +301,26 @@ impl ListingStore {
         let mut bytes = vec![0u8; length];
         let read = memory.get_bytes(record.address(), &mut bytes);
         bytes.truncate(read);
+        // one pass over the operands, laid out as InstructionView::display_string does
         let mnemonic = view.mnemonic();
-        let display = view.display_string();
-        let operand_text = display.strip_prefix(mnemonic.as_str()).unwrap_or(&display).trim_start().to_string();
+        let num_operands = view.num_operands();
+        let mut operands = Vec::with_capacity(num_operands.max(0) as usize);
+        let mut operand_text = view.separator(0).unwrap_or_default();
+        for i in 0..num_operands {
+            let rep = view.default_operand_representation(i);
+            operand_text.push_str(&rep);
+            operands.push(rep);
+            if let Some(sep) = view.separator(i + 1) {
+                operand_text.push_str(&sep);
+            }
+        }
         CodeUnitSummary {
             address: record.address().clone(),
             length,
             bytes,
             kind: CodeUnitKind::Instruction(id),
             mnemonic,
-            operands: (0..view.num_operands()).map(|i| view.default_operand_representation(i)).collect(),
+            operands,
             operand_text,
         }
     }
