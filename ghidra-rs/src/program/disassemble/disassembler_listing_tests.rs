@@ -550,6 +550,16 @@ fn operand_display_shows_referenced_addresses_by_symbol() {
     program.get_symbol_table().write().unwrap().create_label(&at(0x1008), "done", SourceType::UserDefined).unwrap();
     assert_eq!(program.operand_display(&at(0x1004)).unwrap().operand_field, "done");
     assert!(program.operand_display(&at(0x1001)).is_none(), "no instruction starts there");
+
+    // the batch form: every instruction in the range, in address order, as operand_display shows it
+    let shown = program.operand_displays(&at(0x1000), &at(0x1005));
+    let addresses: Vec<i64> = shown.iter().map(|(a, _)| a.offset()).collect();
+    assert_eq!(addresses, [0x1000, 0x1002, 0x1004]);
+    for (address, display) in &shown {
+        assert_eq!(Some(display), program.operand_display(address).as_ref());
+    }
+    assert_eq!(shown[2].1.operand_field, "done");
+    assert!(program.operand_displays(&at(0x1001), &at(0x1001)).is_empty());
 }
 
 /// Acceptance (milestone C4): `/bin/ls` disassembled from `_start` (and the C runtime helpers
@@ -714,4 +724,47 @@ fn bin_ls_start_calls_libc_start_main_through_a_got_pointer() {
 
     let shown = program.operand_display(&call.address).unwrap();
     assert_eq!((shown.mnemonic.as_str(), shown.operand_field.as_str()), ("CALL", "qword ptr [->__libc_start_main]"));
+}
+
+/// Measurement, not an assertion (milestone C6): how long `ProgramDB::operand_display` takes
+/// over every instruction disassembled from `/bin/ls`'s entry. Run with
+/// `cargo test -p ghidra-rs --lib bin_ls_operand_display_timing -- --ignored --nocapture`.
+/// Skipped when the distribution or an x86-64 `/bin/ls` is absent.
+#[test]
+#[ignore = "measurement; prints timings"]
+fn bin_ls_operand_display_timing() {
+    use crate::program::model::symbol::SymbolTable;
+    let Some((program, _, entry)) = load_bin_ls() else { return };
+    let mut disassembler = Disassembler::get_program_disassembler(&program, Arc::new(DummyMonitor), None);
+    disassembler.disassemble_program(&program, &entry, None, true);
+    // the whole of `.text`, as auto-analysis would reach most of it
+    let text = MemoryMapDB::as_memory(&program.get_memory()).get_block(&entry).unwrap();
+    let mut set = AddressSet::new();
+    set.add_range(&text.get_start(), &text.get_end());
+    let disassembly = std::time::Instant::now();
+    {
+        let listing = program.get_listing_store();
+        let mut listing = listing.write().unwrap();
+        let memory = MemoryMapDB::as_memory(&program.get_memory());
+        disassembler.disassemble_set_into(&mut listing, memory, &set, Some(&set), None, true);
+    }
+    println!("disassembled {} in {:?}", text.get_name(), disassembly.elapsed());
+    let space = entry.space().clone();
+    let (start, end) = (Address::new(space.clone(), 0), Address::new(space, i64::MAX));
+    let addresses: Vec<Address> = program.instruction_summaries(&start, &end).into_iter().map(|s| s.address).collect();
+    let symbols = {
+        let mut it = program.get_symbol_table().read().unwrap().get_all_symbols(false);
+        std::iter::from_fn(|| it.next_symbol()).count()
+    };
+    let begun = std::time::Instant::now();
+    let shown = addresses.iter().filter(|a| program.operand_display(a).is_some()).count();
+    let elapsed = begun.elapsed();
+    println!(
+        "operand_display: {shown}/{} instructions, {symbols} stored symbols, {elapsed:?} ({:?}/instruction)",
+        addresses.len(),
+        elapsed / addresses.len().max(1) as u32
+    );
+    let begun = std::time::Instant::now();
+    let batch = program.operand_displays(&start, &end).len();
+    println!("operand_displays: {batch} code units in {:?}", begun.elapsed());
 }

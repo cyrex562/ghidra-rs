@@ -17,6 +17,7 @@ use crate::program::database::symbol::DynamicSymbolSource;
 use crate::program::database::symbol::dynamic_symbol::{DataLabelPrefix, DynamicDataLabel};
 use crate::program::model::listing::code_unit_format::{CodeUnitFormat, DefaultCodeUnitFormat};
 use crate::program::model::listing::Instruction;
+use crate::program::disassemble::DisassembledInstruction;
 use crate::program::model::symbol::{ReferenceManager, SymbolTable};
 use crate::program::seam_stubs::CodeUnitFormatOptions;
 use std::io;
@@ -268,11 +269,50 @@ impl ProgramDB {
             listing.to_instruction(id, &*memory, Some(program), SleighLanguage::get_address_factory(&self.language))?
         };
         let format = DefaultCodeUnitFormat::with_options(CodeUnitFormatOptions::browser_default());
-        let mnemonic = format.get_mnemonic_representation(&instruction);
-        let instr: &dyn Instruction = &instruction;
+        Some(Self::instruction_operand_display(&format, &instruction))
+    }
+
+    /// [`operand_display`](Self::operand_display) of every instruction and defined data
+    /// starting in `[start, end]`, in address order. Takes the listing and memory read locks
+    /// once to build the range's code units and releases them before formatting (each operand's
+    /// formatting takes the reference, symbol, listing and memory locks in turn, as
+    /// `operand_display` does); do not call it while holding any of them.
+    pub fn operand_displays(self: &Arc<Self>, start: &Address, end: &Address) -> Vec<(Address, OperandDisplay)> {
+        let (instructions, data) = {
+            let listing = self.listing.read().unwrap_or_else(|p| p.into_inner());
+            let memory = self.memory.read().unwrap_or_else(|p| p.into_inner());
+            let program: Arc<dyn Program> = self.clone();
+            let factory = SleighLanguage::get_address_factory(&self.language);
+            let instructions: Vec<(Address, DisassembledInstruction)> = listing
+                .instructions_in(start, end)
+                .filter_map(|id| {
+                    let address = listing.record(id).address().clone();
+                    let instruction = listing.to_instruction(id, &*memory, Some(program.clone()), factory.clone())?;
+                    Some((address, instruction))
+                })
+                .collect();
+            let big_endian = self.language.is_big_endian();
+            let data: Vec<CodeUnitSummary> =
+                listing.defined_data_in(start, end).map(|d| d.summary(&*memory, big_endian)).collect();
+            (instructions, data)
+        };
+        let format = DefaultCodeUnitFormat::with_options(CodeUnitFormatOptions::browser_default());
+        let mut shown: Vec<(Address, OperandDisplay)> = instructions
+            .iter()
+            .map(|(address, instruction)| (address.clone(), Self::instruction_operand_display(&format, instruction)))
+            .collect();
+        shown.extend(data.into_iter().map(|summary| (summary.address.clone(), self.data_operand_display(summary))));
+        shown.sort_by(|a, b| a.0.cmp(&b.0));
+        shown
+    }
+
+    /// An instruction's mnemonic, operands and operand field through `format`.
+    fn instruction_operand_display(format: &DefaultCodeUnitFormat, instruction: &DisassembledInstruction) -> OperandDisplay {
+        let mnemonic = format.get_mnemonic_representation(instruction);
+        let instr: &dyn Instruction = instruction;
         let count = instr.get_num_operands();
         let operands: Vec<String> =
-            (0..count).map(|i| format.get_operand_representation_string(&instruction, i)).collect();
+            (0..count).map(|i| format.get_operand_representation_string(instruction, i)).collect();
         let mut operand_field = instr.get_separator(0).unwrap_or_default();
         for (i, operand) in operands.iter().enumerate() {
             operand_field.push_str(operand);
@@ -280,7 +320,7 @@ impl ProgramDB {
                 operand_field.push_str(&separator);
             }
         }
-        Some(OperandDisplay { mnemonic, operands, operand_field })
+        OperandDisplay { mnemonic, operands, operand_field }
     }
 }
 
@@ -561,6 +601,10 @@ mod tests {
             .unwrap();
         assert_eq!(program.operand_display(&addr).unwrap().operands, vec!["target".to_string()]);
         assert!(program.operand_display(&addr.add_wrap(1)).is_none());
+        assert_eq!(
+            program.operand_displays(&addr, &addr.add_wrap(4)),
+            vec![(addr.clone(), program.operand_display(&addr).unwrap())]
+        );
     }
 
     #[test]
