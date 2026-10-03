@@ -7,7 +7,9 @@ use crate::program::database::symbol::variable_storage_manager::VariableStorageM
 use crate::program::database::ManagerDB;
 use crate::program::model::address::{Address, AddressSpace};
 use crate::program::model::listing::Library;
-use crate::program::model::symbol::{SourceType, Symbol, SymbolIterator, SymbolTable, SymbolType};
+use crate::program::model::symbol::{SetSymbolNameError, SourceType, Symbol, SymbolIterator, SymbolTable, SymbolType};
+use crate::program::model::symbol::symbol_utilities::SymbolUtilities;
+use crate::util::exception::{DuplicateNameException, InvalidInputException};
 use crate::program::model::listing::variable_storage::VariableStorage;
 use crate::program::model::address::BoxedAddressIterator;
 use crate::program::model::symbol::{Namespace, SymbolIteratorAdapter};
@@ -40,6 +42,8 @@ impl SymbolManagerDB {
     pub const SYMBOL_PRIMARY_COL: usize = 6;
 
     pub const SYMBOL_PINNED_FLAG: u8 = 0x4;
+    /// The flag bits holding the source type (`SymbolDatabaseAdapter.SYMBOL_SOURCE_MASK`).
+    pub const SYMBOL_SOURCE_MASK: u8 = 0x3 | 0x8;
 
     pub fn new(
         db_handle: Arc<RwLock<DBHandle>>,
@@ -410,6 +414,71 @@ impl SymbolTable for SymbolManagerDB {
     fn get_symbols(&self, addr: &Address) -> io::Result<Vec<Arc<dyn Symbol>>> {
         // This is inefficient without a secondary index iterator: every record is scanned.
         self.records_at(addr)?.into_iter().map(|rec| self.record_to_symbol(rec)).collect()
+    }
+
+    /// Mirrors `SymbolDB.setName(String, SourceType)` (`doSetNameAndNamespace` without a
+    /// namespace change) for labels in memory: `CodeSymbol.validateNameSource` turns a DEFAULT
+    /// source into ANALYSIS; the source must be valid for the symbol type
+    /// (`SymbolManager.validateSource`) and the name pass `SymbolUtilities.validateName`; an
+    /// unchanged name changes nothing (not even the source); another symbol of the new name in
+    /// the same namespace at the address is a duplicate (`checkDuplicateSymbolName` -- labels
+    /// elsewhere may share it). The record's name, source bits and locator hash are rewritten.
+    ///
+    /// Not ported: renaming other symbol types (functions, namespaces, externals), the
+    /// register-name check (`checkEditOK`), dynamic symbol conversion, label history and the
+    /// rename event.
+    fn set_symbol_name(&mut self, symbol_id: i64, new_name: &str, source: SourceType) -> Result<(), SetSymbolNameError> {
+        struct Utils;
+        impl SymbolUtilities for Utils {}
+        let invalid = |msg: String| SetSymbolNameError::InvalidInput(InvalidInputException::with_message(msg));
+        let record = {
+            let handle = self.db_handle.read().unwrap();
+            let table = handle.get_table(Self::SYMBOL_TABLE_NAME).ok_or_else(|| invalid("Symbol table not found".into()))?;
+            let record = table.read().unwrap().get_record(&Field::Long(Some(symbol_id)));
+            record.map_err(|e| invalid(e.to_string()))?
+        };
+        let Some(mut rec) = record else {
+            return Err(invalid(format!("Symbol {symbol_id} has been deleted")));
+        };
+        let type_id = rec.get_byte(Self::SYMBOL_TYPE_COL).unwrap_or(0) as i32;
+        let symbol_type = SymbolType::get_symbol_type(type_id).unwrap_or(SymbolType::Label);
+        let old_name = rec.get_string(Self::SYMBOL_NAME_COL).unwrap_or("").to_string();
+        let addr_key = rec.get_long(Self::SYMBOL_ADDR_COL).unwrap_or(0);
+        let address = self.addr_map.read().unwrap().decode_address(addr_key);
+        if symbol_type != SymbolType::Label || !address.is_memory_address() {
+            return Err(invalid(format!("Renaming {symbol_type:?} symbol {old_name} is not supported")));
+        }
+        // CodeSymbol.validateNameSource
+        let source = if source == SourceType::Default { SourceType::Analysis } else { source };
+        if !symbol_type.is_valid_source_type(source, &address) {
+            return Err(invalid(format!(
+                "Can't set source to {source:?} for symbol '{new_name}' since it is a {symbol_type:?} symbol type."
+            )));
+        }
+        Utils.validate_name(Some(new_name)).map_err(SetSymbolNameError::InvalidInput)?;
+        if old_name == new_name {
+            return Ok(());
+        }
+        let parent_id = rec.get_long(Self::SYMBOL_PARENT_ID_COL).unwrap_or(0);
+        let records = self.records_at(&address).map_err(|e| invalid(e.to_string()))?;
+        if records.iter().any(|other| {
+            other.get_string(Self::SYMBOL_NAME_COL) == Some(new_name)
+                && other.get_long(Self::SYMBOL_PARENT_ID_COL) == Some(parent_id)
+        }) {
+            return Err(SetSymbolNameError::Duplicate(DuplicateNameException(format!(
+                "A symbol named {new_name} already exists at this address!"
+            ))));
+        }
+        // labels allow duplicates: no namespace-wide check
+        rec.set_string(Self::SYMBOL_NAME_COL, Some(new_name.to_string()));
+        let mut flags = rec.get_byte(Self::SYMBOL_FLAGS_COL).unwrap_or(0) as u8;
+        flags &= !Self::SYMBOL_SOURCE_MASK;
+        flags |= Self::get_source_type_flags_bits(source);
+        rec.set_byte(Self::SYMBOL_FLAGS_COL, flags as i8);
+        if let Some(hash) = Self::compute_locator_hash(new_name, parent_id, addr_key) {
+            rec.set_long(Self::SYMBOL_HASH_COL, hash);
+        }
+        self.put_record(rec).map_err(|e| invalid(e.to_string()))
     }
 
     fn set_symbol_pinned(&mut self, symbol_id: i64, pinned: bool) -> io::Result<()> {
@@ -924,6 +993,81 @@ mod symbol_manager_db_tests {
         let by_name = mgr.get_symbols_by_name("puts").unwrap();
         assert_eq!(by_name.len(), 1);
         assert_eq!(by_name[0].get_address().offset(), 0x200);
+    }
+
+    /// `SymbolDB.setName` for a label: the name and source change; primary and pinned stay.
+    #[test]
+    fn renaming_a_label_changes_its_name_and_source() {
+        let (mut mgr, space) = manager();
+        let addr = Address::new(space, 0x100);
+        let sym = mgr.create_label(&addr, "old", SourceType::Imported).unwrap();
+        mgr.set_symbol_pinned(sym.get_id(), true).unwrap();
+        mgr.set_symbol_name(sym.get_id(), "new_name", SourceType::UserDefined).unwrap();
+        let renamed = mgr.get_symbol(sym.get_id()).unwrap().unwrap();
+        assert_eq!(renamed.get_name(), "new_name");
+        assert_eq!(renamed.get_source(), SourceType::UserDefined);
+        assert!(renamed.is_primary());
+        assert!(renamed.is_pinned());
+        assert!(mgr.get_symbols_by_name("old").unwrap().is_empty());
+        assert_eq!(mgr.get_symbols_by_name("new_name").unwrap().len(), 1);
+        // a stored locator hash follows the new name
+        let rec = mgr.records_at(&addr).unwrap().remove(0);
+        let key = rec.get_long(SymbolManagerDB::SYMBOL_ADDR_COL).unwrap();
+        assert_eq!(
+            rec.get_long(SymbolManagerDB::SYMBOL_HASH_COL),
+            SymbolManagerDB::compute_locator_hash("new_name", sym.get_parent_id(), key)
+        );
+    }
+
+    /// `CodeSymbol.validateNameSource`: a label renamed with DEFAULT source becomes ANALYSIS.
+    #[test]
+    fn renaming_a_label_with_default_source_records_analysis() {
+        let (mut mgr, space) = manager();
+        let sym = mgr.create_label(&Address::new(space, 0x100), "old", SourceType::Imported).unwrap();
+        mgr.set_symbol_name(sym.get_id(), "auto", SourceType::Default).unwrap();
+        assert_eq!(mgr.get_symbol(sym.get_id()).unwrap().unwrap().get_source(), SourceType::Analysis);
+    }
+
+    /// Same name: nothing changes, not even the source (Java returns early).
+    #[test]
+    fn renaming_a_label_to_its_own_name_changes_nothing() {
+        let (mut mgr, space) = manager();
+        let sym = mgr.create_label(&Address::new(space, 0x100), "same", SourceType::Imported).unwrap();
+        mgr.set_symbol_name(sym.get_id(), "same", SourceType::UserDefined).unwrap();
+        assert_eq!(mgr.get_symbol(sym.get_id()).unwrap().unwrap().get_source(), SourceType::Imported);
+    }
+
+    /// `SymbolManager.checkDuplicateSymbolName`: no two symbols of a name in one namespace at one
+    /// address; labels elsewhere may share it.
+    #[test]
+    fn renaming_a_label_onto_a_name_at_its_address_is_a_duplicate() {
+        let (mut mgr, space) = manager();
+        let addr = Address::new(space.clone(), 0x100);
+        mgr.create_label(&addr, "taken", SourceType::Imported).unwrap();
+        let sym = mgr.create_label(&addr, "other", SourceType::Imported).unwrap();
+        let err = mgr.set_symbol_name(sym.get_id(), "taken", SourceType::UserDefined).unwrap_err();
+        assert!(matches!(err, SetSymbolNameError::Duplicate(_)), "{err:?}");
+        assert_eq!(err.to_string(), "A symbol named taken already exists at this address!");
+        assert_eq!(mgr.get_symbol(sym.get_id()).unwrap().unwrap().get_name(), "other");
+        let elsewhere = mgr.create_label(&Address::new(space, 0x200), "x", SourceType::Imported).unwrap();
+        mgr.set_symbol_name(elsewhere.get_id(), "taken", SourceType::UserDefined).unwrap();
+        assert_eq!(mgr.get_symbols_by_name("taken").unwrap().len(), 2);
+    }
+
+    /// `SymbolUtilities.validateName`, and a missing symbol.
+    #[test]
+    fn renaming_rejects_invalid_names_and_missing_symbols() {
+        let (mut mgr, space) = manager();
+        let sym = mgr.create_label(&Address::new(space, 0x100), "ok", SourceType::Imported).unwrap();
+        for bad in ["", "has space"] {
+            let err = mgr.set_symbol_name(sym.get_id(), bad, SourceType::UserDefined).unwrap_err();
+            assert!(matches!(err, SetSymbolNameError::InvalidInput(_)), "{bad:?}: {err:?}");
+        }
+        assert_eq!(mgr.get_symbol(sym.get_id()).unwrap().unwrap().get_name(), "ok");
+        assert!(matches!(
+            mgr.set_symbol_name(9999, "x", SourceType::UserDefined),
+            Err(SetSymbolNameError::InvalidInput(_))
+        ));
     }
 
     #[test]

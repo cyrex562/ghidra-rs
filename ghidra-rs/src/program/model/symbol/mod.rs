@@ -443,6 +443,18 @@ pub trait SymbolTable: Send + Sync {
         Ok(false)
     }
 
+    /// Rename the symbol with the given ID. Stands in for `Symbol.setName(String, SourceType)`,
+    /// keyed by ID like [`set_symbol_pinned`](Self::set_symbol_pinned), since an
+    /// `Arc<dyn Symbol>` handed out by this trait cannot be mutated through.
+    ///
+    /// Defaults to rejecting the change so existing implementors are unaffected.
+    fn set_symbol_name(&mut self, symbol_id: i64, name: &str, source: SourceType) -> Result<(), SetSymbolNameError> {
+        let _ = (symbol_id, name, source);
+        Err(SetSymbolNameError::InvalidInput(InvalidInputException::with_message(
+            "symbol renaming is not supported by this symbol table",
+        )))
+    }
+
     /// Set the pinned status of a symbol by its ID.
     fn set_symbol_pinned(&mut self, symbol_id: i64, pinned: bool) -> io::Result<()> {
         let _ = (symbol_id, pinned);
