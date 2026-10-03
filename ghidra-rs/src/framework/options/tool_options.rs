@@ -8,9 +8,9 @@
 //! - Java keeps listeners in a `WeakSet`; here listeners are [`SharedOptionsListener`] handles
 //!   held weakly, so a dropped listener stops being notified.
 //! - Wrapped (non-primitive) values persist for `File`, `Date` and `CustomOption` exactly as
-//!   `WrappedFile` / `WrappedDate` / `WrappedCustomOption` write them. `Color`, `Font` and
-//!   `ActionTrigger` values have no ported wrapper (`WrappedColor`/`WrappedFont`/
-//!   `WrappedActionTrigger` depend on the unported AWT value types), so they are not written.
+//!   `WrappedFile` / `WrappedDate` / `WrappedCustomOption` write them. `Color` and `Font`
+//!   values have no ported wrapper (`WrappedColor`/`WrappedFont` depend on the unported AWT
+//!   value types), so they are not written. `ActionTrigger`s use `WrappedActionTrigger`.
 
 use std::any::Any;
 use std::collections::BTreeMap;
@@ -54,6 +54,7 @@ pub const XML_ELEMENT_NAME: &str = "CATEGORY";
 const WRAPPED_FILE_CLASS: &str = "ghidra.framework.options.WrappedFile";
 const WRAPPED_DATE_CLASS: &str = "ghidra.framework.options.WrappedDate";
 const WRAPPED_CUSTOM_CLASS: &str = "ghidra.framework.options.WrappedCustomOption";
+const WRAPPED_ACTION_TRIGGER_CLASS: &str = "ghidra.framework.options.WrappedActionTrigger";
 const CUSTOM_OPTION_CLASS_KEY: &str = "CUSTOM OPTION CLASS";
 
 /// Options for a tool: a registry with change listeners and XML persistence.
@@ -419,11 +420,11 @@ impl ToolOptions {
             let (option_type, value) = match class_name {
                 WRAPPED_FILE_CLASS => {
                     let path = state.get_string("file", Some(".")).unwrap_or_default();
-                    (OptionType::FileType, OptionValue::File(path.into()))
+                    (OptionType::FileType, Some(OptionValue::File(path.into())))
                 }
                 WRAPPED_DATE_CLASS => {
                     let millis = state.get_long("date", 0);
-                    (OptionType::DateType, OptionValue::Date(date_from_millis(millis)))
+                    (OptionType::DateType, Some(OptionValue::Date(date_from_millis(millis))))
                 }
                 WRAPPED_CUSTOM_CLASS => {
                     let custom_class =
@@ -436,7 +437,10 @@ impl ToolOptions {
                         continue;
                     };
                     custom.read_state(&state);
-                    (OptionType::CustomType, OptionValue::Custom(Arc::from(custom)))
+                    (OptionType::CustomType, Some(OptionValue::Custom(Arc::from(custom))))
+                }
+                WRAPPED_ACTION_TRIGGER_CLASS => {
+                    (OptionType::ActionTrigger, ActionTrigger::create(&state).map(OptionValue::ActionTrigger))
                 }
                 other => {
                     Msg::error(
@@ -453,7 +457,7 @@ impl ToolOptions {
             if first_child.get_name() == CLEARED_VALUE_ELEMENT_NAME {
                 option.do_set_current_value(None);
             } else {
-                option.do_set_current_value(Some(value));
+                option.do_set_current_value(value);
             }
             let day = element
                 .get_attribute_value(LAST_REGISTERED_DATE_ATTRIBUTE)
@@ -557,6 +561,7 @@ fn write_wrapped_option(root: &mut Element, option: &OptionEntry) {
         OptionValue::File(_) => WRAPPED_FILE_CLASS,
         OptionValue::Date(_) => WRAPPED_DATE_CLASS,
         OptionValue::Custom(_) => WRAPPED_CUSTOM_CLASS,
+        OptionValue::ActionTrigger(_) => WRAPPED_ACTION_TRIGGER_CLASS,
         other => {
             Msg::warn(
                 "ToolOptions",
@@ -586,6 +591,7 @@ fn write_wrapped_option(root: &mut Element, option: &OptionEntry) {
                     ss.put_string(CUSTOM_OPTION_CLASS_KEY, Some(custom.java_class_name()));
                     custom.write_state(&mut ss);
                 }
+                OptionValue::ActionTrigger(trigger) => trigger.write_state(&mut ss),
                 _ => return,
             }
             ss.save_to_xml()

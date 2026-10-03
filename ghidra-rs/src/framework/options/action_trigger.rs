@@ -4,6 +4,10 @@
 use crate::docking::MouseBinding;
 use crate::util::awt::KeyStroke;
 
+/// Java `ActionTrigger.KEY_STROKE` / `MOUSE_BINDING` save-state keys.
+const KEY_STROKE: &str = "KeyStroke";
+const MOUSE_BINDING: &str = "MouseBinding";
+
 /// Error for an [`ActionTrigger`] with neither a key stroke nor a mouse binding.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EmptyActionTrigger;
@@ -33,6 +37,23 @@ impl ActionTrigger {
             return Err(EmptyActionTrigger);
         }
         Ok(Self { key_stroke, mouse_binding })
+    }
+
+    /// Java `writeState(SaveState)`: the key stroke and mouse binding as text
+    /// ("" for none). Key strokes use Ghidra's form (`Ctrl-J`); Java writes
+    /// AWT's (`ctrl pressed J`) — both are read back.
+    pub fn write_state(&self, state: &mut crate::framework::options::SaveState) {
+        let ks = self.key_stroke.map(|k| k.to_ghidra_string()).unwrap_or_default();
+        state.put_string(KEY_STROKE, Some(&ks));
+        let mb = self.mouse_binding.as_ref().map(|m| m.display_text()).unwrap_or_default();
+        state.put_string(MOUSE_BINDING, Some(&mb));
+    }
+
+    /// Java `create(SaveState)`: `None` when neither part is set.
+    pub fn create(state: &crate::framework::options::SaveState) -> Option<ActionTrigger> {
+        let ks = state.get_string(KEY_STROKE, None).filter(|v| !v.trim().is_empty()).and_then(|v| KeyStroke::parse(&v));
+        let mb = state.get_string(MOUSE_BINDING, None).filter(|v| !v.trim().is_empty()).and_then(|v| MouseBinding::parse(&v));
+        ActionTrigger::new(ks, mb).ok()
     }
 
     /// The key stroke, if any.

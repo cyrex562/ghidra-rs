@@ -638,3 +638,43 @@ fn take_listeners_moves_them() {
     new.set_int("Foo", 2).unwrap();
     assert_eq!(rec.lock().unwrap().0.len(), 1);
 }
+
+// ---------------------------------------------------------------- WrappedActionTrigger
+
+fn ctrl_j() -> ActionTrigger {
+    ActionTrigger::new(KeyStroke::parse("ctrl J"), None).unwrap()
+}
+
+#[test]
+fn action_trigger_options_round_trip_through_xml() {
+    let o = ToolOptions::new("Key Bindings");
+    o.register_option_with_type("Go To (Demo)", OptionType::ActionTrigger, Some(OptionValue::ActionTrigger(ctrl_j())), None, Some("kb"), None).unwrap();
+    o.set_action_trigger("Go To (Demo)", ActionTrigger::new(KeyStroke::parse("ctrl K"), None).ok()).unwrap();
+    let back = ToolOptions::from_xml(&o.get_xml_root(false));
+    match back.get_object("Go To (Demo)", None).unwrap() {
+        Some(OptionValue::ActionTrigger(t)) => assert_eq!(t.key_stroke(), KeyStroke::parse("ctrl K")),
+        other => panic!("{:?}", other.map(|v| v.option_type())),
+    }
+}
+
+#[test]
+fn a_cleared_action_trigger_round_trips_as_cleared() {
+    let o = ToolOptions::new("Key Bindings");
+    o.register_option_with_type("Find (Demo)", OptionType::ActionTrigger, Some(OptionValue::ActionTrigger(ctrl_j())), None, Some("kb"), None).unwrap();
+    o.set_action_trigger("Find (Demo)", None).unwrap();
+    let back = ToolOptions::from_xml(&o.get_xml_root(false));
+    back.register_option_with_type("Find (Demo)", OptionType::ActionTrigger, Some(OptionValue::ActionTrigger(ctrl_j())), None, Some("kb"), None).unwrap();
+    assert!(back.get_object("Find (Demo)", None).unwrap().is_none(), "cleared, not reset to the default");
+}
+
+#[test]
+fn java_written_action_triggers_are_read() {
+    // Ghidra writes KeyStroke.toString() (AWT form) into the wrapped option.
+    let xml = r#"<CATEGORY NAME="Key Bindings"><WRAPPED_OPTION NAME="Go To (Demo)" CLASS="ghidra.framework.options.WrappedActionTrigger"><STATE NAME="KeyStroke" TYPE="string" VALUE="ctrl pressed J" /><STATE NAME="MouseBinding" TYPE="string" VALUE="" /></WRAPPED_OPTION></CATEGORY>"#;
+    let element = crate::util::xml::element::Element::parse_bytes(xml.as_bytes()).unwrap();
+    let o = ToolOptions::from_xml(&element);
+    match o.get_object("Go To (Demo)", None).unwrap() {
+        Some(OptionValue::ActionTrigger(t)) => assert_eq!(t.key_stroke(), KeyStroke::parse("ctrl J")),
+        other => panic!("{:?}", other.map(|v| v.option_type())),
+    }
+}
