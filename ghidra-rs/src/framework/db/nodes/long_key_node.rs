@@ -460,7 +460,11 @@ impl LongKeyVarRecNode {
 
         let count = self.get_key_count();
 
-        // Shift entries
+        // Make room for the new record's data first (Java's order): moving the data adjusts the
+        // stored offsets of entries index.., which must still be at their own positions.
+        let data_offset = self.move_records(index, -(rec_len as i32));
+
+        // Make room for the new key/offset entry
         {
             let mut buf = self.buffer.write().unwrap();
             let start_entry = Self::ENTRY_BASE_OFFSET + (index as usize * Self::ENTRY_SIZE);
@@ -473,8 +477,6 @@ impl LongKeyVarRecNode {
                 );
             }
         }
-
-        let data_offset = self.move_records(index, -(rec_len as i32));
 
         self.put_key(index, record.get_key().get_long_value());
         self.put_record_data_offset(index, data_offset as i32);
@@ -501,7 +503,9 @@ impl LongKeyVarRecNode {
             return false;
         }
 
-        let data_offset = self.move_records(index + 1, diff) - rec_len;
+        // Java: `offset = moveRecords(index + 1, dataShift)` -- the block after the moved records
+        // is exactly where the updated record now starts
+        let data_offset = self.move_records(index + 1, diff);
         self.put_record_data_offset(index, data_offset as i32);
         self.set_indirect(index, false);
         record.write(&mut *self.buffer.write().unwrap(), data_offset);
@@ -520,5 +524,64 @@ impl LongKeyVarRecNode {
         self.set_key_count(split_index);
         new_right_node.set_key_count(0);
         self.get_key(split_index)
+    }
+}
+
+#[cfg(test)]
+mod var_rec_tests {
+    use super::*;
+    use crate::framework::db::buffer_mgr::BufferMgr;
+    use crate::framework::db::nodes::node_mgr::NodeMgr;
+    use crate::framework::db::{DBRecord, Field, FieldType, Schema};
+
+    fn schema() -> Arc<Schema> {
+        Arc::new(Schema::new(0, FieldType::Long, "Key".into(), vec![FieldType::String], vec!["Name".into()], vec![]))
+    }
+
+    fn record(schema: &Arc<Schema>, key: i64, name: &str) -> DBRecord {
+        let mut r = DBRecord::new(schema.clone(), Field::Long(Some(key)));
+        r.set_string(0, Some(name.to_string()));
+        r
+    }
+
+    /// Java's `VarRecNode.updateRecord`: the updated record lands right below its predecessor's
+    /// data, and the records after it shift by the length change.
+    #[test]
+    fn updating_a_record_to_a_new_length_keeps_every_record_readable() {
+        let schema = schema();
+        let mgr = NodeMgr::new(Arc::new(RwLock::new(BufferMgr::new(1024))), schema.clone());
+        let LongKeyNode::VarRec(mut node) = mgr.create_record_node().unwrap() else {
+            panic!("a string schema uses variable-length record nodes")
+        };
+        for (i, name) in ["one", "two", "three"].iter().enumerate() {
+            assert!(node.insert_record(i as i32, &record(&schema, i as i64 + 1, name)));
+        }
+        assert!(node.update_record(1, &record(&schema, 2, "a much longer second name")));
+        assert!(node.update_record(2, &record(&schema, 3, "3")));
+        assert!(node.update_record(1, &record(&schema, 2, "2")));
+        let names: Vec<String> =
+            (0..3).map(|i| node.get_record(i, schema.clone()).get_string(0).unwrap_or_default().to_string()).collect();
+        assert_eq!(names, vec!["one", "2", "3"]);
+    }
+
+    /// Many inserts and length-changing updates through a table, splitting nodes along the way,
+    /// never corrupt a node.
+    #[test]
+    fn a_table_survives_many_length_changing_updates() {
+        use crate::framework::db::table::Table;
+        let schema = schema();
+        let mut table = Table::new("t".into(), schema.clone(), Arc::new(RwLock::new(BufferMgr::new(1024))));
+        let mut seed: u64 = 0x1234_5678;
+        let mut next = move || {
+            seed ^= seed << 13;
+            seed ^= seed >> 7;
+            seed ^= seed << 17;
+            seed
+        };
+        for round in 0..4000 {
+            let key = (next() % 500) as i64;
+            let len = (next() % 60) as usize;
+            table.put_record(record(&schema, key, &"x".repeat(len))).unwrap_or_else(|e| panic!("round {round}: {e}"));
+        }
     }
 }
