@@ -27,9 +27,11 @@
 //! [`CodeManager`]: super::code_manager::CodeManager
 
 use std::collections::{BTreeMap, HashMap};
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 
 use crate::app::util::pseudo_instruction::byte_cache_size;
+use crate::program::database::code::default_references::add_references_for_instruction;
+use crate::program::database::references::ReferenceStore;
 use crate::program::disassemble::{DisassembledInstruction, DisassemblerInstructionContext};
 use crate::program::model::address::{Address, AddressFactory, AddressSet, AddressSetView};
 use crate::program::model::lang::instruction_context::InstructionContextError;
@@ -67,12 +69,27 @@ pub struct ListingStore {
     next_id: u64,
     records: HashMap<InstructionId, StoredInstruction>,
     by_address: BTreeMap<Address, InstructionId>,
+    /// The program's references (Java's `CodeManager.refManager`): default references are added
+    /// as instructions are created and removed as code units are cleared. Lock order: the
+    /// listing before the references.
+    references: Arc<RwLock<ReferenceStore>>,
 }
 
 impl ListingStore {
-    /// An empty listing for a program in `language`.
+    /// An empty listing for a program in `language`, with a reference store of its own.
     pub fn new(language: Arc<SleighLanguage>) -> Self {
-        ListingStore { language, next_id: 1, records: HashMap::new(), by_address: BTreeMap::new() }
+        Self::with_references(language, Arc::new(RwLock::new(ReferenceStore::new())))
+    }
+
+    /// An empty listing for a program in `language` that maintains the default references of
+    /// its instructions in `references` (the program's reference store).
+    pub fn with_references(language: Arc<SleighLanguage>, references: Arc<RwLock<ReferenceStore>>) -> Self {
+        ListingStore { language, next_id: 1, records: HashMap::new(), by_address: BTreeMap::new(), references }
+    }
+
+    /// The reference store this listing maintains default references in.
+    pub fn references(&self) -> Arc<RwLock<ReferenceStore>> {
+        Arc::clone(&self.references)
     }
 
     /// Creates an instruction at `address` decoded by `prototype` under `context` (the base
@@ -110,7 +127,16 @@ impl ListingStore {
         self.next_id += 1;
         self.records.insert(id, StoredInstruction { record, context });
         self.by_address.insert(address, id);
+        self.add_references_for_instruction(id, memory);
         Ok(id)
+    }
+
+    /// Lays down instruction `id`'s default references (`CodeManager.addReferencesForInstruction`).
+    fn add_references_for_instruction(&self, id: InstructionId, memory: &dyn Memory) {
+        let snapshot = self.snapshot(id, memory);
+        let view = InstructionView::new(self.record(id), &snapshot);
+        let mut references = self.references.write().unwrap_or_else(|p| p.into_inner());
+        add_references_for_instruction(&mut references, &view, memory, &*self.language);
     }
 
     /// Port of `InstructionDB.checkLengthOverride(int, InstructionPrototype)`: the length override
@@ -245,15 +271,23 @@ impl ListingStore {
         undefined
     }
 
-    /// Removes every instruction intersecting `[start, end]`. Port of
-    /// `CodeManager.clearCodeUnits(Address, Address, boolean, TaskMonitor)` for instructions,
-    /// without clearing context.
+    /// Removes every instruction intersecting `[start, end]`, and every reference from
+    /// `[start, end]` widened to the start of the instruction containing `start` (default and
+    /// user references alike, as Java's `refManager.removeAllReferencesFrom(start, end)`). Port
+    /// of `CodeManager.clearCodeUnits(Address, Address, boolean, TaskMonitor)` for instructions,
+    /// without clearing context or delay-slot range adjustment.
     pub fn clear_code_units(&mut self, start: &Address, end: &Address) {
         let mut doomed: Vec<Address> =
             self.by_address.range(start.clone()..=end.clone()).map(|(a, _)| a.clone()).collect();
+        let mut refs_start = start.clone();
         if let Some(id) = self.instruction_containing(start) {
-            doomed.push(self.records[&id].record.address().clone());
+            refs_start = self.records[&id].record.address().clone();
+            doomed.push(refs_start.clone());
         }
+        self.references
+            .write()
+            .unwrap_or_else(|p| p.into_inner())
+            .remove_all_references_from_range(&refs_start, end);
         for addr in doomed {
             if let Some(id) = self.by_address.remove(&addr) {
                 self.records.remove(&id);

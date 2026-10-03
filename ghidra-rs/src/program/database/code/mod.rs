@@ -16,6 +16,7 @@ pub mod data_component;
 pub mod data_db;
 pub mod data_db_adapter;
 pub mod data_db_adapter_v0;
+pub mod default_references;
 pub mod data_filtered_code_unit_iterator;
 pub mod data_key_iterator;
 pub mod data_record_iterator;

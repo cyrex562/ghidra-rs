@@ -11,6 +11,7 @@ use crate::program::database::program_db::ProgramDB;
 use crate::program::model::address::AddressSet;
 use crate::program::model::listing::instruction_record::InstructionView;
 use crate::util::task::DummyMonitor;
+use crate::program::model::symbol::{RefType, SourceType};
 
 /// Records every message the disassembler reports.
 #[derive(Default)]
@@ -229,13 +230,9 @@ fn a_global_context_commit_reaches_the_instruction_it_targets() {
     assert_eq!(tmode(&f, 0x1004), Some(0));
 }
 
-/// Acceptance (milestone C2): `x86:LE:64:default` from the language service over the local
-/// Ghidra distribution -> `ProgramDB` -> `/bin/ls` through `ElfLoader` -> disassemble from the
-/// ELF entry (`_start`) following flows -> the listing holds the entry's instructions with the
-/// x86-64 encodings they must have. Skipped when the distribution or an x86-64 `/bin/ls` is
-/// absent.
-#[test]
-fn bin_ls_disassembles_from_its_entry_point() {
+/// `/bin/ls` loaded as x86-64 through the language service with image base 0x100000, and its
+/// entry point; `None` when the Ghidra distribution or an x86-64 `/bin/ls` is missing.
+fn load_bin_ls() -> Option<(Arc<ProgramDB>, Arc<dyn crate::program::model::listing::Program>, Address)> {
     use crate::app::plugin::processors::sleigh::sleigh_language_provider::tests::ghidra_dist;
     use crate::app::plugin::processors::sleigh::sleigh_language_provider::SleighLanguageProvider;
     use crate::app::seam_stubs::new_string;
@@ -247,10 +244,10 @@ fn bin_ls_disassembles_from_its_entry_point() {
     use crate::program::model::listing::Program;
     use crate::program::util::default_language_service::DefaultLanguageService;
 
-    let Some(dist) = ghidra_dist() else { return };
-    let Ok(bytes) = std::fs::read("/bin/ls") else { return };
+    let dist = ghidra_dist()?;
+    let bytes = std::fs::read("/bin/ls").ok()?;
     if bytes.len() < 0x40 || bytes[..4] != [0x7f, b'E', b'L', b'F'] || bytes[4] != 2 || bytes[5] != 1 || bytes[18] != 62 {
-        return; // not x86-64
+        return None; // not x86-64
     }
     let e_entry = u64::from_le_bytes(bytes[0x18..0x20].try_into().unwrap());
     let e_type = u16::from_le_bytes([bytes[16], bytes[17]]);
@@ -268,6 +265,18 @@ fn bin_ls_disassembles_from_its_entry_point() {
     let entries: Vec<i64> =
         dyn_program.get_symbol_table().unwrap().get_external_entry_point_iterator().map(|a| a.offset()).collect();
     assert!(entries.contains(&entry_offset), "entry {entry_offset:#x} not in {entries:x?}");
+    Some((program, dyn_program, entry))
+}
+
+/// Acceptance (milestone C2): `x86:LE:64:default` from the language service over the local
+/// Ghidra distribution -> `ProgramDB` -> `/bin/ls` through `ElfLoader` -> disassemble from the
+/// ELF entry (`_start`) following flows -> the listing holds the entry's instructions with the
+/// x86-64 encodings they must have. Skipped when the distribution or an x86-64 `/bin/ls` is
+/// absent.
+#[test]
+fn bin_ls_disassembles_from_its_entry_point() {
+    let Some((program, dyn_program, entry)) = load_bin_ls() else { return };
+    let entry_offset = entry.offset();
 
     let mut disassembler = Disassembler::get_program_disassembler(&program, Arc::new(DummyMonitor), None);
     let result = disassembler.disassemble_program(&program, &entry, None, true);
@@ -333,4 +342,181 @@ fn a_start_set_disassembles_from_each_undefined_address() {
     // nothing undefined is left to start from
     let again = f.disassembler.disassemble_set_into(&mut f.listing, memory, &start_set, None, None, true);
     assert!(again.disassembled.is_empty());
+}
+
+/// (operand index, to offset, type, source, primary) of every reference from `offset`.
+fn refs_from(f: &Fixture, offset: i64) -> Vec<(i32, i64, RefType, SourceType, bool)> {
+    use crate::program::model::symbol::Reference;
+    let refs = f.listing.references();
+    let refs = refs.read().unwrap();
+    refs.references_from(&f.at(offset))
+        .iter()
+        .map(|r| (r.operand_index(), r.to_address().offset(), r.reference_type(), r.source(), r.is_primary()))
+        .collect()
+}
+
+/// `CodeManager.addReferencesForInstruction`: a flow whose address is an operand is a primary
+/// default reference on that operand, typed by the instruction's flow; fall-throughs and
+/// instructions without addresses get none.
+#[test]
+fn created_instructions_get_default_flow_references_on_their_operands() {
+    let mut f = Fixture::new(&FLOWS);
+    f.disassemble(0x1000, None, true);
+    assert_eq!(refs_from(&f, 0x1000), vec![(1, 0x1006, RefType::ConditionalJump, SourceType::Default, true)]);
+    assert_eq!(refs_from(&f, 0x1004), vec![(0, 0x1008, RefType::UnconditionalJump, SourceType::Default, true)]);
+    for plain in [0x1002, 0x1006, 0x1008] {
+        assert_eq!(refs_from(&f, plain), vec![], "{plain:#x}");
+    }
+    let refs = f.listing.references();
+    let refs = refs.read().unwrap();
+    assert_eq!(refs.len(), 2);
+    let to: Vec<i64> = refs.references_to(&f.at(0x1008)).iter().map(|r| {
+        use crate::program::model::symbol::Reference;
+        r.from_address().offset()
+    }).collect();
+    assert_eq!(to, vec![0x1004]);
+}
+
+/// Java drops a mnemonic jump reference to the next instruction when the instruction falls
+/// through, but a flow address an operand shows is an operand reference first, so a branch to the
+/// next instruction written as an operand keeps its reference either way.
+#[test]
+fn a_branch_to_the_next_instruction_written_as_an_operand_is_a_reference() {
+    // 0x1000: bz r0,0x1002 ; 0x1002: jmp 0x1004 ; 0x1004: ret
+    let mut f = Fixture::new(&[0x70, 0x00, 0x20, 0x00, 0x31, 0x00]);
+    f.disassemble(0x1000, None, true);
+    assert_eq!(f.instructions().len(), 3);
+    assert_eq!(refs_from(&f, 0x1000), vec![(1, 0x1002, RefType::ConditionalJump, SourceType::Default, true)]);
+    assert_eq!(refs_from(&f, 0x1002), vec![(0, 0x1004, RefType::UnconditionalJump, SourceType::Default, true)]);
+}
+
+/// `CodeManager.clearCodeUnits` removes every reference from the cleared range, from the start
+/// of the instruction containing its start, user references included.
+#[test]
+fn clearing_code_units_removes_the_references_from_them() {
+    let mut f = Fixture::new(&FLOWS);
+    f.disassemble(0x1000, None, true);
+    {
+        let refs = f.listing.references();
+        let mut refs = refs.write().unwrap();
+        refs.add_memory_reference(f.at(0x1002), f.at(0x2000), RefType::Write, SourceType::UserDefined, 0).unwrap();
+    }
+    // 0x1001 is inside the bz at 0x1000; the range ends inside the mov at 0x1002
+    f.listing.clear_code_units(&f.at(0x1001), &f.at(0x1002));
+    assert_eq!(f.instructions().iter().map(|(a, _)| *a).collect::<Vec<_>>(), vec![0x1004, 0x1006, 0x1008]);
+    assert_eq!(refs_from(&f, 0x1000), vec![]);
+    assert_eq!(refs_from(&f, 0x1002), vec![]);
+    assert_eq!(refs_from(&f, 0x1004).len(), 1);
+    // re-disassembly lays the default reference down again
+    f.disassemble(0x1000, None, true);
+    assert_eq!(refs_from(&f, 0x1000), vec![(1, 0x1006, RefType::ConditionalJump, SourceType::Default, true)]);
+}
+
+/// A `ProgramDB`'s listing maintains its default references in the program's reference store.
+#[test]
+fn a_program_listing_shares_the_programs_reference_store() {
+    let f = Fixture::new(&FLOWS);
+    let start = f.at(0x1000);
+    let mut disassembler =
+        Disassembler::get_disassembler(f.language.clone(), SleighLanguage::get_address_factory(&f.language), Arc::new(DummyMonitor), None);
+    let memory = MemoryMapDB::as_memory(&f.memory);
+    {
+        let listing = f.program.get_listing_store();
+        let mut listing = listing.write().unwrap();
+        disassembler.disassemble_into(&mut listing, memory, &start, None, None, true);
+    }
+    use crate::program::model::symbol::Reference;
+    let from = f.program.references_from(&f.at(0x1004));
+    assert_eq!(from.len(), 1);
+    assert_eq!(from[0].to_address(), f.at(0x1008));
+    assert_eq!(f.program.references_to(&f.at(0x1006)).len(), 1);
+    assert!(Arc::ptr_eq(&f.program.get_reference_store(), &f.program.get_listing_store().read().unwrap().references()));
+}
+
+/// Acceptance (milestone C3): the `/bin/ls` instructions disassembled from `_start` and from
+/// `main` carry the default references Java's `CodeManager` gives them: the `LEA RDI,[main]`
+/// operand none (its address is a scalar), the `CALL qword ptr [GOT]` operand a primary read or
+/// indirection reference to the GOT slot (no flow reference: the call is computed), direct calls
+/// and jumps primary call / jump references on their operand, and nothing is a fall-through
+/// reference. Skipped when the distribution or an x86-64 `/bin/ls` is absent.
+#[test]
+fn bin_ls_instructions_get_javas_default_references() {
+    use crate::program::model::symbol::Reference;
+    let Some((program, _, entry)) = load_bin_ls() else { return };
+    let mut disassembler = Disassembler::get_program_disassembler(&program, Arc::new(DummyMonitor), None);
+    disassembler.disassemble_program(&program, &entry, None, true);
+
+    let rel32 = |b: &[u8]| i64::from(i32::from_le_bytes(b.try_into().unwrap()));
+    let start_units = program.instruction_summaries(&entry, &entry.add_wrap(0x40));
+    let (mut saw_lea, mut saw_call) = (None, false);
+    for u in &start_units {
+        let next = u.address.add_wrap(u.length as i64);
+        let refs = program.references_from(&u.address);
+        match u.bytes.as_slice() {
+            // lea rdi,[rip+disp32]: x86-64's RIP-relative effective address is a constant
+            // (a Scalar in the representation) and the instruction has no flows, so Java's
+            // CodeManager lays down no default reference (the analyzers add one later)
+            [0x48, 0x8d, 0x3d, d @ ..] => {
+                assert!(refs.is_empty(), "{u:?} {refs:?}");
+                saw_lea = Some(next.add_wrap(rel32(d)));
+            }
+            // call qword ptr [rip+disp32]
+            [0xff, 0x15, d @ ..] => {
+                let slot = next.add_wrap(rel32(d));
+                assert_eq!(refs.len(), 1, "{refs:?}");
+                let r = &refs[0];
+                assert_eq!((r.operand_index(), r.to_address(), r.source(), r.is_primary()), (0, slot, SourceType::Default, true));
+                assert!(matches!(r.reference_type(), RefType::Read | RefType::Indirection), "{:?}", r.reference_type());
+                saw_call = true;
+            }
+            _ => assert!(refs.is_empty(), "{u:?} {refs:?}"),
+        }
+    }
+    assert!(saw_call, "no CALL [GOT] in _start: {start_units:#?}");
+
+    // direct calls and jumps carry their flow as a primary operand reference, in main and in
+    // the C runtime helpers laid out after _start (each start of the range starts a flow)
+    let mut checked: Vec<RefType> = Vec::new();
+    let mut check = |start: &Address, end: &Address| {
+        for u in program.instruction_summaries(start, end) {
+            let next = u.address.add_wrap(u.length as i64);
+            let refs = program.references_from(&u.address);
+            assert!(refs.iter().all(|r| r.reference_type() != RefType::FallThrough && r.source() == SourceType::Default));
+            let expected = match u.bytes.as_slice() {
+                [0xe8, d @ ..] if d.len() == 4 => Some((next.add_wrap(rel32(d)), RefType::UnconditionalCall)),
+                [0xe9, d @ ..] if d.len() == 4 => Some((next.add_wrap(rel32(d)), RefType::UnconditionalJump)),
+                [0xeb, d] => Some((next.add_wrap(i64::from(*d as i8)), RefType::UnconditionalJump)),
+                [0x70..=0x7f, d] => Some((next.add_wrap(i64::from(*d as i8)), RefType::ConditionalJump)),
+                [0x0f, 0x80..=0x8f, d @ ..] if d.len() == 4 => Some((next.add_wrap(rel32(d)), RefType::ConditionalJump)),
+                _ => None,
+            };
+            if let Some((target, ref_type)) = expected {
+                let r: Vec<_> =
+                    refs.iter().map(|r| (r.operand_index(), r.to_address(), r.reference_type(), r.is_primary())).collect();
+                assert_eq!(r, vec![(0, target.clone(), ref_type, true)], "{u:?}");
+                assert!(program.references_to(&target).iter().any(|r| r.from_address() == u.address));
+                checked.push(ref_type);
+            }
+        }
+    };
+    if let Some(main) = saw_lea {
+        let mut window = AddressSet::new();
+        window.add_range(&main, &main.add_wrap(0x200));
+        disassembler.disassemble_program(&program, &main, Some(&window), true);
+        check(&main, &main.add_wrap(0x200));
+    }
+    let (crt_start, crt_end) = (entry.add_wrap(0x26), entry.add_wrap(0x100));
+    let mut crt = AddressSet::new();
+    crt.add_range(&crt_start, &crt_end);
+    {
+        let listing = program.get_listing_store();
+        let mut listing = listing.write().unwrap();
+        let memory = MemoryMapDB::as_memory(&program.get_memory());
+        disassembler.disassemble_set_into(&mut listing, memory, &crt, Some(&crt), None, true);
+    }
+    check(&crt_start, &crt_end);
+    assert!(
+        checked.contains(&RefType::UnconditionalCall) && checked.contains(&RefType::ConditionalJump),
+        "too few direct flows checked: {checked:?}"
+    );
 }

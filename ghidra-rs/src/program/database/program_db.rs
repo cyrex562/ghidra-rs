@@ -3,6 +3,7 @@ use crate::framework::model::DomainObject;
 use crate::program::database::code::listing_store::{CodeUnitSummary, ListingStore};
 use crate::program::database::map::AddressMapDB;
 use crate::program::database::mem::MemoryMapDB;
+use crate::program::database::references::{ReferenceRecord, ReferenceStore};
 use crate::program::database::symbol::namespace_manager::NamespaceManagerDB;
 use crate::program::database::symbol::SymbolManagerDB;
 use crate::program::model::lang::sleigh::SleighLanguage;
@@ -24,6 +25,9 @@ pub struct ProgramDB {
     symbol_mgr: Arc<RwLock<SymbolManagerDB>>,
     /// The program's code units (Java's `CodeManager` store).
     listing: Arc<RwLock<ListingStore>>,
+    /// The program's references (Java's `ReferenceDBManager` store), shared with the listing,
+    /// which maintains its instructions' default references in it.
+    references: Arc<RwLock<ReferenceStore>>,
     /// The program's image base (Java keeps it in `AddressMapDB` and the program's stored
     /// options). A new program's image base is address 0 of the default space.
     image_base: RwLock<Address>,
@@ -63,8 +67,10 @@ impl ProgramDB {
             .map(|space| space.address(0))
             .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "language has no default address space"))?;
 
+        let references = Arc::new(RwLock::new(ReferenceStore::new()));
         Ok(Self {
-            listing: Arc::new(RwLock::new(ListingStore::new(language.clone()))),
+            listing: Arc::new(RwLock::new(ListingStore::with_references(language.clone(), references.clone()))),
+            references,
             image_base: RwLock::new(image_base),
             db_handle,
             name,
@@ -92,6 +98,25 @@ impl ProgramDB {
     /// instructions, for reading to query them (with [`ProgramDB::get_memory`] for their bytes).
     pub fn get_listing_store(&self) -> Arc<RwLock<ListingStore>> {
         self.listing.clone()
+    }
+
+    /// The program's reference store, shared: lock it for reading to query references, for
+    /// writing to add or remove them. Lock order: never take the listing lock while holding this
+    /// one (creating or clearing instructions takes the listing lock, then this one).
+    pub fn get_reference_store(&self) -> Arc<RwLock<ReferenceStore>> {
+        self.references.clone()
+    }
+
+    /// The references from `from`, in the order added (see
+    /// [`ReferenceStore::references_from`]). Takes the reference read lock for the call.
+    pub fn references_from(&self, from: &Address) -> Vec<ReferenceRecord> {
+        self.references.read().unwrap_or_else(|p| p.into_inner()).references_from(from)
+    }
+
+    /// The references to `to`, in the order added (see [`ReferenceStore::references_to`]).
+    /// Takes the reference read lock for the call.
+    pub fn references_to(&self, to: &Address) -> Vec<ReferenceRecord> {
+        self.references.read().unwrap_or_else(|p| p.into_inner()).references_to(to)
     }
 
     /// The code units intersecting `[start, end]`, in address order: instructions, and an
