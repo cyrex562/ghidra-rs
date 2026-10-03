@@ -682,7 +682,7 @@ impl Disassembler {
         instr_mem_buffer: &dyn MemBuffer,
         _block: &DisassembledBlock,
     ) -> Result<SleighInstructionPrototype, StepError> {
-        Ok(self.language.parse_sleigh(instr_mem_buffer, &mut self.disassembler_context, false)?)
+        Ok(self.language.parse_with_commits(instr_mem_buffer, &mut self.disassembler_context, false)?)
     }
 
     /// Port of the private `endBlockEarly`: at the instruction limit (outside a parallel packet)
@@ -858,7 +858,7 @@ impl Disassembler {
 
             // create one instruction
             let prototype =
-                match self.language.parse_sleigh(&ds_instr_mem_buffer, &mut self.disassembler_context, true) {
+                match self.language.parse_with_commits(&ds_instr_mem_buffer, &mut self.disassembler_context, true) {
                     Ok(prototype) => prototype,
                     Err(e) => break Err(e.into()),
                 };

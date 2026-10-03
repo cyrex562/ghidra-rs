@@ -34,7 +34,10 @@ struct Fixture {
 impl Fixture {
     /// `code` at 0x1000 (initialized) and 4 uninitialized bytes at 0x2000.
     fn new(code: &[u8]) -> Self {
-        let language = decode_tests::language();
+        Self::with_language(decode_tests::language(), code)
+    }
+
+    fn with_language(language: Arc<SleighLanguage>, code: &[u8]) -> Self {
         let program = ProgramDB::new("toy".into(), language.clone()).unwrap();
         let memory = program.get_memory();
         {
@@ -207,6 +210,23 @@ fn flows_into_uninitialized_memory_are_not_disassembled() {
         vec![(f.at(0x2000), "Disassembly not permitted within uninitialized memory block".to_string())]
     );
     let _ = &f.program;
+}
+
+#[test]
+fn a_global_context_commit_reaches_the_instruction_it_targets() {
+    // 0x1000: setm 0x1002  (TMode=1; globalset(0x1002, TMode)) ; 0x1002: mov r0,0x7 ; 0x1004: ret
+    let mut f = Fixture::with_language(decode_tests::context_language(), &[0x80, 0x00, 0x10, 0x07, 0x31, 0x00]);
+    let result = f.disassemble(0x1000, None, true);
+    assert_eq!(result.disassembled, set(&f, &[(0x1000, 0x1005)]), "{:?}", result.errors);
+    let tmode = |f: &Fixture, offset: i64| {
+        let id = f.listing.instruction_at(&f.at(offset)).unwrap();
+        f.listing.context_value(id).map(RegisterValue::unsigned_value_ignore_mask)
+    };
+    assert_eq!(tmode(&f, 0x1000), Some(0));
+    // the commit is applied to the disassembler context at its target
+    assert_eq!(tmode(&f, 0x1002), Some(0x8000_0000));
+    // TMode is non-flowing: it does not reach the next instruction
+    assert_eq!(tmode(&f, 0x1004), Some(0));
 }
 
 /// Acceptance (milestone C2): `x86:LE:64:default` from the language service over the local

@@ -23,7 +23,9 @@
 //! * [`Language::parse`] builds a [`SleighInstructionPrototype`] but does not cache prototypes
 //!   by hash (Java's `instructProtoMap`), and cannot apply the instruction's global context
 //!   commits: Java only applies them when the processor context is a `DisassemblerContext`,
-//!   which a `&mut dyn ProcessorContext` cannot be tested for here. A language can only parse
+//!   which a `&mut dyn ProcessorContext` cannot be tested for here; callers holding one (the
+//!   [`Disassembler`](crate::program::disassemble::Disassembler)) use
+//!   [`SleighLanguage::parse_with_commits`]. A language can only parse
 //!   once it is shared through [`SleighLanguage::into_shared`] (prototypes hold the language).
 //! * [`Language::get_compiler_spec_by_id`] needs the language to have been shared through
 //!   [`SleighLanguage::into_shared`] (a spec refers back to its language).
@@ -901,6 +903,38 @@ impl SleighLanguage {
         in_delay_slot: bool,
     ) -> Result<SleighInstructionPrototype, ParseError> {
         let view: &dyn ProcessorContextView = &*context;
+        Ok(self.parse_with_parser_context(buf, view, in_delay_slot)?.0)
+    }
+
+    /// [`SleighLanguage::parse_sleigh`] with a [`DisassemblerContext`](crate::program::model::lang::disassembler_context::DisassemblerContext):
+    /// the instruction's global context commits (`globalset`) are applied to `context` as future
+    /// register values at their target addresses, as Java's `parse` does
+    /// (`protoContext.applyCommits(context)`) when its context is a `DisassemblerContext`.
+    ///
+    /// # Errors
+    /// As [`Language::parse`]; a commit that cannot be applied is an unknown instruction.
+    pub fn parse_with_commits(
+        &self,
+        buf: &dyn MemBuffer,
+        context: &mut dyn crate::program::model::lang::disassembler_context::DisassemblerContext,
+        in_delay_slot: bool,
+    ) -> Result<SleighInstructionPrototype, ParseError> {
+        let view: &dyn ProcessorContextView = &*context;
+        let (proto, proto_context) = self.parse_with_parser_context(buf, view, in_delay_slot)?;
+        proto_context
+            .apply_commits(context, &crate::pcode::emu::default_pcode_thread::RegisterValueFromBytes)
+            .map_err(|_| UnknownInstructionException::new())?;
+        Ok(proto)
+    }
+
+    /// The body of Java's `parse`: the prototype, and the instruction's parser context (whose
+    /// pending commits the caller may apply).
+    fn parse_with_parser_context(
+        &self,
+        buf: &dyn MemBuffer,
+        view: &dyn ProcessorContextView,
+        in_delay_slot: bool,
+    ) -> Result<(SleighInstructionPrototype, crate::app::plugin::processors::sleigh::sleigh_parser_context::SleighParserContext), ParseError> {
         let words = read_context_words(self, view);
         let mem = snapshot_mem_buffer(buf, 0)
             .map_err(|e| InsufficientBytesException::with_message(e.to_string()))?;
@@ -916,10 +950,10 @@ impl SleighLanguage {
         };
         // Java builds the instruction's parser context here to apply its context commits; a
         // failure to do so is an unknown instruction
-        proto
+        let proto_context = proto
             .new_parser_context(mem, words)
             .map_err(|_| UnknownInstructionException::new())?;
-        Ok(proto)
+        Ok((proto, proto_context))
     }
 }
 
