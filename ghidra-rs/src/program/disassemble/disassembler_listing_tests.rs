@@ -520,3 +520,114 @@ fn bin_ls_instructions_get_javas_default_references() {
         "too few direct flows checked: {checked:?}"
     );
 }
+
+/// Milestone C4: `ProgramDB::operand_display` formats an instruction through `CodeUnitFormat`
+/// over the program's stores -- an operand address with a reference reads as the destination's
+/// symbol, a dynamic label (`LAB_`) when it has none, the stored label once one is created.
+#[test]
+fn operand_display_shows_referenced_addresses_by_symbol() {
+    use crate::program::model::symbol::SymbolTable;
+    let f = Fixture::new(&FLOWS);
+    let space = f.language.get_default_space();
+    let at = move |offset: i64| Address::new(space.clone(), offset);
+    let mut disassembler =
+        Disassembler::get_disassembler(f.language.clone(), SleighLanguage::get_address_factory(&f.language), Arc::new(DummyMonitor), None);
+    let program = Arc::new(f.program);
+    {
+        let listing = program.get_listing_store();
+        let mut listing = listing.write().unwrap();
+        disassembler.disassemble_into(&mut listing, MemoryMapDB::as_memory(&program.get_memory()), &at(0x1000), None, None, true);
+    }
+    // 0x1000: bz r0,0x1006 ; 0x1002: mov r1,0x2a ; 0x1004: jmp 0x1008
+    let bz = program.operand_display(&at(0x1000)).unwrap();
+    assert_eq!(bz.mnemonic, "bz");
+    assert_eq!(bz.operands, vec!["r0".to_string(), "LAB_00001006".to_string()]);
+    assert_eq!(bz.operand_field, "r0,LAB_00001006");
+    let mov = program.operand_display(&at(0x1002)).unwrap();
+    assert_eq!(mov.operand_field, "r1,0x2a", "no reference, default representation");
+    assert_eq!(program.operand_display(&at(0x1004)).unwrap().operand_field, "LAB_00001008");
+
+    program.get_symbol_table().write().unwrap().create_label(&at(0x1008), "done", SourceType::UserDefined).unwrap();
+    assert_eq!(program.operand_display(&at(0x1004)).unwrap().operand_field, "done");
+    assert!(program.operand_display(&at(0x1001)).is_none(), "no instruction starts there");
+}
+
+/// Acceptance (milestone C4): `/bin/ls` disassembled from `_start` (and the C runtime helpers
+/// after it) reads in the listing the way stock Ghidra shows it right after import, before
+/// analysis: an operand address with a reference shows the destination's symbol -- here always
+/// a dynamic one (`DAT_` for data such as the GOT slot `_start` calls through, `LAB_` for a jump
+/// target, `SUB_` for a call target), since the import creates no symbols there -- and every
+/// operand without a reference keeps its default representation.
+///
+/// Java shows `_start`'s call as `CALL qword ptr [->__libc_start_main]`: its ELF import defines
+/// a pointer at the GOT slot, and `CodeUnitFormat` follows a READ reference to a pointer whose
+/// single data reference reaches a non-dynamic symbol. The program has no defined data yet, so
+/// the slot is undefined data, which Java (and this) shows as `qword ptr [DAT_<slot>]`.
+/// Skipped when the distribution or an x86-64 `/bin/ls` is absent.
+#[test]
+fn bin_ls_operands_read_as_ghidras_listing_shows_them() {
+    use crate::program::model::symbol::{Reference, SymbolTable};
+    let Some((program, _, entry)) = load_bin_ls() else { return };
+    let mut disassembler = Disassembler::get_program_disassembler(&program, Arc::new(DummyMonitor), None);
+    disassembler.disassemble_program(&program, &entry, None, true);
+    let (crt_start, crt_end) = (entry.add_wrap(0x26), entry.add_wrap(0x100));
+    let mut crt = AddressSet::new();
+    crt.add_range(&crt_start, &crt_end);
+    {
+        let listing = program.get_listing_store();
+        let mut listing = listing.write().unwrap();
+        let memory = MemoryMapDB::as_memory(&program.get_memory());
+        disassembler.disassemble_set_into(&mut listing, memory, &crt, Some(&crt), None, true);
+    }
+
+    // the name Ghidra gives `to`: its stored symbol, else SymbolUtilities.getDynamicName's by
+    // the highest reference level to it (a call SUB_, data DAT_, a jump LAB_), except that an
+    // instruction start that is not called is a LAB_ (no functions exist before analysis)
+    let name_of = |to: &Address| -> String {
+        let stored = program.get_symbol_table().read().unwrap().get_primary_symbol(to).unwrap();
+        if let Some(symbol) = stored.filter(|s| !s.is_dynamic()) {
+            return symbol.get_name().to_string();
+        }
+        let is_instruction = program.get_listing_store().read().unwrap().instruction_at(to).is_some();
+        let types: Vec<RefType> = program.references_to(to).iter().map(|r| r.reference_type()).collect();
+        let prefix = if types.iter().any(|t| t.is_call()) {
+            "SUB_"
+        } else if is_instruction || !types.iter().any(|t| t.is_data()) {
+            "LAB_"
+        } else {
+            "DAT_"
+        };
+        format!("{prefix}{:08x}", to.offset())
+    };
+
+    let rel32 = |b: &[u8]| i64::from(i32::from_le_bytes(b.try_into().unwrap()));
+    let (mut saw_got_call, mut marked_up) = (false, Vec::new());
+    for u in program.instruction_summaries(&entry, &crt_end) {
+        let shown = program.operand_display(&u.address).unwrap();
+        assert_eq!(shown.mnemonic, u.mnemonic);
+        assert_eq!(shown.operands.len(), u.operands.len());
+        let refs = program.references_from(&u.address);
+        if refs.is_empty() {
+            assert_eq!(shown.operand_field, u.operand_text, "{u:?}");
+            assert_eq!(shown.operands, u.operands);
+            continue;
+        }
+        assert_eq!(refs.len(), 1, "{u:?} {refs:?}");
+        let to = refs[0].to_address();
+        let name = name_of(&to);
+        let expected = u.operand_text.replacen(&format!("0x{:x}", to.offset()), &name, 1);
+        assert_ne!(expected, u.operand_text, "{u:?} does not show {to}");
+        assert_eq!(shown.operand_field, expected, "{u:?}");
+        marked_up.push(shown.operand_field.clone());
+        if let [0xff, 0x15, d @ ..] = u.bytes.as_slice() {
+            let slot = u.address.add_wrap(u.length as i64 + rel32(d));
+            assert_eq!(to, slot);
+            assert_eq!((shown.mnemonic.as_str(), shown.operand_field.clone()), ("CALL", format!("qword ptr [DAT_{:08x}]", slot.offset())));
+            saw_got_call = true;
+        }
+    }
+    assert!(saw_got_call, "no CALL [GOT] in _start");
+    for prefix in ["LAB_", "SUB_", "DAT_"] {
+        assert!(marked_up.iter().any(|t| t.contains(prefix)), "no {prefix} operand among {marked_up:?}");
+    }
+}

@@ -2333,6 +2333,21 @@ impl CodeUnitFormatOptions {
         Self::default()
     }
 
+    /// The options the listing's operand field formats with when the tool options are at their
+    /// defaults: `BrowserCodeUnitFormatOptions` reading an untouched options store (block names
+    /// never, non-local namespaces shown, inferred variable markup, the primary reference always
+    /// shown, read/indirect pointer references followed).
+    pub fn browser_default() -> Self {
+        CodeUnitFormatOptions {
+            show_block_name: ShowBlockName::Never,
+            show_namespace: ShowNamespace::NonLocal,
+            include_inferred_variable_markup: true,
+            always_show_primary_reference: true,
+            follow_referenced_pointers: true,
+            ..Self::default()
+        }
+    }
+
     /// Stands in for `new CodeUnitFormatOptions(ShowBlockName, ShowNamespace)`.
     pub fn with_show_options(show_block_name: ShowBlockName, show_namespace: ShowNamespace) -> Self {
         CodeUnitFormatOptions { show_block_name, show_namespace, ..Self::default() }

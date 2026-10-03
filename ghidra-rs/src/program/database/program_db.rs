@@ -11,7 +11,11 @@ use crate::program::model::listing::{ManagerGuard, Program};
 use crate::program::model::address::factory::AddressFactory;
 use crate::program::model::address::Address;
 use crate::program::model::mem::Memory;
-use crate::program::model::symbol::SymbolTable;
+use crate::program::database::symbol::DynamicSymbolSource;
+use crate::program::model::listing::code_unit_format::{CodeUnitFormat, DefaultCodeUnitFormat};
+use crate::program::model::listing::Instruction;
+use crate::program::model::symbol::{ReferenceManager, SymbolTable};
+use crate::program::seam_stubs::CodeUnitFormatOptions;
 use std::io;
 use std::sync::{Arc, RwLock};
 
@@ -68,8 +72,13 @@ impl ProgramDB {
             .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "language has no default address space"))?;
 
         let references = Arc::new(RwLock::new(ReferenceStore::new()));
+        let listing = Arc::new(RwLock::new(ListingStore::with_references(language.clone(), references.clone())));
+        symbol_mgr.write().unwrap_or_else(|p| p.into_inner()).set_dynamic_symbol_source(Arc::new(ProgramDynamicSymbols {
+            listing: listing.clone(),
+            references: references.clone(),
+        }));
         Ok(Self {
-            listing: Arc::new(RwLock::new(ListingStore::with_references(language.clone(), references.clone()))),
+            listing,
             references,
             image_base: RwLock::new(image_base),
             db_handle,
@@ -138,6 +147,74 @@ impl ProgramDB {
     }
 }
 
+/// A code unit's text as the listing shows it: the mnemonic and operands through
+/// `CodeUnitFormat` with the listing's default options, so operand addresses with a reference
+/// read as the destination's symbol (stored or dynamic). See [`ProgramDB::operand_display`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OperandDisplay {
+    /// `CodeUnitFormat.getMnemonicRepresentation`.
+    pub mnemonic: String,
+    /// `CodeUnitFormat.getOperandRepresentationString` of each operand, in order.
+    pub operands: Vec<String>,
+    /// The operand field: the operands laid out with the instruction's separators the way
+    /// [`CodeUnitSummary::operand_text`] lays out the default representations
+    /// (`qword ptr [DAT_00103fd8]`, `RAX,qword ptr [LAB_00101234]`).
+    pub operand_field: String,
+}
+
+/// What [`SymbolManagerDB`] asks the program for dynamic symbols: the reference store's
+/// reference levels and the listing's instructions. Each answer takes one store's read lock.
+struct ProgramDynamicSymbols {
+    listing: Arc<RwLock<ListingStore>>,
+    references: Arc<RwLock<ReferenceStore>>,
+}
+
+impl DynamicSymbolSource for ProgramDynamicSymbols {
+    fn reference_level(&self, addr: &Address) -> Option<i8> {
+        self.references.read().unwrap_or_else(|p| p.into_inner()).reference_level(addr)
+    }
+
+    fn instruction_containing(&self, addr: &Address) -> Option<Address> {
+        let listing = self.listing.read().unwrap_or_else(|p| p.into_inner());
+        listing.instruction_containing(addr).map(|id| listing.record(id).address().clone())
+    }
+}
+
+impl ProgramDB {
+    /// The instruction at `address` as the listing displays it (`CodeUnitFormat` with
+    /// [`CodeUnitFormatOptions::browser_default`]): references on operands read as their
+    /// destinations' symbols, a referenced address without one as its dynamic label (`LAB_`,
+    /// `SUB_`, `DAT_`, ...). `None` when no instruction starts at `address` (or its bytes can
+    /// no longer be read).
+    ///
+    /// Takes the listing and memory read locks to build the instruction and releases them
+    /// before formatting, which takes the reference, symbol, listing and memory locks in turn;
+    /// do not call it while holding any of them.
+    pub fn operand_display(self: &Arc<Self>, address: &Address) -> Option<OperandDisplay> {
+        let instruction = {
+            let listing = self.listing.read().unwrap_or_else(|p| p.into_inner());
+            let memory = self.memory.read().unwrap_or_else(|p| p.into_inner());
+            let id = listing.instruction_at(address)?;
+            let program: Arc<dyn Program> = self.clone();
+            listing.to_instruction(id, &*memory, Some(program), SleighLanguage::get_address_factory(&self.language))?
+        };
+        let format = DefaultCodeUnitFormat::with_options(CodeUnitFormatOptions::browser_default());
+        let mnemonic = format.get_mnemonic_representation(&instruction);
+        let instr: &dyn Instruction = &instruction;
+        let count = instr.get_num_operands();
+        let operands: Vec<String> =
+            (0..count).map(|i| format.get_operand_representation_string(&instruction, i)).collect();
+        let mut operand_field = instr.get_separator(0).unwrap_or_default();
+        for (i, operand) in operands.iter().enumerate() {
+            operand_field.push_str(operand);
+            if let Some(separator) = instr.get_separator(i as i32 + 1) {
+                operand_field.push_str(&separator);
+            }
+        }
+        Some(OperandDisplay { mnemonic, operands, operand_field })
+    }
+}
+
 impl DomainObject for ProgramDB {
     /// A `ProgramDB` here is a local, unversioned database the caller owns outright, so -- as
     /// Java's `DomainObjectAdapterDB.hasExclusiveAccess` answers for a program with no shared
@@ -178,6 +255,14 @@ impl Program for ProgramDB {
     /// every later handle.
     fn get_symbol_table(&self) -> Option<ManagerGuard<'_, dyn SymbolTable>> {
         Some(ManagerGuard::write(&*self.symbol_mgr))
+    }
+
+    /// The program's reference store as a [`ReferenceManager`], write-locked for the life of
+    /// the handle. Stands in for `ProgramDB.getReferenceManager()` (memory references only, see
+    /// [`ReferenceStore`]'s `ReferenceManager` impl). Lock order: never ask for it while
+    /// holding the reference store's lock, nor take the listing lock while holding it.
+    fn get_reference_manager(&self) -> Option<ManagerGuard<'_, dyn ReferenceManager>> {
+        Some(ManagerGuard::write(&*self.references))
     }
 
     /// The program's memory, write-locked for the life of the returned handle. Stands in for
