@@ -23,6 +23,21 @@ pub struct ImportedProgram {
     pub block_names: Vec<String>,
     /// Each named block's start, parallel to `block_names`.
     pub block_starts: Vec<u64>,
+    /// The symbol table in loaded memory, address order (Symbols pane).
+    pub symbols: Vec<ImportedSymbol>,
+}
+
+/// One symbol as the Symbols pane shows it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ImportedSymbol {
+    /// Name.
+    pub name: String,
+    /// Address offset.
+    pub address: u64,
+    /// Symbol type ("Label", "Function", ...).
+    pub kind: String,
+    /// Source ("Imported", "Analysis", ...).
+    pub source: String,
 }
 
 /// The Ghidra distribution whose compiled languages back imports:
@@ -112,7 +127,24 @@ pub fn import_elf(path: &Path, dist: &Path) -> Result<ImportedProgram, String> {
         .collect();
     named.sort();
     let (block_starts, block_names) = named.into_iter().unzip();
-    Ok(ImportedProgram { name, language: language.to_owned(), address_bits, blocks, block_names, block_starts })
+    let mut symbols = Vec::new();
+    if let Some(table) = program.get_symbol_table() {
+        let mut it = table.get_all_symbols(false);
+        while let Some(sym) = it.next_symbol() {
+            let address = sym.get_address();
+            if !address.space().is_loaded_memory_space() {
+                continue;
+            }
+            symbols.push(ImportedSymbol {
+                name: sym.get_name().to_owned(),
+                address: address.offset() as u64,
+                kind: format!("{:?}", sym.get_symbol_type()),
+                source: format!("{:?}", sym.get_source()),
+            });
+        }
+    }
+    symbols.sort_by(|a, b| a.address.cmp(&b.address).then_with(|| a.name.cmp(&b.name)));
+    Ok(ImportedProgram { name, language: language.to_owned(), address_bits, blocks, block_names, block_starts, symbols })
 }
 
 #[cfg(test)]
@@ -196,6 +228,10 @@ mod tests {
         assert!(p.block_starts.windows(2).all(|w| w[0] <= w[1]));
         let text = p.block_names.iter().position(|n| n == ".text").unwrap();
         assert!(p.blocks.iter().any(|b| b.start == p.block_starts[text]));
+        assert!(!p.symbols.is_empty(), "ELF symbols are imported");
+        assert!(p.symbols.iter().any(|s| s.source == "Imported"));
+        assert!(p.symbols.windows(2).all(|w| w[0].address <= w[1].address));
+        assert!(p.symbols.iter().all(|s| p.blocks.iter().any(|b| b.start <= s.address && s.address < b.start + b.len())));
         assert!(p.blocks.iter().all(|b| b.start >= 0x10_0000), "image base 0x100000");
     }
 }

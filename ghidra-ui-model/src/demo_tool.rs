@@ -117,11 +117,25 @@ pub fn build_session_for(program: Option<&ImportedProgram>) -> UiSession {
 
     let symbols = s.add_provider(
         provider("Symbols", ProviderViewKind::Table, WindowPosition::Left),
-        Some(ViewModelBox::Table(Box::new(VecTable::new(
+        Some(ViewModelBox::Table(Box::new(match program {
+            // Java SymbolTablePlugin columns (Namespace, reference counts: later)
+            Some(p) => VecTable::new(
+                vec!["Name".into(), "Location".into(), "Type".into(), "Source".into()],
+                p.symbols
+                    .iter()
+                    .map(|s| {
+                        vec![
+                            CellValue::Text(s.name.clone()),
+                            CellValue::Address(s.address),
+                            CellValue::Text(s.kind.clone()),
+                            CellValue::Text(s.source.clone()),
+                        ]
+                    })
+                    .collect(),
+            ),
+            None => VecTable::new(
             vec!["Name".into(), "Address".into(), "Size".into()],
-            if program.is_some() {
-                Vec::new() // ELF symbols arrive with ElfProgramBuilder phase 2
-            } else {
+            {
                 vec![
                     vec![CellValue::Text("main".into()), CellValue::Address(0x401000), CellValue::Int(120)],
                     vec![CellValue::Text("_start".into()), CellValue::Address(0x400f00), CellValue::Int(42)],
@@ -129,7 +143,8 @@ pub fn build_session_for(program: Option<&ImportedProgram>) -> UiSession {
                     vec![CellValue::Text("helper".into()), CellValue::Address(0x401100), CellValue::Int(64)],
                 ]
             },
-        )))),
+            ),
+        }))),
         true,
     );
     s.add_provider(
@@ -480,6 +495,10 @@ mod tests {
             blocks: vec![MemoryBlockSnapshot::initialized(0x10_0000, vec![0x7f, 0x45]), MemoryBlockSnapshot::uninitialized(0x12_0000, 3)],
             block_names: vec!["segment_1".into(), ".bss".into()],
             block_starts: vec![0x10_0000, 0x12_0000],
+            symbols: vec![
+                crate::program_import::ImportedSymbol { name: "_start".into(), address: 0x10_0001, kind: "Label".into(), source: "Imported".into() },
+                crate::program_import::ImportedSymbol { name: "free".into(), address: 0x12_0002, kind: "Label".into(), source: "Imported".into() },
+            ],
         };
         let s = build_session_for(Some(&program));
         let (_, h) = listing(&s);
@@ -497,7 +516,10 @@ mod tests {
         assert_eq!((0..t.child_count(root)).map(|i| t.label(t.child(root, i))).collect::<Vec<_>>(), vec!["segment_1", ".bss"]);
         let symbols = s.tool().find_provider("Demo", "Symbols").unwrap();
         let Some(ViewModelBox::Table(sym)) = s.model(symbols) else { panic!("table") };
-        assert_eq!(sym.row_count(), 0);
+        assert_eq!((0..sym.column_count()).map(|c| sym.column_name(c)).collect::<Vec<_>>(), vec!["Name", "Location", "Type", "Source"]);
+        assert_eq!(sym.row_count(), 2);
+        assert_eq!(sym.cell(1, 0), CellValue::Text("free".into()));
+        assert_eq!(sym.location(1, 0), Some(0x12_0002));
         let dec = s.tool().find_provider("Demo", "Decompiler").unwrap();
         let Some(ViewModelBox::Text(text)) = s.model(dec) else { panic!("text") };
         assert!(text.line_count() > 0);
