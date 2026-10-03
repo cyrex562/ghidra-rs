@@ -27,20 +27,24 @@ pub struct Renamed {
 
 /// A program the listing can edit (addresses are offsets in the default space).
 pub trait EditableProgram: Send + Sync {
-    /// Whether an instruction contains `address`.
+    /// Whether an instruction or defined data contains `address`.
     fn instruction_containing(&self, address: u64) -> bool;
     /// Java `DisassembleCommand` following flows: from `start`, or from every
     /// undefined address in `ranges` when there are any.
     fn disassemble(&self, start: u64, ranges: &[(u64, u64)]) -> Disassembled;
-    /// Clears the instructions intersecting each range; returns the cleared
-    /// extents (widened to the instruction containing a range's start).
+    /// Clears the code units intersecting each range; returns the cleared
+    /// extents (widened to the unit containing a range's start).
     fn clear_code(&self, ranges: &[(u64, u64)]) -> Vec<(u64, u64)>;
-    /// The instructions starting in `lo..=hi`, as the listing shows them.
+    /// The code units (instructions, defined data) starting in `lo..=hi`, as
+    /// the listing shows them.
     fn instructions_in(&self, lo: u64, hi: u64) -> Vec<InstructionSnapshot>;
     /// Java `RenameLabelCmd` (USER_DEFINED) on symbol `id`.
     fn rename_symbol(&self, id: i64, name: &str) -> Result<Renamed, String>;
     /// The addresses whose references go to `address`.
     fn references_to(&self, address: u64) -> Vec<u64>;
+    /// The dynamic labels (`LAB_`, `SUB_`...) of those `addresses` that are
+    /// referenced and have no symbol.
+    fn dynamic_labels_at(&self, addresses: &[u64]) -> Vec<crate::code_unit_listing::LabelSnapshot>;
 }
 
 impl LiveProgram {
@@ -54,7 +58,8 @@ impl EditableProgram for LiveProgram {
     fn instruction_containing(&self, address: u64) -> bool {
         let store = self.program().get_listing_store();
         let store = store.read().unwrap_or_else(std::sync::PoisonError::into_inner);
-        store.instruction_containing(&self.address(address)).is_some()
+        let a = self.address(address);
+        store.instruction_containing(&a).is_some() || store.defined_data_containing(&a).is_some()
     }
 
     fn disassemble(&self, start: u64, ranges: &[(u64, u64)]) -> Disassembled {
@@ -89,11 +94,20 @@ impl EditableProgram for LiveProgram {
             .iter()
             .filter_map(|&(lo, hi)| {
                 let (start, end) = (self.address(lo), self.address(hi));
-                // the extent actually holding instructions (the unit containing `lo` included)
-                let first = store
+                // the extent actually holding code units (the one containing `lo` included)
+                let insn = store
                     .instruction_containing(&start)
-                    .or_else(|| store.instruction_after(&start).filter(|&id| store.record(id).address() <= &end))?;
-                let from = store.record(first).address().offset() as u64;
+                    .or_else(|| store.instruction_after(&start).filter(|&id| store.record(id).address() <= &end))
+                    .map(|id| store.record(id).address().offset() as u64);
+                let data = store
+                    .defined_data_containing(&start)
+                    .map(|d| d.address().offset() as u64)
+                    .or_else(|| store.defined_data_in(&start, &end).next().map(|d| d.address().offset() as u64));
+                let from = match (insn, data) {
+                    (Some(a), Some(b)) => a.min(b),
+                    (Some(a), None) | (None, Some(a)) => a,
+                    (None, None) => return None,
+                };
                 store.clear_code_units(&start, &end);
                 Some((from.min(lo), hi))
             })
@@ -121,5 +135,10 @@ impl EditableProgram for LiveProgram {
     fn references_to(&self, address: u64) -> Vec<u64> {
         use ghidra_rs::program::model::symbol::reference::Reference;
         self.program().references_to(&self.address(address)).iter().map(|r| r.from_address().offset() as u64).collect()
+    }
+
+    fn dynamic_labels_at(&self, addresses: &[u64]) -> Vec<crate::code_unit_listing::LabelSnapshot> {
+        let targets: Vec<_> = addresses.iter().map(|&a| self.address(a)).collect();
+        crate::program_import::dynamic_labels_of(self.program(), targets)
     }
 }

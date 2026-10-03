@@ -309,6 +309,7 @@ fn code_unit_listing(p: &ImportedProgram, instructions: Vec<crate::code_unit_lis
         p.symbols
             .iter()
             .map(|s| crate::code_unit_listing::LabelSnapshot { address: s.address, name: s.name.clone(), primary: s.primary, id: s.id })
+            .chain(p.dynamic_labels.iter().cloned())
             .collect(),
         p.block_headers.clone(),
     )
@@ -392,14 +393,32 @@ impl ListingEditor {
     fn refresh(&self, cleared: &[(u64, u64)], added: &[(u64, u64)]) {
         let mut new: Vec<_> = added.iter().flat_map(|&(lo, hi)| self.live.instructions_in(lo, hi)).collect();
         new.sort_by_key(|i| i.start);
+        // the reference targets whose dynamic labels may change: those of
+        // the units removed and the units added
+        let mut affected: Vec<u64> = new.iter().flat_map(|i| i.references.iter().map(|r| r.to)).collect();
         let merged = {
             let mut current = self.instructions.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
             let mut kept = std::mem::take(&mut *current);
-            kept.retain(|i| !cleared.iter().any(|&(lo, hi)| i.start <= hi && lo < i.start + u64::from(i.len.max(1))));
+            kept.retain(|i| {
+                let gone = cleared.iter().any(|&(lo, hi)| i.start <= hi && lo < i.start + u64::from(i.len.max(1)))
+                    || new.iter().any(|n| n.start == i.start);
+                if gone {
+                    affected.extend(i.references.iter().map(|r| r.to));
+                }
+                !gone
+            });
             *current = merge_instructions(kept, new);
             current.clone()
         };
-        let rebuilt = code_unit_listing(&self.base.lock().unwrap_or_else(std::sync::PoisonError::into_inner), merged);
+        affected.sort_unstable();
+        affected.dedup();
+        let relabeled = self.live.dynamic_labels_at(&affected);
+        let rebuilt = {
+            let mut base = self.base.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+            base.dynamic_labels.retain(|l| affected.binary_search(&l.address).is_err());
+            base.dynamic_labels.extend(relabeled);
+            code_unit_listing(&base, merged)
+        };
         lock(&self.listing).replace_model(Box::new(rebuilt));
         self.events.post(UiEvent::ViewChanged(self.listing_id.0));
         self.events.post(UiEvent::ActionsChanged);
@@ -802,6 +821,7 @@ mod tests {
                 space: "ram".into(),
             }],
             instructions: vec![],
+            dynamic_labels: vec![],
             live: None,
         };
         let s = build_session_for(Some(&program));
@@ -1418,7 +1438,7 @@ mod tests {
                 len: 3,
                 mnemonic: "PUSH".into(),
                 operands: String::new(),
-                references: vec![],
+                references: vec![crate::code_unit_listing::OperandRef { op_index: 0, to: 0x401003 }],
                 operand_starts: vec![],
             };
             if *self.0.lock().unwrap() && lo <= 0x401000 && 0x401000 <= hi { vec![i] } else { vec![] }
@@ -1428,6 +1448,12 @@ mod tests {
         }
         fn references_to(&self, _address: u64) -> Vec<u64> {
             vec![]
+        }
+        fn dynamic_labels_at(&self, addresses: &[u64]) -> Vec<crate::code_unit_listing::LabelSnapshot> {
+            // the decoded PUSH refers to 0x401003
+            let decoded = *self.0.lock().unwrap();
+            let label = crate::code_unit_listing::LabelSnapshot { address: 0x401003, name: "LAB_00401003".into(), primary: true, id: 0 };
+            if decoded && addresses.contains(&0x401003) { vec![label] } else { vec![] }
         }
     }
 
@@ -1443,6 +1469,7 @@ mod tests {
             symbols: vec![],
             block_headers: vec![],
             instructions: vec![],
+            dynamic_labels: vec![],
             live: None,
         };
         let session = UiSession::new();
@@ -1452,7 +1479,8 @@ mod tests {
         assert_eq!(lock(&listing).model().index_count(), 4);
         let done = editor.live.disassemble(0x401000, &[]);
         editor.refresh(&[], &done.ranges);
-        assert_eq!(lock(&listing).model().index_count(), 2, "PUSH + 1 byte");
+        assert_eq!(lock(&listing).model().index_count(), 3, "PUSH, LAB_00401003, its byte");
+        assert_eq!(lock(&listing).model().label_at(1).map(|l| l.1), Some("LAB_00401003".to_string()), "dynamic labels follow edits");
         let cleared = editor.live.clear_code(&[(0x401001, 0x401001)]);
         editor.refresh(&cleared, &[]);
         assert_eq!(lock(&listing).model().index_count(), 4, "bytes again");

@@ -33,6 +33,9 @@ pub struct ImportedProgram {
     pub block_headers: Vec<BlockHeader>,
     /// Decoded instructions (empty until the disassembler runs).
     pub instructions: Vec<crate::code_unit_listing::InstructionSnapshot>,
+    /// Labels of referenced addresses without a symbol (SymbolManager's
+    /// dynamic symbols: `LAB_`, `SUB_`, `DAT_`, `PTR_`...).
+    pub dynamic_labels: Vec<crate::code_unit_listing::LabelSnapshot>,
     /// The open program behind this snapshot, for edits (none for fixtures).
     pub live: Option<LiveProgram>,
 }
@@ -68,14 +71,18 @@ impl std::fmt::Debug for LiveProgram {
     }
 }
 
-/// The instructions starting in `start..=end`, in address order.
+/// The code units (instructions and defined data) starting in `start..=end`,
+/// in address order.
 pub fn instructions_in(
     program: &Arc<ProgramDB>,
     start: &ghidra_rs::program::model::address::Address,
     end: &ghidra_rs::program::model::address::Address,
 ) -> Vec<InstructionSnapshot> {
     use ghidra_rs::program::model::symbol::reference::Reference;
-    let summaries = program.instruction_summaries(start, end);
+    // instructions and defined data (C5), in address order
+    let mut summaries = program.instruction_summaries(start, end);
+    summaries.extend(program.data_summaries(start, end));
+    summaries.sort_by(|a, b| a.address.cmp(&b.address));
     let references: Vec<Vec<OperandRef>> = {
         let refs = program.get_reference_store();
         let refs = refs.read().unwrap_or_else(std::sync::PoisonError::into_inner);
@@ -111,6 +118,48 @@ pub fn instructions_in(
                 mnemonic: u.mnemonic,
                 operands,
             }
+        })
+        .collect()
+}
+
+/// The dynamic labels (Java `SymbolManager.getPrimarySymbol` on a referenced
+/// address with no symbol) over the program's loaded memory.
+pub fn dynamic_labels(program: &Arc<ProgramDB>) -> Vec<crate::code_unit_listing::LabelSnapshot> {
+    use ghidra_rs::program::model::listing::Program;
+    let Some(memory) = Program::get_memory(program.as_ref()) else { return Vec::new() };
+    let ranges: Vec<_> = memory
+        .get_block_handles()
+        .iter()
+        .filter_map(|h| h.read().ok().map(|b| (b.get_start(), b.get_end())))
+        .filter(|(start, _)| start.space().is_loaded_memory_space())
+        .collect();
+    drop(memory);
+    let targets: Vec<_> = {
+        let refs = program.get_reference_store();
+        let refs = refs.read().unwrap_or_else(std::sync::PoisonError::into_inner);
+        ranges.iter().flat_map(|(start, end)| refs.destination_addresses(start, end).cloned().collect::<Vec<_>>()).collect()
+    };
+    dynamic_labels_of(program, targets)
+}
+
+/// The dynamic labels of those `targets` that are referenced and unnamed.
+pub fn dynamic_labels_of(
+    program: &Arc<ProgramDB>,
+    targets: Vec<ghidra_rs::program::model::address::Address>,
+) -> Vec<crate::code_unit_listing::LabelSnapshot> {
+    use ghidra_rs::program::model::symbol::SymbolTable;
+    let table = program.get_symbol_table();
+    let table = table.read().unwrap_or_else(std::sync::PoisonError::into_inner);
+    targets
+        .into_iter()
+        .filter_map(|a| {
+            let s = table.get_primary_symbol(&a).ok().flatten()?;
+            s.is_dynamic().then(|| crate::code_unit_listing::LabelSnapshot {
+                address: a.offset() as u64,
+                name: s.get_name().to_owned(),
+                primary: true,
+                id: 0,
+            })
         })
         .collect()
 }
@@ -325,6 +374,7 @@ pub fn import_elf(path: &Path, dist: &Path) -> Result<ImportedProgram, String> {
         symbols,
         block_headers,
         instructions: snapshot_instructions(&db),
+        dynamic_labels: dynamic_labels(&db),
         live: Some(LiveProgram::new(db.clone())),
     })
 }
@@ -463,8 +513,18 @@ mod tests {
             .map(|b| (b.get_start().offset() as u64, b.get_end().offset() as u64))
             .collect();
         assert!(!exec.is_empty(), "the ELF loader marks code blocks executable");
-        let stray: Vec<u64> =
-            p.instructions.iter().map(|i| i.start).filter(|&a| !exec.iter().any(|&(lo, hi)| lo <= a && a <= hi)).collect();
+        let is_instruction = |a: u64| {
+            use ghidra_rs::program::model::lang::language::Language;
+            let store = live.program().get_listing_store();
+            let store = store.read().unwrap();
+            store.instruction_at(&ghidra_rs::program::model::address::Address::new(live.program().get_language().get_default_space(), a as i64)).is_some()
+        };
+        let stray: Vec<u64> = p
+            .instructions
+            .iter()
+            .map(|i| i.start)
+            .filter(|&a| is_instruction(a) && !exec.iter().any(|&(lo, hi)| lo <= a && a <= hi))
+            .collect();
         assert!(stray.is_empty(), "instructions outside executable blocks: {:x?}", &stray[..stray.len().min(5)]);
         // CodeManager's default references: _start's CALL [GOT] reads its slot
         let call = p
@@ -480,6 +540,13 @@ mod tests {
             "operands show Ghidra's names"
         );
         assert!(p.instructions.iter().filter(|i| i.references.is_empty()).all(|i| !i.operands.contains("DAT_")));
+        // defined data (C5): the GOT slot _start calls through is a pointer
+        let slot = p.instructions.iter().find(|u| u.mnemonic == "addr" && u.operands.contains("__libc_start_main"));
+        assert!(slot.is_some_and(|u| u.len == 8 && !u.references.is_empty()), "GOT pointer row: {slot:?}");
+        // SymbolManager dynamic symbols label every referenced, unnamed address
+        let slot_label = p.dynamic_labels.iter().find(|l| l.name.starts_with("PTR___libc_start_main_"));
+        assert!(slot_label.is_some_and(|l| slot.is_some_and(|u| u.start == l.address)), "{slot_label:?}");
+        assert!(p.dynamic_labels.iter().any(|l| l.name.starts_with("SUB_") || l.name.starts_with("LAB_")));
         let first = p.instructions.iter().find(|i| i.start == entry).expect("an instruction at the entry");
         if bytes.windows(4).any(|w| w == [0xf3, 0x0f, 0x1e, 0xfa]) && first.len == 4 {
             assert_eq!(first.mnemonic, "ENDBR64");
