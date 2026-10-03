@@ -286,7 +286,7 @@ pub fn build_session_for(program: Option<&ImportedProgram>) -> UiSession {
     s.tool_mut().add_action(Box::new(switch));
     let mut config = Vec::new();
     if let Some((p, live)) = program.and_then(|p| Some((p, p.live.clone()?))) {
-        let mut editor = ListingEditor::new(p, live, listing.clone(), listing_id, &events);
+        let mut editor = ListingEditor::new(p, Arc::new(live), listing.clone(), listing_id, &events);
         editor.symbols = symbols_table.map(|t| (symbols, t));
         add_disassemble_action(s.tool_mut(), &editor);
         add_clear_code_bytes_action(s.tool_mut(), &editor);
@@ -340,7 +340,7 @@ fn merge_instructions(
 /// bytes, and only the edited ranges are re-read from the program.
 #[derive(Clone)]
 struct ListingEditor {
-    live: crate::program_import::LiveProgram,
+    live: Arc<dyn crate::program_edit::EditableProgram>,
     base: Arc<Mutex<ImportedProgram>>,
     symbols: Option<(ProviderId, crate::demo::SharedTable)>,
     instructions: Arc<Mutex<Vec<crate::code_unit_listing::InstructionSnapshot>>>,
@@ -350,7 +350,13 @@ struct ListingEditor {
 }
 
 impl ListingEditor {
-    fn new(p: &ImportedProgram, live: crate::program_import::LiveProgram, listing: ListingHandle, listing_id: ProviderId, events: &UiEventQueue) -> Self {
+    fn new(
+        p: &ImportedProgram,
+        live: Arc<dyn crate::program_edit::EditableProgram>,
+        listing: ListingHandle,
+        listing_id: ProviderId,
+        events: &UiEventQueue,
+    ) -> Self {
         Self {
             live,
             base: Arc::new(Mutex::new(ImportedProgram { instructions: Vec::new(), live: None, ..p.clone() })),
@@ -360,11 +366,6 @@ impl ListingEditor {
             listing_id,
             events: events.clone(),
         }
-    }
-
-    fn address(&self, offset: u64) -> ghidra_rs::program::model::address::Address {
-        use ghidra_rs::program::model::lang::language::Language;
-        ghidra_rs::program::model::address::Address::new(self.live.program().get_language().get_default_space(), offset as i64)
     }
 
     /// The cursor's address and the selection as address ranges.
@@ -379,11 +380,7 @@ impl ListingEditor {
     /// Drops the snapshot's instructions intersecting `cleared`, re-reads
     /// `added` from the program, and swaps the listing model.
     fn refresh(&self, cleared: &[(u64, u64)], added: &[(u64, u64)]) {
-        let program = self.live.program();
-        let mut new: Vec<_> = added
-            .iter()
-            .flat_map(|&(lo, hi)| crate::program_import::instructions_in(program, &self.address(lo), &self.address(hi)))
-            .collect();
+        let mut new: Vec<_> = added.iter().flat_map(|&(lo, hi)| self.live.instructions_in(lo, hi)).collect();
         new.sort_by_key(|i| i.start);
         let merged = {
             let mut current = self.instructions.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
@@ -404,32 +401,9 @@ impl ListingEditor {
     /// program, then the listing row and the Symbols pane row; the cursor
     /// stays on the label.
     fn rename_label(&self, id: i64, name: &str) -> Result<(), String> {
-        use ghidra_rs::program::model::symbol::{SourceType, SymbolTable};
-        self.live
-            .program()
-            .get_symbol_table()
-            .write()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
-            .set_symbol_name(id, name, SourceType::UserDefined)
-            .map_err(|e| e.to_string())?;
-        // the program's source after the rename (an unchanged name keeps it)
-        let symbol = self
-            .live
-            .program()
-            .get_symbol_table()
-            .read()
-            .unwrap_or_else(std::sync::PoisonError::into_inner)
-            .get_symbol(id)
-            .ok()
-            .flatten();
-        let source = symbol.as_ref().map_or(SourceType::UserDefined, |s| s.get_source()).display_string().to_owned();
+        let crate::program_edit::Renamed { address, source } = self.live.rename_symbol(id, name)?;
         // instructions whose operands show the name re-read it (CodeUnitFormat)
-        let referring: Vec<(u64, u64)> = symbol
-            .map(|s| {
-                use ghidra_rs::program::model::symbol::reference::Reference;
-                self.live.program().references_to(&s.get_address()).iter().map(|r| r.from_address().offset() as u64).map(|a| (a, a)).collect()
-            })
-            .unwrap_or_default();
+        let referring: Vec<(u64, u64)> = self.live.references_to(address).into_iter().map(|a| (a, a)).collect();
         let renamed = {
             let mut base = self.base.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
             base.symbols.iter().position(|s| s.id == id).map(|index| {
@@ -505,16 +479,11 @@ fn add_edit_label_action(tool: &mut DockingTool, editor: &ListingEditor) {
 /// Java `DisassemblerPlugin` "Disassemble" (`D`, listing popup): disassembles
 /// from the selection, else the cursor, following flows.
 fn add_disassemble_action(tool: &mut DockingTool, editor: &ListingEditor) {
-    use ghidra_rs::app::cmd::disassemble::disassemble_command::DisassembleCommand;
-    use ghidra_rs::framework::cmd::background_command::BackgroundCommand;
-    use ghidra_rs::program::model::address::AddressSet;
-    use ghidra_rs::util::task::DummyMonitor;
-
     let (ed, enabled) = (editor.clone(), editor.clone());
     let mut a = ClosureAction::new("Disassemble", "DisassemblerPlugin", move |_| {
         let (cursor, ranges) = ed.location();
-        let mut cmd = if ranges.is_empty() {
-            let Some(cursor) = cursor else { return };
+        let Some(start) = cursor.or_else(|| ranges.first().map(|r| r.0)) else { return };
+        if ranges.is_empty() {
             // DisassemblerPlugin.disassembleCallback
             let initialized = ed
                 .base
@@ -522,34 +491,21 @@ fn add_disassemble_action(tool: &mut DockingTool, editor: &ListingEditor) {
                 .unwrap_or_else(std::sync::PoisonError::into_inner)
                 .blocks
                 .iter()
-                .any(|b| cursor >= b.start && b.byte(cursor - b.start).is_some());
+                .any(|b| start >= b.start && b.byte(start - b.start).is_some());
             if !initialized {
                 ed.events.post(UiEvent::Status("Can't disassemble uninitialized memory!".into()));
                 return;
             }
-            DisassembleCommand::new(ed.address(cursor), None, true)
-        } else {
-            let mut set = AddressSet::new();
-            for (lo, hi) in ranges {
-                set.add_range(&ed.address(lo), &ed.address(hi));
-            }
-            DisassembleCommand::with_start_set(set, None, true)
-        };
-        let applied = cmd.apply(ed.live.program(), &DummyMonitor);
-        let done: Vec<(u64, u64)> = cmd
-            .get_disassembled_address_set()
-            .to_list()
-            .iter()
-            .map(|r| (r.min_address().offset() as u64, r.max_address().offset() as u64))
-            .collect();
-        if !applied || done.is_empty() {
-            ed.events.post(UiEvent::Status(cmd.get_status_msg().unwrap_or_else(|| "Disassembly failed".into())));
+        }
+        let done = ed.live.disassemble(start, &ranges);
+        if done.ranges.is_empty() {
+            ed.events.post(UiEvent::Status(done.status.unwrap_or_else(|| "Disassembly failed".into())));
             return;
         }
-        if let Some(msg) = cmd.get_status_msg() {
+        if let Some(msg) = done.status {
             ed.events.post(UiEvent::Status(msg));
         }
-        ed.refresh(&[], &done);
+        ed.refresh(&[], &done.ranges);
     });
     // DisassemblerPlugin.checkDisassemblyEnabled: a selection, or a cursor not
     // inside an instruction
@@ -561,10 +517,7 @@ fn add_disassemble_action(tool: &mut DockingTool, editor: &ListingEditor) {
         if !ranges.is_empty() {
             return true;
         }
-        let Some(cursor) = cursor else { return false };
-        let store = enabled.live.program().get_listing_store();
-        let store = store.read().unwrap_or_else(std::sync::PoisonError::into_inner);
-        store.instruction_containing(&enabled.address(cursor)).is_none()
+        cursor.is_some_and(|cursor| !enabled.live.instruction_containing(cursor))
     }));
     a.state_mut().set_popup_menu_data(MenuData::full(&["Disassemble"], None, Some("Disassembly"), None, None).ok());
     a.state_mut().set_key_binding_data(Some(KeyBindingData::new(KeyStroke::new(vk::D, 0))));
@@ -581,21 +534,7 @@ fn add_clear_code_bytes_action(tool: &mut DockingTool, editor: &ListingEditor) {
             let Some(cursor) = cursor else { return };
             ranges.push((cursor, cursor));
         }
-        let cleared: Vec<(u64, u64)> = {
-            let store = ed.live.program().get_listing_store();
-            let mut store = store.write().unwrap_or_else(std::sync::PoisonError::into_inner);
-            ranges
-                .into_iter()
-                .filter_map(|(lo, hi)| {
-                    let (start, end) = (ed.address(lo), ed.address(hi));
-                    // the extent actually holding instructions (the unit containing `lo` included)
-                    let first = store.instruction_containing(&start).or_else(|| store.instruction_after(&start).filter(|&id| store.record(id).address() <= &end))?;
-                    let from = store.record(first).address().offset() as u64;
-                    store.clear_code_units(&start, &end);
-                    Some((from.min(lo), hi))
-                })
-                .collect()
-        };
+        let cleared = ed.live.clear_code(&ranges);
         if !cleared.is_empty() {
             ed.refresh(&cleared, &[]);
         }
@@ -1379,7 +1318,7 @@ mod tests {
             .unwrap();
         let events_owner = UiSession::new();
         let listing = ListingController::handle(Box::new(code_unit_listing(&program, program.instructions.clone())));
-        let editor = ListingEditor::new(&program, live, listing.clone(), ProviderId(1), events_owner.events());
+        let editor = ListingEditor::new(&program, Arc::new(live), listing.clone(), ProviderId(1), events_owner.events());
         editor.rename_label(label.get_id(), "renamed_target").unwrap();
         let snapshot = editor.instructions.lock().unwrap();
         let operands = &snapshot.iter().find(|i| i.start == from).unwrap().operands;
@@ -1398,6 +1337,70 @@ mod tests {
             assert!(c.model().label_at(c.cursor().unwrap().index).is_none());
         }
         assert!(matches!(s.tool_mut().dispatch_key(KeyStroke::new(vk::L, 0), Some(id)), DispatchResult::Disabled(_)));
+    }
+
+    /// An editable program with one 3-byte instruction at 0x401000 and no
+    /// ProgramDB behind it.
+    struct FakeProgram(Mutex<bool>);
+
+    impl crate::program_edit::EditableProgram for FakeProgram {
+        fn instruction_containing(&self, address: u64) -> bool {
+            *self.0.lock().unwrap() && (0x401000..0x401003).contains(&address)
+        }
+        fn disassemble(&self, _start: u64, _ranges: &[(u64, u64)]) -> crate::program_edit::Disassembled {
+            *self.0.lock().unwrap() = true;
+            crate::program_edit::Disassembled { ranges: vec![(0x401000, 0x401002)], status: None }
+        }
+        fn clear_code(&self, ranges: &[(u64, u64)]) -> Vec<(u64, u64)> {
+            let mut present = self.0.lock().unwrap();
+            let hit = *present && ranges.iter().any(|&(lo, hi)| lo <= 0x401002 && 0x401000 <= hi);
+            *present &= !hit;
+            if hit { vec![(0x401000, 0x401002)] } else { vec![] }
+        }
+        fn instructions_in(&self, lo: u64, hi: u64) -> Vec<crate::code_unit_listing::InstructionSnapshot> {
+            let i = crate::code_unit_listing::InstructionSnapshot {
+                start: 0x401000,
+                len: 3,
+                mnemonic: "PUSH".into(),
+                operands: String::new(),
+                references: vec![],
+                operand_starts: vec![],
+            };
+            if *self.0.lock().unwrap() && lo <= 0x401000 && 0x401000 <= hi { vec![i] } else { vec![] }
+        }
+        fn rename_symbol(&self, _id: i64, _name: &str) -> Result<crate::program_edit::Renamed, String> {
+            Err("read-only".into())
+        }
+        fn references_to(&self, _address: u64) -> Vec<u64> {
+            vec![]
+        }
+    }
+
+    #[test]
+    fn the_listing_editor_works_over_any_editable_program() {
+        let program = ImportedProgram {
+            name: "fake".into(),
+            language: "x".into(),
+            address_bits: 32,
+            blocks: vec![MemoryBlockSnapshot::initialized(0x401000, vec![0x55, 0x48, 0x89, 0x55])],
+            block_names: vec![],
+            block_starts: vec![],
+            symbols: vec![],
+            block_headers: vec![],
+            instructions: vec![],
+            live: None,
+        };
+        let session = UiSession::new();
+        let listing = ListingController::handle(Box::new(code_unit_listing(&program, vec![])));
+        lock(&listing).goto_address(0x401000).unwrap();
+        let editor = ListingEditor::new(&program, Arc::new(FakeProgram(Mutex::new(false))), listing.clone(), ProviderId(1), session.events());
+        assert_eq!(lock(&listing).model().index_count(), 4);
+        let done = editor.live.disassemble(0x401000, &[]);
+        editor.refresh(&[], &done.ranges);
+        assert_eq!(lock(&listing).model().index_count(), 2, "PUSH + 1 byte");
+        let cleared = editor.live.clear_code(&[(0x401001, 0x401001)]);
+        editor.refresh(&cleared, &[]);
+        assert_eq!(lock(&listing).model().index_count(), 4, "bytes again");
     }
 
     #[test]
