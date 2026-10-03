@@ -354,6 +354,33 @@ fn opening_bin_ls_lists_its_memory() {
     assert!(lines.contains(&"0000000000100000  7f  ??  7Fh"), "{text}");
 }
 
+#[test]
+fn go_to_bin_ls_entry_shows_its_decoded_first_instruction() {
+    let dist = std::env::var("GHIDRA_RS_GHIDRA_DIST")
+        .unwrap_or_else(|_| concat!(env!("CARGO_MANIFEST_DIR"), "/../tools/ghidra-dist/ghidra_12.1.2_PUBLIC").to_string());
+    let Ok(bytes) = std::fs::read("/bin/ls") else { return };
+    if !std::path::Path::new(&dist).is_dir() || bytes.len() < 64 || bytes[..4] != *b"\x7fELF" || bytes[4] != 2 || bytes[18] != 62 {
+        return; // needs the Ghidra dist and an x86-64 /bin/ls
+    }
+    let e_entry = u64::from_le_bytes(bytes[0x18..0x20].try_into().unwrap());
+    let entry = if u16::from_le_bytes([bytes[16], bytes[17]]) == 3 { e_entry + 0x10_0000 } else { e_entry };
+    let out = shell()
+        .env_var("GHIDRA_RS_GHIDRA_DIST", &dist)
+        .args(["--open", "/bin/ls", "--focus", "Listing", "--press", "G,Ctrl-C", "--prompt-answer", &format!("{entry:x}")])
+        .args(["--print-clipboard", "--quit-after-ms", "4000"])
+        .output()
+        .expect("spawn");
+    let text = String::from_utf8_lossy(&out.stdout).to_string();
+    let line = text.lines().find(|l| l.starts_with("clipboard: ")).unwrap_or_else(|| panic!("nothing copied: {text}"));
+    // the cursor row at the entry: an instruction (multi-byte, not `??`), unless a label sits there
+    if line.contains(&format!("{entry:016x}")) {
+        assert!(!line.contains("??"), "entry is disassembled: {line}");
+    }
+    if bytes.windows(4).any(|w| w == [0xf3, 0x0f, 0x1e, 0xfa]) && text.contains("f3 0f 1e fa") {
+        assert!(text.contains("ENDBR64"), "{text}");
+    }
+}
+
 fn options_run(dir: &std::path::Path, answer: &str) -> String {
     let out = shell_with_config(dir)
         .args(["--invoke-menu", "Tool Options", "--prompt-answer", answer, "--press", "Escape", "--quit-after-ms", "2000"])
@@ -388,6 +415,20 @@ fn a_key_binding_set_in_tool_options_works_after_a_restart() {
     let text = String::from_utf8_lossy(&out.stdout).to_string();
     assert!(text.lines().any(|l| l == "dialog: Go To ..."), "Ctrl-J opens Go To: {text}");
     assert!(text.lines().any(|l| l.contains("cursor=00402000")), "{text}");
+}
+
+#[test]
+fn every_posted_key_is_dispatched_even_when_its_event_reuses_a_freed_ones_address() {
+    // Synthetic key events have no timestamp; one allocated where the previous
+    // (freed) event lived must not be taken for that event's propagation.
+    for run in 0..5 {
+        let out = shell()
+            .args(["--focus", "Listing", "--press", "G,Shift-Down,Ctrl-C", "--prompt-answer", "402000", "--print-clipboard", "--quit-after-ms", "3000"])
+            .output()
+            .expect("spawn");
+        let text = String::from_utf8_lossy(&out.stdout).to_string();
+        assert!(text.lines().any(|l| l.starts_with("clipboard: 00402000")), "run {run}: {text}");
+    }
 }
 
 #[test]

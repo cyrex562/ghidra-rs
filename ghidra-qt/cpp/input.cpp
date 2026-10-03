@@ -64,14 +64,24 @@ bool handledByTextWidget(QObject* watched, QKeyEvent* key) {
     const auto mods = key->modifiers() & ~(Qt::ShiftModifier | Qt::KeypadModifier);
     return mods == Qt::NoModifier && !key->text().isEmpty();
 }
+// Whether `ancestor` is a parent (at any depth) of `object`.
+bool isAncestorObject(const QObject* ancestor, const QObject* object) {
+    for (const QObject* p = object ? object->parent() : nullptr; p; p = p->parent()) {
+        if (p == ancestor) return true;
+    }
+    return false;
+}
 }  // namespace
 
 bool KeyForwarder::eventFilter(QObject* watched, QEvent* event) {
     if (event->type() != QEvent::KeyPress) return false;
     auto* key = static_cast<QKeyEvent*>(event);
-    if (event == m_lastEvent && key->timestamp() == m_lastTimestamp) return false;  // propagation repeat
+    const bool repeat = event == m_lastEvent && key->timestamp() == m_lastTimestamp && m_lastWatched &&
+                        watched != m_lastWatched && isAncestorObject(watched, m_lastWatched);
     m_lastEvent = event;
     m_lastTimestamp = key->timestamp();
+    m_lastWatched = watched;
+    if (repeat) return false;  // propagation to a parent
     // Java ignores docking actions while a menu is open (MenuKeyProcessor).
     if (QApplication::activePopupWidget()) return false;
     // Nor while a dialog is up: tool bindings belong to the tool window only

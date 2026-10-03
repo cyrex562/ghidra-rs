@@ -2,6 +2,7 @@
 // Key forwarding (keys go to Rust's context-sensitive dispatch first) and the
 // event pump (drains the Rust UiEventQueue when its wake fd is readable).
 #include <QObject>
+#include <QPointer>
 #include <QString>
 #include <cstdint>
 #include <functional>
@@ -23,9 +24,12 @@ public:
 private:
     MainWindow* m_window;
     // The app-level filter sees a key event again for every parent it
-    // propagates to; dispatch each event once.
+    // propagates to; dispatch each event once. A repeat is the same event at
+    // an ancestor of the last receiver: a new event can reuse a freed one's
+    // address (and synthetic events share timestamp 0).
     const QEvent* m_lastEvent = nullptr;
     unsigned long m_lastTimestamp = 0;
+    QPointer<QObject> m_lastWatched;
 };
 
 /// Watches the Rust wake fd; on readiness drains events and applies them.
