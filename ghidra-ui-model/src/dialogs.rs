@@ -24,8 +24,19 @@ pub struct ComboSpec {
     pub items: Vec<String>,
 }
 
-/// Everything a dialog shows.
+/// An extra dialog button (OK and Cancel are always present).
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ButtonSpec {
+    /// Stable key passed to [`DialogModel::button`].
+    pub key: String,
+    /// Label.
+    pub label: String,
+    /// Ask the user with this text first (renderer yes/no), if set.
+    pub confirm: Option<String>,
+}
+
+/// Everything a dialog shows.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct DialogSpec {
     /// Window title.
     pub title: String,
@@ -37,6 +48,10 @@ pub struct DialogSpec {
     pub checks: Vec<CheckSpec>,
     /// Status line (errors, "No results for ...").
     pub status: String,
+    /// Extra buttons beside OK/Cancel.
+    pub buttons: Vec<ButtonSpec>,
+    /// Shows a tree pane beside a form pane ([`DialogModel::panes`]).
+    pub has_panes: bool,
 }
 
 /// What OK did.
@@ -56,6 +71,14 @@ pub trait DialogModel: Send {
     fn ok(&mut self, text: &str, checks: &[(String, bool)]) -> DialogReply;
     /// Cancel / escape.
     fn cancel(&mut self) {}
+    /// One of the spec's extra buttons was pressed.
+    fn button(&mut self, _key: &str) -> DialogReply {
+        DialogReply::Stay(self.spec())
+    }
+    /// The tree and form panes' view models (shared with this dialog's state).
+    fn panes(&self) -> Option<(Box<dyn crate::view_models::TreeModel>, Box<dyn crate::view_models::FormModel>)> {
+        None
+    }
 }
 
 /// Open dialogs by id.
@@ -88,6 +111,14 @@ impl Dialogs {
         Ok(reply)
     }
 
+    /// Dialog `id`'s pane view models.
+    pub fn panes(
+        &self,
+        id: u64,
+    ) -> Result<Option<(Box<dyn crate::view_models::TreeModel>, Box<dyn crate::view_models::FormModel>)>, String> {
+        self.open.get(&id).map(|m| m.panes()).ok_or_else(|| format!("no open dialog {id}"))
+    }
+
     /// Removes dialog `id` so its model can run without the registry locked.
     pub fn take(&mut self, id: u64) -> Option<Box<dyn DialogModel>> {
         self.open.remove(&id)
@@ -115,7 +146,7 @@ pub(crate) mod tests {
 
     impl DialogModel for YesDialog {
         fn spec(&self) -> DialogSpec {
-            DialogSpec { title: "Q".into(), message: "Say yes".into(), combo: None, checks: Vec::new(), status: String::new() }
+            DialogSpec { title: "Q".into(), message: "Say yes".into(), ..DialogSpec::default() }
         }
         fn ok(&mut self, text: &str, _checks: &[(String, bool)]) -> DialogReply {
             self.0.lock().unwrap().push(text.to_owned());

@@ -255,6 +255,29 @@ impl UiEventQueue {
         Ok(reply)
     }
 
+    /// An extra button on dialog `id` (model runs outside the registry lock).
+    pub fn dialog_button(&self, id: u64, key: &str) -> Result<crate::dialogs::DialogReply, String> {
+        let mut model = self
+            .dialogs
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .take(id)
+            .ok_or_else(|| format!("no open dialog {id}"))?;
+        let reply = model.button(key);
+        if reply != crate::dialogs::DialogReply::Close {
+            self.dialogs.lock().unwrap_or_else(std::sync::PoisonError::into_inner).put_back(id, model);
+        }
+        Ok(reply)
+    }
+
+    /// The pane view models of dialog `id`, if it has panes.
+    pub fn dialog_panes(
+        &self,
+        id: u64,
+    ) -> Result<Option<(Box<dyn crate::view_models::TreeModel>, Box<dyn crate::view_models::FormModel>)>, String> {
+        self.dialogs.lock().unwrap_or_else(std::sync::PoisonError::into_inner).panes(id)
+    }
+
     /// Cancel on dialog `id`.
     pub fn dialog_cancel(&self, id: u64) -> Result<(), String> {
         let model = self.dialogs.lock().unwrap_or_else(std::sync::PoisonError::into_inner).take(id);
@@ -436,7 +459,7 @@ mod tests {
     struct Nested(UiEventQueue);
     impl crate::dialogs::DialogModel for Nested {
         fn spec(&self) -> crate::dialogs::DialogSpec {
-            crate::dialogs::DialogSpec { title: "n".into(), message: String::new(), combo: None, checks: vec![], status: String::new() }
+            crate::dialogs::DialogSpec { title: "n".into(), ..Default::default() }
         }
         fn ok(&mut self, _text: &str, _checks: &[(String, bool)]) -> crate::dialogs::DialogReply {
             self.0.open_dialog(Box::new(Nested(self.0.clone())));

@@ -16,6 +16,7 @@ pub mod listing_scroll;
 pub mod listing_selection;
 pub mod program_import;
 pub mod menus;
+pub mod options_dialog;
 mod session;
 mod view_kind;
 mod view_models;

@@ -116,6 +116,8 @@ impl DialogModel for GoToAddressLabelDialog {
                 },
             ],
             status: self.status.clone(),
+            buttons: Vec::new(),
+            has_panes: false,
         }
     }
 

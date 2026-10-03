@@ -87,6 +87,8 @@ pub trait TreeModel: Send {
     fn icon(&self, _node: NodeId) -> Option<String> {
         None
     }
+    /// The renderer selected `node` (single selection); default: ignored.
+    fn select(&mut self, _node: NodeId) {}
     /// Whether the node has no children.
     fn is_leaf(&self, node: NodeId) -> bool {
         self.child_count(node) == 0
@@ -147,22 +149,38 @@ pub struct FormField {
     pub kind: FormFieldKind,
     /// Current value, as text.
     pub value: String,
+    /// Tooltip (an option's description); empty for none.
+    pub tooltip: String,
+    /// Shown but not editable.
+    pub read_only: bool,
 }
 
 impl FormField {
     /// A text field.
     pub fn text(key: &str, label: &str, value: &str) -> Self {
-        Self { key: key.into(), label: label.into(), kind: FormFieldKind::Text, value: value.into() }
+        Self { key: key.into(), label: label.into(), kind: FormFieldKind::Text, value: value.into(), tooltip: String::new(), read_only: false }
     }
 
     /// An integer field.
     pub fn int(key: &str, label: &str, value: i64) -> Self {
-        Self { key: key.into(), label: label.into(), kind: FormFieldKind::Int, value: value.to_string() }
+        Self { key: key.into(), label: label.into(), kind: FormFieldKind::Int, value: value.to_string(), tooltip: String::new(), read_only: false }
     }
 
     /// A checkbox field.
     pub fn bool(key: &str, label: &str, value: bool) -> Self {
-        Self { key: key.into(), label: label.into(), kind: FormFieldKind::Bool, value: value.to_string() }
+        Self { key: key.into(), label: label.into(), kind: FormFieldKind::Bool, value: value.to_string(), tooltip: String::new(), read_only: false }
+    }
+
+    /// With a tooltip.
+    pub fn with_tooltip(mut self, tooltip: &str) -> Self {
+        self.tooltip = tooltip.to_owned();
+        self
+    }
+
+    /// Shown but not editable.
+    pub fn read_only(mut self) -> Self {
+        self.read_only = true;
+        self
     }
 
     /// Validates a candidate value for this field's kind.

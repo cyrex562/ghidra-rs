@@ -36,7 +36,11 @@ pub struct UiSession {
     icons: Option<Box<dyn crate::icons::IconResolver>>,
     goto_target: Option<ProviderId>,
     config_states: Vec<(String, Box<dyn ConfigState>)>,
+    dialog_panes: BTreeMap<u64, (ProviderId, ProviderId)>,
 }
+
+/// First view-model id used for dialog panes (tool providers count up from 1).
+pub const DIALOG_VIEW_BASE: u64 = 1 << 62;
 
 /// Per-plugin state saved with the tool configuration (Java
 /// `Plugin.writeConfigState`/`readConfigState`).
@@ -62,6 +66,7 @@ impl UiSession {
             icons: None,
             goto_target: None,
             config_states: Vec::new(),
+            dialog_panes: BTreeMap::new(),
         }
     }
 
@@ -211,6 +216,29 @@ impl UiSession {
         self.config_states.push((name.to_owned(), state));
     }
 
+    /// The view-model ids of dialog `id`'s tree and form panes, registered in
+    /// this session's model registry on first use (ids from
+    /// [`DIALOG_VIEW_BASE`], never a tool provider's).
+    pub fn dialog_pane_ids(&mut self, id: u64) -> Result<(ProviderId, ProviderId), String> {
+        if let Some(ids) = self.dialog_panes.get(&id) {
+            return Ok(*ids);
+        }
+        let (tree, form) = self.events.dialog_panes(id)?.ok_or_else(|| format!("dialog {id} has no panes"))?;
+        let ids = (ProviderId(DIALOG_VIEW_BASE + 2 * id), ProviderId(DIALOG_VIEW_BASE + 2 * id + 1));
+        self.models.insert(ids.0, ViewModelBox::Tree(tree));
+        self.models.insert(ids.1, ViewModelBox::Form(form));
+        self.dialog_panes.insert(id, ids);
+        Ok(ids)
+    }
+
+    /// Drops dialog `id`'s pane view models (after it closed).
+    pub fn release_dialog(&mut self, id: u64) {
+        if let Some((tree, form)) = self.dialog_panes.remove(&id) {
+            self.models.remove(&tree);
+            self.models.remove(&form);
+        }
+    }
+
     /// Installs the theme icon resolver.
     pub fn set_icon_resolver(&mut self, resolver: Box<dyn crate::icons::IconResolver>) {
         self.icons = Some(resolver);
@@ -330,5 +358,35 @@ mod tests {
         assert_eq!(listing_at(&s), Some(12));
         assert_eq!(s.events().drain(), vec![UiEvent::Status("Address not found: 400f00".into())]);
         assert!(s.table_activate(symbols, 99, 0).is_ok()); // no row: nothing to do
+    }
+
+    #[test]
+    fn dialog_panes_get_dialog_scoped_view_ids_until_released() {
+        use crate::options_dialog::{OptionsDialog, OptionsDialogState};
+        use ghidra_rs::framework::options::option_type::OptionValue;
+        let o = std::sync::Arc::new(ghidra_rs::framework::options::ToolOptions::new("Tool"));
+        o.register_option("A.X", Some(OptionValue::Int(1)), None, "x").unwrap();
+        o.register_option("B.Y", Some(OptionValue::Boolean(true)), None, "y").unwrap();
+        let mut s = UiSession::new();
+        let id = s.events().open_dialog(Box::new(OptionsDialog(OptionsDialogState::shared("T", vec![o]))));
+        let (tree, form) = s.dialog_pane_ids(id).unwrap();
+        assert!(tree.0 >= DIALOG_VIEW_BASE && form.0 >= DIALOG_VIEW_BASE && tree != form);
+        assert_eq!(s.dialog_pane_ids(id).unwrap(), (tree, form), "registered once");
+        let b = match s.model_mut(tree) {
+            Some(ViewModelBox::Tree(t)) => {
+                let b = t.child(t.root(), 1);
+                t.select(b);
+                b
+            }
+            _ => panic!("tree pane"),
+        };
+        assert_eq!(b.0, 2);
+        match s.model(form) {
+            Some(ViewModelBox::Form(f)) => assert_eq!(f.fields()[0].label, "Y"),
+            _ => panic!("form pane"),
+        }
+        s.release_dialog(id);
+        assert!(s.model(tree).is_none() && s.model(form).is_none());
+        assert!(UiSession::new().dialog_pane_ids(42).is_err());
     }
 }
