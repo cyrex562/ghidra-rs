@@ -84,6 +84,12 @@ pub trait ListingViewModel: Send {
     fn address_text(&self, index: u128) -> String;
     /// The address of a row (a label row: its code unit's), if listed.
     fn address_of(&self, index: u128) -> Option<u64>;
+    /// Where the reference under the cursor goes (an operand's primary
+    /// memory reference), if any.
+    fn reference_target(&self, cursor: CursorPos) -> Option<u64> {
+        let _ = cursor;
+        None
+    }
     /// Pixel x of the cursor's column, if the cursor is on a listed row.
     fn cursor_x(&self, cursor: CursorPos) -> Option<i32>;
     /// Full text of the cursor's field.

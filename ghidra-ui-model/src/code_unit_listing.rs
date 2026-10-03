@@ -69,7 +69,7 @@ pub struct CodeUnitListing {
 #[derive(Debug, Clone)]
 enum SegKind {
     Label(String),
-    Instruction { len: u64, mnemonic: String, operands: String },
+    Instruction { len: u64, mnemonic: String, operands: String, references: Vec<OperandRef> },
     /// `rows` undefined bytes from `address`.
     Undefined,
 }
@@ -188,7 +188,12 @@ impl CodeUnitListing {
                 }
                 if let Some(len) = len {
                     let insn = &instructions[ii];
-                    let kind = SegKind::Instruction { len, mnemonic: insn.mnemonic.clone(), operands: insn.operands.clone() };
+                    let kind = SegKind::Instruction {
+                        len,
+                        mnemonic: insn.mnemonic.clone(),
+                        operands: insn.operands.clone(),
+                        references: insn.references.clone(),
+                    };
                     push(&mut segments, 1, p, bi, kind);
                     cursor = p + len;
                     ii += 1;
@@ -240,7 +245,7 @@ impl CodeUnitListing {
                 let width = xs[1].1 + xs[2].1 + xs[3].1;
                 vec![self.field(xs[1].0, width, name.clone())]
             }
-            SegKind::Instruction { len, mnemonic, operands } => {
+            SegKind::Instruction { len, mnemonic, operands, .. } => {
                 let off = s.address - block.start;
                 let bytes: Vec<String> = (0..*len).map(|k| block.byte(off + k).map_or_else(|| "??".to_owned(), |b| format!("{b:02x}"))).collect();
                 let texts = [self.address_string(s.address), bytes.join(" "), mnemonic.clone(), operands.clone()];
@@ -266,7 +271,34 @@ impl CodeUnitListing {
     }
 }
 
+/// The operand (0-based) holding column `col` of an operand field's text:
+/// operands are separated by commas outside `[]`/`()`; a column past the end
+/// belongs to the last operand.
+pub fn operand_index_at(text: &str, col: usize) -> i32 {
+    let mut depth = 0i32;
+    let mut index = 0;
+    for ch in text.chars().take(col) {
+        match ch {
+            '[' | '(' => depth += 1,
+            ']' | ')' => depth -= 1,
+            ',' if depth <= 0 => index += 1,
+            _ => {}
+        }
+    }
+    index
+}
+
 impl ListingViewModel for CodeUnitListing {
+    fn reference_target(&self, c: CursorPos) -> Option<u64> {
+        const OPERANDS: usize = 3;
+        let s = self.segment(c.index)?;
+        let SegKind::Instruction { operands, references, .. } = &s.kind else { return None };
+        if c.field != OPERANDS {
+            return None;
+        }
+        let op = operand_index_at(operands, c.col);
+        references.iter().find(|r| r.op_index == op).map(|r| r.to)
+    }
     fn set_metrics(&mut self, metrics: FontMetrics) {
         self.metrics = metrics;
     }
@@ -469,6 +501,30 @@ mod tests {
         assert_eq!(rows[0], vec!["mid"]);
         assert_eq!(rows[1], vec!["fn"]);
         assert_eq!(rows[2][2], "MOV");
+    }
+
+    #[test]
+    fn operand_columns_split_at_top_level_commas() {
+        let text = "RAX,qword ptr [RBX + RCX*0x8 + 0x10]";
+        assert_eq!(operand_index_at(text, 0), 0);
+        assert_eq!(operand_index_at(text, 2), 0);
+        assert_eq!(operand_index_at(text, 3), 0, "the comma ends operand 0");
+        assert_eq!(operand_index_at(text, 4), 1);
+        assert_eq!(operand_index_at(text, 99), 1, "past the end: the last operand");
+        assert_eq!(operand_index_at("qword ptr [RIP + 0x2fe2]", 12), 0);
+        assert_eq!(operand_index_at("dword ptr [RAX + RAX*0x1],EAX", 26), 1);
+    }
+
+    #[test]
+    fn an_operands_reference_is_its_target() {
+        let mut call = insn(0x1000, 4, "CALL", "RAX,qword ptr [0x2000]");
+        call.references = vec![OperandRef { op_index: 1, to: 0x2000 }];
+        let l = listing(vec![call], vec![label(0x1000, "f", true)]);
+        let at = |field, col| l.reference_target(CursorPos { index: 1, field, col });
+        assert_eq!(at(3, 6), Some(0x2000));
+        assert_eq!(at(3, 0), None, "operand 0 (RAX) has no reference");
+        assert_eq!(at(2, 0), None, "the mnemonic");
+        assert_eq!(l.reference_target(CursorPos { index: 0, field: 0, col: 0 }), None, "the label row");
     }
 
     #[test]

@@ -229,6 +229,15 @@ impl ListingController {
         }
     }
 
+    /// Double click (Java `OperandFieldMouseHandler`): the cursor goes there,
+    /// then to the operand's referenced address if it has one, with history.
+    /// Returns whether it navigated.
+    pub fn activate(&mut self, x: i32, y: i32) -> bool {
+        self.click(x, y, false);
+        let Some(target) = self.cursor.and_then(|c| self.model.reference_target(c)) else { return false };
+        self.goto_address(target).is_ok()
+    }
+
     /// Middle click: cursor there, then highlight the word under it (Java
     /// `ListingMiddleMouseHighlightProvider`); the same word again clears.
     pub fn middle_click(&mut self, x: i32, y: i32) {
@@ -631,6 +640,36 @@ mod tests {
         c.key(Move::Down, true);
         assert!(!c.selection().contains(0), "the label above the anchor is not pulled in");
         assert!(c.selection().contains(1));
+    }
+
+    #[test]
+    fn activating_an_operand_with_a_reference_follows_it_with_history() {
+        use crate::code_unit_listing::{CodeUnitListing, InstructionSnapshot, OperandRef};
+        let mut c = ListingController::new(Box::new(CodeUnitListing::new(
+            32,
+            vec![
+                MemoryBlockSnapshot::initialized(0x401000, vec![0xe8, 0, 0x10, 0, 0]),
+                MemoryBlockSnapshot::initialized(0x402000, vec![0xc3]),
+            ],
+            vec![InstructionSnapshot {
+                start: 0x401000,
+                len: 5,
+                mnemonic: "CALL".into(),
+                operands: "0x402000".into(),
+                references: vec![OperandRef { op_index: 0, to: 0x402000 }],
+            }],
+            vec![],
+        )));
+        c.set_metrics(FontMetrics::monospace(7, 11, 3));
+        c.set_viewport(10 * H);
+        let operand_x = c.model().cursor_x(CursorPos { index: 0, field: 3, col: 2 }).unwrap();
+        let mnemonic_x = c.model().cursor_x(CursorPos { index: 0, field: 2, col: 1 }).unwrap();
+        assert!(!c.activate(mnemonic_x, 1), "the mnemonic only places the cursor");
+        assert_eq!(c.cursor().unwrap().field, 2);
+        assert!(c.activate(operand_x, 1));
+        assert_eq!(c.model().address_of(at(&c)), Some(0x402000));
+        assert!(c.back());
+        assert_eq!(at(&c), 0);
     }
 
     #[test]
