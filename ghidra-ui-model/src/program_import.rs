@@ -145,6 +145,12 @@ fn language_for(class: u8, data: u8, machine: u16) -> Result<(&'static str, &'st
     }
 }
 
+/// The entry points Ghidra's EntryPointAnalyzer disassembles: those inside an
+/// executable block (`[start, end]` ranges), or all when no block is executable.
+fn executable_entries(entries: &[u64], exec: &[(u64, u64)]) -> Vec<u64> {
+    entries.iter().copied().filter(|&a| exec.is_empty() || exec.iter().any(|&(lo, hi)| lo <= a && a <= hi)).collect()
+}
+
 /// Imports the ELF at `path` using the compiled languages under `dist`.
 pub fn import_elf(path: &Path, dist: &Path) -> Result<ImportedProgram, String> {
     use ghidra_rs::app::seam_stubs::{new_string, Option as LoaderOption};
@@ -205,8 +211,20 @@ pub fn import_elf(path: &Path, dist: &Path) -> Result<ImportedProgram, String> {
         .get_symbol_table()
         .map(|t| t.get_external_entry_point_iterator().collect())
         .unwrap_or_default();
+    let exec: Vec<(u64, u64)> = program
+        .get_memory()
+        .map(|m| {
+            m.get_block_handles()
+                .iter()
+                .filter_map(|h| h.read().ok())
+                .filter(|b| b.is_execute())
+                .map(|b| (b.get_start().offset() as u64, b.get_end().offset() as u64))
+                .collect()
+        })
+        .unwrap_or_default();
+    let keep = executable_entries(&entries.iter().map(|a| a.offset() as u64).collect::<Vec<_>>(), &exec);
     let mut disassembler = Disassembler::get_program_disassembler(&db, Arc::new(DummyMonitor), None);
-    for entry in &entries {
+    for entry in entries.iter().filter(|a| keep.contains(&(a.offset() as u64))) {
         // errors stay local to their flow; the rest still disassembles
         let _ = disassembler.disassemble_program(&db, entry, None, true);
     }
@@ -381,6 +399,14 @@ mod tests {
     }
 
     #[test]
+    fn only_entry_points_in_executable_blocks_are_disassembled() {
+        let exec = [(0x1000, 0x1fff)];
+        assert_eq!(executable_entries(&[0x1000, 0x5000, 0x1ff0], &exec), vec![0x1000, 0x1ff0]);
+        // EntryPointAnalyzer: no executable block at all means no filtering
+        assert_eq!(executable_entries(&[0x5000], &[]), vec![0x5000]);
+    }
+
+    #[test]
     fn bin_ls_is_disassembled_from_its_entry_point() {
         let Some(dist) = default_ghidra_dist() else { return };
         let Ok(bytes) = std::fs::read("/bin/ls") else { return };
@@ -394,6 +420,20 @@ mod tests {
         assert!(p.instructions.windows(2).all(|w| w[0].start + u64::from(w[0].len) <= w[1].start));
         let live = p.live.as_ref().expect("the live program stays open");
         assert_eq!(snapshot_instructions(live.program()), p.instructions, "re-snapshot of the live program");
+        // EntryPointAnalyzer: entry points intersect the executable blocks
+        use ghidra_rs::program::model::listing::Program;
+        let memory = Program::get_memory(live.program().as_ref()).unwrap();
+        let exec: Vec<(u64, u64)> = memory
+            .get_block_handles()
+            .iter()
+            .filter_map(|h| h.read().ok())
+            .filter(|b| b.is_execute())
+            .map(|b| (b.get_start().offset() as u64, b.get_end().offset() as u64))
+            .collect();
+        assert!(!exec.is_empty(), "the ELF loader marks code blocks executable");
+        let stray: Vec<u64> =
+            p.instructions.iter().map(|i| i.start).filter(|&a| !exec.iter().any(|&(lo, hi)| lo <= a && a <= hi)).collect();
+        assert!(stray.is_empty(), "instructions outside executable blocks: {:x?}", &stray[..stray.len().min(5)]);
         let first = p.instructions.iter().find(|i| i.start == entry).expect("an instruction at the entry");
         if bytes.windows(4).any(|w| w == [0xf3, 0x0f, 0x1e, 0xfa]) && first.len == 4 {
             assert_eq!(first.mnemonic, "ENDBR64");
