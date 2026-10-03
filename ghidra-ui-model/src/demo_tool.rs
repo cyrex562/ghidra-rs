@@ -519,6 +519,7 @@ mod tests {
                 space: "ram".into(),
             }],
             instructions: vec![],
+            live: None,
         };
         let s = build_session_for(Some(&program));
         let (_, h) = listing(&s);

@@ -8,6 +8,8 @@ use std::path::{Path, PathBuf};
 
 use crate::code_unit_listing::{BlockHeader, InstructionSnapshot};
 use crate::listing::MemoryBlockSnapshot;
+use ghidra_rs::program::database::program_db::ProgramDB;
+use std::sync::Arc;
 use ghidra_rs::program::model::mem::memory_block_type::MemoryBlockType;
 
 /// What the shell shows of an imported program.
@@ -31,6 +33,60 @@ pub struct ImportedProgram {
     pub block_headers: Vec<BlockHeader>,
     /// Decoded instructions (empty until the disassembler runs).
     pub instructions: Vec<crate::code_unit_listing::InstructionSnapshot>,
+    /// The open program behind this snapshot, for edits (none for fixtures).
+    pub live: Option<LiveProgram>,
+}
+
+/// The open program an [`ImportedProgram`] was taken from. Equal only to
+/// itself (the same program).
+#[derive(Clone)]
+pub struct LiveProgram(Arc<ProgramDB>);
+
+impl LiveProgram {
+    /// Wraps an open program.
+    pub fn new(program: Arc<ProgramDB>) -> Self {
+        Self(program)
+    }
+
+    /// The program.
+    pub fn program(&self) -> &Arc<ProgramDB> {
+        &self.0
+    }
+}
+
+impl PartialEq for LiveProgram {
+    fn eq(&self, other: &Self) -> bool {
+        Arc::ptr_eq(&self.0, &other.0)
+    }
+}
+
+impl Eq for LiveProgram {}
+
+impl std::fmt::Debug for LiveProgram {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_tuple("LiveProgram").finish_non_exhaustive()
+    }
+}
+
+/// Every instruction in the program's loaded memory, in address order.
+pub fn snapshot_instructions(program: &ProgramDB) -> Vec<InstructionSnapshot> {
+    use ghidra_rs::program::model::listing::Program;
+    let Some(memory) = Program::get_memory(program) else { return Vec::new() };
+    let mut instructions: Vec<InstructionSnapshot> = memory
+        .get_block_handles()
+        .iter()
+        .filter_map(|h| h.read().ok().map(|b| (b.get_start(), b.get_end())))
+        .filter(|(start, _)| start.space().is_loaded_memory_space())
+        .flat_map(|(start, end)| program.instruction_summaries(&start, &end))
+        .map(|u| InstructionSnapshot {
+            start: u.address.offset() as u64,
+            len: u32::try_from(u.length).unwrap_or(u32::MAX),
+            mnemonic: u.mnemonic,
+            operands: u.operand_text,
+        })
+        .collect();
+    instructions.sort_by_key(|i| i.start);
+    instructions
 }
 
 /// One symbol as the Symbols pane shows it.
@@ -91,12 +147,10 @@ pub fn import_elf(path: &Path, dist: &Path) -> Result<ImportedProgram, String> {
     use ghidra_rs::app::plugin::processors::sleigh::sleigh_language_provider::SleighLanguageProvider;
     use ghidra_rs::program::model::lang::LanguageID;
     use ghidra_rs::program::util::default_language_service::DefaultLanguageService;
-    use ghidra_rs::program::database::program_db::ProgramDB;
     use ghidra_rs::program::disassemble::disassembler::Disassembler;
     use ghidra_rs::program::model::listing::Program;
     use ghidra_rs::util::task::DummyMonitor;
     use std::rc::Rc;
-    use std::sync::Arc;
 
     let bytes = std::fs::read(path).map_err(|e| format!("cannot read {}: {e}", path.display()))?;
     if bytes.len() < 20 || bytes[..4] != *b"\x7fELF" {
@@ -148,19 +202,6 @@ pub fn import_elf(path: &Path, dist: &Path) -> Result<ImportedProgram, String> {
     let memory = program.get_memory().ok_or_else(|| "program has no memory".to_string())?;
     let handles = memory.get_block_handles();
     let (address_bits, blocks) = crate::listing::snapshot_blocks(&handles);
-    let mut instructions: Vec<InstructionSnapshot> = handles
-        .iter()
-        .filter_map(|h| h.read().ok())
-        .filter(|b| b.get_start().space().is_loaded_memory_space())
-        .flat_map(|b| db.instruction_summaries(&b.get_start(), &b.get_end()))
-        .map(|u| InstructionSnapshot {
-            start: u.address.offset() as u64,
-            len: u32::try_from(u.length).unwrap_or(u32::MAX),
-            mnemonic: u.mnemonic,
-            operands: u.operand_text,
-        })
-        .collect();
-    instructions.sort_by_key(|i| i.start);
     let mut block_headers: Vec<BlockHeader> = handles
         .iter()
         .filter_map(|h| h.read().ok())
@@ -221,7 +262,8 @@ pub fn import_elf(path: &Path, dist: &Path) -> Result<ImportedProgram, String> {
         block_starts,
         symbols,
         block_headers,
-        instructions,
+        instructions: snapshot_instructions(&db),
+        live: Some(LiveProgram::new(db.clone())),
     })
 }
 
@@ -338,6 +380,8 @@ mod tests {
         let p = import_elf(Path::new("/bin/ls"), &dist).unwrap();
         assert!(p.instructions.len() >= 10, "{} instructions", p.instructions.len());
         assert!(p.instructions.windows(2).all(|w| w[0].start + u64::from(w[0].len) <= w[1].start));
+        let live = p.live.as_ref().expect("the live program stays open");
+        assert_eq!(snapshot_instructions(live.program()), p.instructions, "re-snapshot of the live program");
         let first = p.instructions.iter().find(|i| i.start == entry).expect("an instruction at the entry");
         if bytes.windows(4).any(|w| w == [0xf3, 0x0f, 0x1e, 0xfa]) && first.len == 4 {
             assert_eq!(first.mnemonic, "ENDBR64");
