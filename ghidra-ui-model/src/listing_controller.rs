@@ -10,6 +10,9 @@ use crate::listing::{CursorPos, FieldRow, FontMetrics, ListingViewModel, Move};
 use crate::listing_scroll::ScrollModel;
 use crate::listing_selection::IndexSelection;
 
+/// Most rows Edit > Copy will lay out at once.
+pub const MAX_COPY_ROWS: u128 = 100_000;
+
 /// Pointer travel (px) before a press becomes a drag (Java `FieldPanel`).
 const DRAG_THRESHOLD: i32 = 3;
 
@@ -333,6 +336,58 @@ impl ListingController {
         out
     }
 
+    /// Edit > Copy (Java `CodeBrowserClipboardProvider.copy`): the selected
+    /// rows laid out as text (`copyCode` + `TextLayoutGraphics`), else the
+    /// cursor field's text (`copyFromCurrentLocation`); `None` with neither.
+    pub fn copy_text(&self) -> Result<Option<String>, String> {
+        if self.selection.is_empty() {
+            return Ok(self.cursor.and_then(|c| self.model.field_text(c)));
+        }
+        let rows = self.selection.row_count();
+        if rows > MAX_COPY_ROWS {
+            return Err(format!("Selection too large to copy: {rows} rows (limit {MAX_COPY_ROWS})"));
+        }
+        let mut out = String::new();
+        for &(lo, hi) in self.selection.ranges() {
+            let mut index = lo;
+            while index <= hi {
+                let viewport = (self.metrics.line_height().max(1)) * 64;
+                let chunk = self.model.rows(index, viewport);
+                if chunk.is_empty() {
+                    break;
+                }
+                for row in chunk.iter().take_while(|r| r.index <= hi) {
+                    self.layout_row_text(row, &mut out);
+                    index = row.index + 1;
+                }
+                if chunk.last().is_some_and(|r| r.index >= hi) {
+                    break;
+                }
+            }
+        }
+        Ok(Some(out))
+    }
+
+    /// Java `TextLayoutGraphics.flush` for one row: runs in x order, gaps
+    /// filled with round(gap / space width) spaces (at least one), then '\n'.
+    fn layout_row_text(&self, row: &FieldRow, out: &mut String) {
+        let mut runs: Vec<&crate::listing::PositionedRun> = row.runs.iter().collect();
+        runs.sort_by_key(|r| r.x);
+        let mut current_x = 0;
+        for run in runs {
+            let cw = if run.bold { self.metrics.bold_char_width } else { self.metrics.char_width }.max(1);
+            let gap = run.x - current_x;
+            let mut fill = ((gap as f32) / (cw as f32)).round() as i32;
+            if fill == 0 && run.x > current_x {
+                fill = 1;
+            }
+            out.extend(std::iter::repeat_n(' ', fill.max(0) as usize));
+            out.push_str(&run.text);
+            current_x = run.x + run.text.chars().count() as i32 * cw;
+        }
+        out.push('\n');
+    }
+
     /// The frame for the current viewport.
     pub fn frame(&self) -> ListingFrame {
         let scroll = self.scroll();
@@ -558,6 +613,34 @@ mod tests {
         c.key(Move::Down, false);
         c.drag(0, 2 * H + 1);
         assert!(c.selection().is_empty());
+    }
+
+    #[test]
+    fn copy_lays_out_selected_rows_like_ghidras_text_layout() {
+        let mut c = controller(5);
+        c.click(0, 3 * H + 1, false); // row 3
+        c.key(Move::Down, true); // select rows 3..=4 (across the block gap)
+        let text = c.copy_text().unwrap().unwrap();
+        // address (10 chars wide), bytes (12), mnemonic (8), operand: runs padded by
+        // round((x - end)/char width) spaces, one line per row, each ending in '\n'
+        assert_eq!(text, "00401003  55          ??      55h\n00402000  c3          ??      C3h\n");
+    }
+
+    #[test]
+    fn copy_without_a_selection_takes_the_cursor_field() {
+        let mut c = controller(5);
+        assert_eq!(c.copy_text().unwrap(), None);
+        c.click(10 * 7 + 1, 1, false); // bytes field of row 0
+        assert_eq!(c.copy_text().unwrap().as_deref(), Some("55"));
+    }
+
+    #[test]
+    fn copying_a_huge_selection_is_refused() {
+        let mut c = ListingController::new(Box::new(MemoryListing::new(32, vec![MemoryBlockSnapshot::initialized(0, vec![0; 300_000])])));
+        c.set_metrics(FontMetrics::monospace(7, 11, 3));
+        c.set_viewport(10 * H);
+        c.key(Move::End, true);
+        assert!(c.copy_text().unwrap_err().contains("300000"));
     }
 
     #[test]

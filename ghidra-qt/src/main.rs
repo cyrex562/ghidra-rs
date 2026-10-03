@@ -53,6 +53,7 @@ fn main() {
         print_listing_state: args.print_listing_state,
         float_dock: args.float_dock.unwrap_or_default(),
         invoke_menu: args.invoke_menu.unwrap_or_default(),
+        print_clipboard: args.print_clipboard,
     };
     std::process::exit(bridge::ffi::run_app(&session, &options));
 }

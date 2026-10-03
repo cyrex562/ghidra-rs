@@ -388,6 +388,17 @@ fn a_key_binding_set_in_tool_options_works_after_a_restart() {
 }
 
 #[test]
+fn ctrl_c_copies_the_listing_selection_to_the_clipboard() {
+    let out = shell()
+        .args(["--focus", "Listing", "--press", "Shift-Down,Ctrl-C", "--print-clipboard", "--quit-after-ms", "2000"])
+        .output()
+        .expect("spawn");
+    let text = String::from_utf8_lossy(&out.stdout).to_string();
+    let lines: Vec<&str> = text.lines().filter(|l| l.starts_with("clipboard: ")).collect();
+    assert_eq!(lines, vec!["clipboard: 00401000  55          ??      55h", "clipboard: 00401001  48          ??      48h"], "{text}");
+}
+
+#[test]
 fn listing_dock_renders_undefined_bytes() {
     let out = shell().args(["--dump-listing", "3"]).output().expect("spawn");
     assert!(out.status.success(), "stderr {}", String::from_utf8_lossy(&out.stderr));

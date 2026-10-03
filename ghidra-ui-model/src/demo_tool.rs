@@ -212,9 +212,23 @@ pub fn build_session_for(program: Option<&ImportedProgram>) -> UiSession {
     exit.state.set_menu_bar_data(MenuData::full(&["&File", "E&xit"], None, Some("Z"), None, None).ok());
     tool.add_action(Box::new(exit));
 
-    let mut copy = status_action("Copy", &events);
-    copy.state.set_menu_bar_data(MenuData::full(&["&Edit", "&Copy"], None, Some("Clipboard"), None, None).ok());
-    copy.state.set_key_binding_data(Some(ctrl(vk::C)));
+    // Java ClipboardPlugin "Copy": the focused provider's clipboard content —
+    // the listing's selection (or cursor field); the demo panes just report.
+    let (ev, copy_listing) = (events.clone(), listing.clone());
+    let mut copy = ClosureAction::new("Copy", OWNER, move |context| {
+        if context.component_provider() != Some(listing_id) {
+            ev.post(UiEvent::Status("Copy".into()));
+            return;
+        }
+        let copied = lock(&copy_listing).copy_text();
+        match copied {
+            Ok(Some(text)) => ev.post(UiEvent::Clipboard(text)),
+            Ok(None) => {}
+            Err(message) => ev.post(UiEvent::Status(message)),
+        }
+    });
+    copy.state_mut().set_menu_bar_data(MenuData::full(&["&Edit", "&Copy"], None, Some("Clipboard"), None, None).ok());
+    copy.state_mut().set_key_binding_data(Some(ctrl(vk::C)));
     tool.add_action(Box::new(copy));
 
     let mut find = status_action("Find", &events);
@@ -657,6 +671,30 @@ mod tests {
         let Some(ViewModelBox::Form(f)) = s2.model(form) else { panic!("form") };
         assert_eq!(f.fields().into_iter().find(|f| f.label == "Max Goto Entries").unwrap().value, "25");
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn ctrl_c_in_the_listing_copies_the_selection_and_elsewhere_reports() {
+        let mut s = build_demo_session();
+        let (id, h) = listing(&s);
+        {
+            let mut c = lock(&h);
+            c.set_viewport(200);
+            c.key(crate::listing::Move::Down, true); // rows 0..=1
+        }
+        s.events().drain();
+        s.tool_mut().dispatch_key(KeyStroke::new(vk::C, CTRL_DOWN_MASK), Some(id));
+        let copied: Vec<String> = s
+            .events()
+            .drain()
+            .into_iter()
+            .filter_map(|e| if let UiEvent::Clipboard(t) = e { Some(t) } else { None })
+            .collect();
+        assert_eq!(copied.len(), 1);
+        assert!(copied[0].starts_with("00401000  55") && copied[0].lines().count() == 2, "{copied:?}");
+        let symbols = s.tool().find_provider("Demo", "Symbols").unwrap();
+        s.tool_mut().dispatch_key(KeyStroke::new(vk::C, CTRL_DOWN_MASK), Some(symbols));
+        assert_eq!(s.events().drain(), vec![UiEvent::Status("Copy".into())]);
     }
 
     #[test]

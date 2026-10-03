@@ -2,6 +2,8 @@
 
 #include <QTimer>
 
+#include <QClipboard>
+#include <QGuiApplication>
 #include <QInputDialog>
 #include <QItemSelectionModel>
 #include <QFormLayout>
@@ -477,6 +479,9 @@ void EventPump::pump() {
                 break;
             case 9:
                 showDialog(e.task);
+                break;
+            case 10:
+                QGuiApplication::clipboard()->setText(qs(e.text));
                 break;
             case 8:
                 m_window->showProvider(static_cast<int64_t>(e.task), e.progress != 0);

@@ -4,6 +4,8 @@
 #include <QMenu>
 #include <QMenuBar>
 #include <functional>
+#include <QClipboard>
+#include <QGuiApplication>
 #include <QFont>
 #include <QFile>
 #include <QPixmap>
@@ -177,7 +179,14 @@ int32_t run_app(const UiSession& session, const AppOptions& options) {
     if (options.quit_after_ms > 0) {
         const QString shot = toQString(options.screenshot_path);
         const bool printListing = options.print_listing_state;
-        QTimer::singleShot(static_cast<int>(options.quit_after_ms), &app, [&app, &window, shot, printListing]() {
+        const bool printClipboard = options.print_clipboard;
+        QTimer::singleShot(static_cast<int>(options.quit_after_ms), &app, [&app, &window, shot, printListing, printClipboard]() {
+            if (printClipboard) {
+                for (const QString& line : QGuiApplication::clipboard()->text().split(QLatin1Char('\n'), Qt::SkipEmptyParts)) {
+                    std::printf("clipboard: %s\n", line.toUtf8().constData());
+                }
+                std::fflush(stdout);
+            }
             if (printListing) {
                 ads::CDockWidget* dock = window.dockByTitle(QStringLiteral("Listing"));
                 auto* view = dock ? dynamic_cast<ListingView*>(dock->widget()) : nullptr;

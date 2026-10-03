@@ -55,6 +55,8 @@ pub enum UiEvent {
         /// Initial text.
         initial: String,
     },
+    /// Put this text on the system clipboard (Edit > Copy).
+    Clipboard(String),
     /// Show open dialog `id` (its spec via [`UiEventQueue::dialog_spec`]).
     Dialog(u64),
     /// A provider's view state changed outside a renderer call (repaint it).
