@@ -172,6 +172,10 @@ QWidget* makeTree(uint64_t pid, QStatusBar* status, QWidget* parent) {
     view->setHeaderHidden(true);
     view->setModel(new RustTreeModel(pid, status, view));
     view->expandToDepth(1);
+    // Java ProgramTreePlugin.doubleClick: go to the fragment's minimum address.
+    QObject::connect(view, &QTreeView::doubleClicked, view, [pid, status](const QModelIndex& index) {
+        if (index.isValid()) bridgeCall(status, [&] { tree_activate(pid, static_cast<uint64_t>(index.internalId())); });
+    });
     return view;
 }
 

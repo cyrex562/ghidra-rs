@@ -239,6 +239,21 @@ impl UiSession {
         }
     }
 
+    /// A tree node was activated (double-click): go to its location.
+    pub fn tree_activate(&mut self, tree: ProviderId, node: crate::view_models::NodeId) -> Result<(), String> {
+        let location = match self.models.get(&tree) {
+            Some(ViewModelBox::Tree(t)) => t.location(node),
+            Some(_) => return Err(format!("provider {} is not a tree", tree.0)),
+            None => return Err(format!("no view model for provider {}", tree.0)),
+        };
+        if let Some(address) = location {
+            if let Err(message) = self.go_to(address) {
+                self.events.post(UiEvent::Status(message));
+            }
+        }
+        Ok(())
+    }
+
     /// Installs the theme icon resolver.
     pub fn set_icon_resolver(&mut self, resolver: Box<dyn crate::icons::IconResolver>) {
         self.icons = Some(resolver);
@@ -388,5 +403,30 @@ mod tests {
         s.release_dialog(id);
         assert!(s.model(tree).is_none() && s.model(form).is_none());
         assert!(UiSession::new().dialog_pane_ids(42).is_err());
+    }
+
+    #[test]
+    fn double_clicking_a_program_tree_fragment_goes_to_its_start() {
+        let mut s = crate::demo_tool::build_demo_session();
+        let tree = s.tool().find_provider("Demo", "Program Tree").unwrap();
+        let node = |s: &UiSession, name: &str| match s.model(tree) {
+            Some(ViewModelBox::Tree(t)) => {
+                let root = t.root();
+                if name.is_empty() {
+                    return root;
+                }
+                (0..t.child_count(root)).map(|i| t.child(root, i)).find(|&n| t.label(n) == name).unwrap()
+            }
+            _ => panic!("tree"),
+        };
+        let data = node(&s, ".data");
+        s.tree_activate(tree, data).unwrap();
+        assert_eq!(listing_at(&s), Some(12));
+        let bss = node(&s, ".bss");
+        s.tree_activate(tree, bss).unwrap(); // no memory behind it: nothing happens
+        assert_eq!(listing_at(&s), Some(12));
+        let root = node(&s, "");
+        s.tree_activate(tree, root).unwrap();
+        assert_eq!(listing_at(&s), Some(0));
     }
 }

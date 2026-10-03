@@ -334,6 +334,8 @@ pub mod ffi {
         fn dialog_panes(id: u64) -> Result<PaneIds>;
         /// The renderer selected a tree node (single selection).
         fn tree_select(pid: u64, node: u64) -> Result<()>;
+        /// Double-click: navigate to the node's location (Java ProgramTreePlugin.doubleClick).
+        fn tree_activate(pid: u64, node: u64) -> Result<()>;
 
         fn menu_bar(focused_pid: i64) -> Result<Vec<MenuItemInfo>>;
         fn popup_menu(pid: u64) -> Result<Vec<MenuItemInfo>>;
@@ -659,6 +661,10 @@ fn dialog_panes(id: u64) -> Result<PaneIds, String> {
         let (tree, form) = s.dialog_pane_ids(id)?;
         Ok(PaneIds { tree: tree.0, form: form.0 })
     })
+}
+
+fn tree_activate(pid: u64, node: u64) -> Result<(), String> {
+    with("tree_activate", |s| s.tree_activate(ProviderId(pid), NodeId(node)))
 }
 
 fn tree_select(pid: u64, node: u64) -> Result<(), String> {
@@ -1025,6 +1031,20 @@ mod tests {
         assert!(!dialog_button(dialog, "apply").unwrap());
         dialog_cancel(dialog).unwrap();
         assert!(form_fields(panes.form).is_err(), "panes released with the dialog");
+    }
+
+    #[test]
+    fn double_clicking_a_program_tree_fragment_navigates_the_listing() {
+        let _g = SESSION_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        let tree = pid("Program Tree");
+        let root = tree_root(tree).unwrap();
+        let data = (0..tree_child_count(tree, root).unwrap())
+            .map(|i| tree_child(tree, root, i).unwrap())
+            .find(|&n| tree_label(tree, n).unwrap() == ".data")
+            .unwrap();
+        tree_activate(tree, data).unwrap();
+        assert_eq!(listing_frame(pid("Listing")).unwrap().location, "00402000");
+        assert!(tree_activate(pid("Symbols"), 0).is_err());
     }
 
     #[test]

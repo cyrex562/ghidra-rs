@@ -87,6 +87,11 @@ pub trait TreeModel: Send {
     fn icon(&self, _node: NodeId) -> Option<String> {
         None
     }
+    /// The address a node navigates to on double-click (Java
+    /// `ProgramTreePlugin.doubleClick`); default: none.
+    fn location(&self, _node: NodeId) -> Option<u64> {
+        None
+    }
     /// The renderer selected `node` (single selection); default: ignored.
     fn select(&mut self, _node: NodeId) {}
     /// Whether the node has no children.

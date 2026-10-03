@@ -86,12 +86,13 @@ pub struct StaticTree {
     labels: Vec<String>,
     parents: Vec<Option<usize>>,
     children: Vec<Vec<usize>>,
+    addresses: Vec<Option<u64>>,
 }
 
 impl StaticTree {
     /// Builds a tree; the first path segment is the root.
     pub fn from_paths(paths: &[&str]) -> Self {
-        let mut t = StaticTree { labels: Vec::new(), parents: Vec::new(), children: Vec::new() };
+        let mut t = StaticTree { labels: Vec::new(), parents: Vec::new(), children: Vec::new(), addresses: Vec::new() };
         let mut index: BTreeMap<(Option<usize>, String), usize> = BTreeMap::new();
         for path in paths {
             let mut parent: Option<usize> = None;
@@ -104,6 +105,7 @@ impl StaticTree {
                         t.labels.push(seg.to_owned());
                         t.parents.push(parent);
                         t.children.push(Vec::new());
+                        t.addresses.push(None);
                         if let Some(p) = parent {
                             t.children[p].push(id);
                         }
@@ -115,6 +117,31 @@ impl StaticTree {
             }
         }
         t
+    }
+
+    /// [`Self::from_paths`] with the address each path's last node starts at
+    /// (a program tree's fragments).
+    pub fn with_locations(paths: &[(&str, Option<u64>)]) -> Self {
+        let names: Vec<&str> = paths.iter().map(|(p, _)| *p).collect();
+        let mut t = Self::from_paths(&names);
+        for (path, address) in paths {
+            if let Some(node) = t.find_path(path) {
+                t.addresses[node] = *address;
+            }
+        }
+        t
+    }
+
+    fn find_path(&self, path: &str) -> Option<usize> {
+        let mut node: Option<usize> = None;
+        for seg in path.split('/').filter(|s| !s.is_empty()) {
+            let candidates: Vec<usize> = match node {
+                None => (0..self.labels.len()).filter(|&i| self.parents[i].is_none()).collect(),
+                Some(n) => self.children[n].clone(),
+            };
+            node = Some(candidates.into_iter().find(|&c| self.labels[c] == seg)?);
+        }
+        node
     }
 }
 
@@ -133,6 +160,14 @@ impl TreeModel for StaticTree {
     }
     fn label(&self, node: NodeId) -> String {
         self.labels.get(node.0 as usize).cloned().unwrap_or_default()
+    }
+    /// A fragment's own start, else a module's: the minimum of its descendants.
+    fn location(&self, node: NodeId) -> Option<u64> {
+        let n = node.0 as usize;
+        if n >= self.labels.len() {
+            return None;
+        }
+        self.addresses[n].or_else(|| self.children[n].iter().filter_map(|&c| self.location(NodeId(c as u64))).min())
     }
 }
 
@@ -185,6 +220,19 @@ impl FormModel for MapForm {
 mod tests {
     use super::*;
     use crate::view_models::TableModel;
+
+    #[test]
+    fn a_tree_node_goes_to_its_address_or_its_descendants_minimum() {
+        use crate::view_models::{NodeId, TreeModel};
+        let t = StaticTree::with_locations(&[("ls/.text", Some(0x30)), ("ls/.data", Some(0x20)), ("ls/.bss", None), ("ls/seg/.x", Some(0x50))]);
+        let label = |n: NodeId| t.label(n);
+        let find = |name: &str| (0..t.labels.len() as u64).map(NodeId).find(|&n| label(n) == name).unwrap();
+        assert_eq!(t.location(find(".text")), Some(0x30));
+        assert_eq!(t.location(find(".bss")), None);
+        assert_eq!(t.location(find("seg")), Some(0x50));
+        assert_eq!(t.location(t.root()), Some(0x20)); // module: its address set's minimum
+        assert_eq!(t.location(NodeId(99)), None);
+    }
 
     #[test]
     fn a_rows_location_is_the_clicked_address_else_its_first_address() {

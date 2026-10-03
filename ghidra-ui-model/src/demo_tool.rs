@@ -137,9 +137,16 @@ pub fn build_session_for(program: Option<&ImportedProgram>) -> UiSession {
             Some(p) => {
                 // '/' separates tree levels; block names never nest
                 let paths: Vec<String> = p.block_names.iter().map(|b| format!("{}/{}", p.name, b.replace('/', "\u{2215}"))).collect();
-                StaticTree::from_paths(&paths.iter().map(String::as_str).collect::<Vec<_>>())
+                let located: Vec<(&str, Option<u64>)> =
+                    paths.iter().map(String::as_str).zip(p.block_starts.iter().map(|&a| Some(a))).collect();
+                StaticTree::with_locations(&located)
             }
-            None => StaticTree::from_paths(&["a.out/.text", "a.out/.data", "a.out/.bss", "a.out/.rodata"]),
+            None => StaticTree::with_locations(&[
+                ("a.out/.text", Some(0x0040_1000)),
+                ("a.out/.data", Some(0x0040_2000)),
+                ("a.out/.bss", None),
+                ("a.out/.rodata", None),
+            ]),
         }))),
         true,
     );
@@ -411,6 +418,39 @@ mod tests {
                 _ => None,
             })
             .expect("a dialog")
+    }
+
+    #[test]
+    fn a_session_for_an_imported_program_shows_its_memory_and_blocks() {
+        let program = ImportedProgram {
+            name: "ls".into(),
+            language: "x86:LE:64:default".into(),
+            address_bits: 64,
+            blocks: vec![MemoryBlockSnapshot::initialized(0x10_0000, vec![0x7f, 0x45]), MemoryBlockSnapshot::uninitialized(0x12_0000, 3)],
+            block_names: vec!["segment_1".into(), ".bss".into()],
+            block_starts: vec![0x10_0000, 0x12_0000],
+        };
+        let s = build_session_for(Some(&program));
+        let (_, h) = listing(&s);
+        let frame = {
+            let mut c = lock(&h);
+            c.set_viewport(1000);
+            c.frame()
+        };
+        assert_eq!(frame.rows.len(), 5);
+        assert_eq!(frame.rows[0].row.runs[0].text, "0000000000100000");
+        let tree = s.tool().find_provider("Demo", "Program Tree").unwrap();
+        let Some(ViewModelBox::Tree(t)) = s.model(tree) else { panic!("tree") };
+        let root = t.root();
+        assert_eq!(t.label(root), "ls");
+        assert_eq!((0..t.child_count(root)).map(|i| t.label(t.child(root, i))).collect::<Vec<_>>(), vec!["segment_1", ".bss"]);
+        let symbols = s.tool().find_provider("Demo", "Symbols").unwrap();
+        let Some(ViewModelBox::Table(sym)) = s.model(symbols) else { panic!("table") };
+        assert_eq!(sym.row_count(), 0);
+        let dec = s.tool().find_provider("Demo", "Decompiler").unwrap();
+        let Some(ViewModelBox::Text(text)) = s.model(dec) else { panic!("text") };
+        assert!(text.line_count() > 0);
+        assert!(!(0..text.line_count()).any(|i| text.line(i).iter().any(|r| r.text.contains("main"))));
     }
 
     #[test]

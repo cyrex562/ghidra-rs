@@ -21,6 +21,8 @@ pub struct ImportedProgram {
     pub blocks: Vec<MemoryBlockSnapshot>,
     /// Block names in address order (Program Tree).
     pub block_names: Vec<String>,
+    /// Each named block's start, parallel to `block_names`.
+    pub block_starts: Vec<u64>,
 }
 
 /// The Ghidra distribution whose compiled languages back imports:
@@ -109,7 +111,8 @@ pub fn import_elf(path: &Path, dist: &Path) -> Result<ImportedProgram, String> {
         .map(|b| (b.get_start().offset() as u64, b.get_name().to_owned()))
         .collect();
     named.sort();
-    Ok(ImportedProgram { name, language: language.to_owned(), address_bits, blocks, block_names: named.into_iter().map(|(_, n)| n).collect() })
+    let (block_starts, block_names) = named.into_iter().unzip();
+    Ok(ImportedProgram { name, language: language.to_owned(), address_bits, blocks, block_names, block_starts })
 }
 
 #[cfg(test)]
@@ -189,6 +192,10 @@ mod tests {
         assert_eq!((p.name.as_str(), p.language.as_str(), p.address_bits), ("ls", "x86:LE:64:default", 64));
         assert!(p.block_names.iter().any(|n| n == ".text"), "{:?}", p.block_names);
         assert_eq!(p.blocks.len(), p.block_names.len());
+        assert_eq!(p.block_starts.len(), p.block_names.len());
+        assert!(p.block_starts.windows(2).all(|w| w[0] <= w[1]));
+        let text = p.block_names.iter().position(|n| n == ".text").unwrap();
+        assert!(p.blocks.iter().any(|b| b.start == p.block_starts[text]));
         assert!(p.blocks.iter().all(|b| b.start >= 0x10_0000), "image base 0x100000");
     }
 }
