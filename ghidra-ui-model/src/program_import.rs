@@ -50,6 +50,11 @@ pub fn default_ghidra_dist() -> Option<PathBuf> {
     p.is_dir().then_some(p)
 }
 
+/// The Source column text (Java `SourceType.getDisplayString`).
+fn source_display(source: ghidra_rs::program::model::symbol::SourceType) -> String {
+    source.display_string().to_owned()
+}
+
 /// (processor dir, .sla file, language id) for an ELF's class
 /// (`EI_CLASS`: 1 = 32-bit, 2 = 64-bit), data encoding (`EI_DATA`: 1 = LE,
 /// 2 = BE) and `e_machine`.
@@ -127,22 +132,28 @@ pub fn import_elf(path: &Path, dist: &Path) -> Result<ImportedProgram, String> {
         .collect();
     named.sort();
     let (block_starts, block_names) = named.into_iter().unzip();
-    let mut symbols = Vec::new();
+    // Collect first: the display-name helper takes the symbol table itself.
+    let mut defined = Vec::new();
     if let Some(table) = program.get_symbol_table() {
         let mut it = table.get_all_symbols(false);
         while let Some(sym) = it.next_symbol() {
-            let address = sym.get_address();
-            if !address.space().is_loaded_memory_space() {
-                continue;
+            if sym.get_address().space().is_loaded_memory_space() {
+                defined.push(sym);
             }
-            symbols.push(ImportedSymbol {
-                name: sym.get_name().to_owned(),
-                address: address.offset() as u64,
-                kind: format!("{:?}", sym.get_symbol_type()),
-                source: format!("{:?}", sym.get_source()),
-            });
         }
     }
+    use ghidra_rs::program::model::symbol::symbol_utilities::{DefaultSymbolUtilities, SymbolUtilities};
+    let mut symbols: Vec<ImportedSymbol> = defined
+        .iter()
+        .map(|sym| ImportedSymbol {
+            name: sym.get_name().to_owned(),
+            address: sym.get_address().offset() as u64,
+            kind: DefaultSymbolUtilities
+                .get_symbol_type_display_name(program.as_ref(), sym.as_ref())
+                .unwrap_or_else(|| sym.get_symbol_type().name().to_owned()),
+            source: source_display(sym.get_source()),
+        })
+        .collect();
     symbols.sort_by(|a, b| a.address.cmp(&b.address).then_with(|| a.name.cmp(&b.name)));
     Ok(ImportedProgram { name, language: language.to_owned(), address_bits, blocks, block_names, block_starts, symbols })
 }
@@ -157,6 +168,13 @@ mod tests {
         let p = dir.join(name);
         std::fs::write(&p, bytes).unwrap();
         p
+    }
+
+    #[test]
+    fn sources_read_as_java_displays_them() {
+        use ghidra_rs::program::model::symbol::SourceType;
+        assert_eq!(source_display(SourceType::UserDefined), "User Defined");
+        assert_eq!(source_display(SourceType::Imported), "Imported");
     }
 
     #[test]
@@ -230,6 +248,9 @@ mod tests {
         assert!(p.blocks.iter().any(|b| b.start == p.block_starts[text]));
         assert!(!p.symbols.is_empty(), "ELF symbols are imported");
         assert!(p.symbols.iter().any(|s| s.source == "Imported"));
+        // Java display names (SymbolUtilities.getSymbolTypeDisplayName / SourceType.getDisplayString)
+        let known = ["Label", "Function", "Data Label", "Instruction Label", "External Data", "External Function", "Thunk Function"];
+        assert!(p.symbols.iter().all(|s| known.contains(&s.kind.as_str())), "{:?}", p.symbols.iter().map(|s| &s.kind).collect::<std::collections::BTreeSet<_>>());
         assert!(p.symbols.windows(2).all(|w| w[0].address <= w[1].address));
         assert!(p.symbols.iter().all(|s| p.blocks.iter().any(|b| b.start <= s.address && s.address < b.start + b.len())));
         assert!(p.blocks.iter().all(|b| b.start >= 0x10_0000), "image base 0x100000");

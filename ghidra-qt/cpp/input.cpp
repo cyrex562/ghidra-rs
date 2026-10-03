@@ -124,7 +124,9 @@ EventPump::EventPump(MainWindow* window, bool echoStatus) : QObject(window), m_w
 // The palette for Rust's theme choice: Fusion dark, or the style's own light
 // palette. Pure presentation; which theme applies is decided in Rust.
 void EventPump::applyTheme(bool dark) {
+    // Captured on the first call (the startup announcement, always light).
     static const QString originalStyle = QApplication::style()->name();
+    static const QPalette originalPalette = QApplication::palette();
     if (dark) {
         QApplication::setStyle(QStyleFactory::create(QStringLiteral("Fusion")));
         QPalette p;
@@ -154,7 +156,7 @@ void EventPump::applyTheme(bool dark) {
         QApplication::setPalette(p);
     } else {
         QApplication::setStyle(QStyleFactory::create(originalStyle));
-        QApplication::setPalette(QApplication::style()->standardPalette());
+        QApplication::setPalette(originalPalette);
     }
 }
 

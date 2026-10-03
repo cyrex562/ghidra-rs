@@ -107,6 +107,7 @@ int32_t run_app(const UiSession& session, const AppOptions& options) {
     app.installEventFilter(keys);
     auto* pump = new EventPump(&window, !options.press.empty());
     if (options.has_prompt_answer) pump->setPromptAnswer(toQString(options.prompt_answer));
+    pump->pump();  // apply startup events (theme, restored state) before the first paint
     window.show();
     if (!options.float_dock.empty()) {
         if (ads::CDockWidget* d = window.dockByTitle(toQString(options.float_dock))) d->setFloating();

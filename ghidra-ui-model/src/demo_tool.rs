@@ -270,6 +270,9 @@ pub fn build_session_for(program: Option<&ImportedProgram>) -> UiSession {
         s.set_icon_resolver(Box::new(icons));
     }
     s.add_config_state("THEME", Box::new(ThemeConfig { theme: theme.clone(), events: s.events().clone() }));
+    // The renderer starts in whatever the platform gives it: say which theme
+    // is current so it matches the chooser (a saved one follows on load).
+    s.events().post(UiEvent::ThemeChanged { dark: false });
     let ev = s.events().clone();
     let mut switch = ClosureAction::new("Switch Theme", OWNER, move |_| {
         ev.open_dialog(Box::new(ChangeThemeDialog::new(theme.clone(), ev.clone())));
@@ -788,6 +791,12 @@ mod tests {
         let symbols = s.tool().find_provider("Demo", "Symbols").unwrap();
         s.tool_mut().dispatch_key(KeyStroke::new(vk::C, CTRL_DOWN_MASK), Some(symbols));
         assert_eq!(s.events().drain(), vec![UiEvent::Status("Copy".into())]);
+    }
+
+    #[test]
+    fn the_startup_theme_is_announced_so_the_renderer_matches_the_chooser() {
+        let s = build_demo_session();
+        assert!(s.events().drain().contains(&UiEvent::ThemeChanged { dark: false }));
     }
 
     #[test]
