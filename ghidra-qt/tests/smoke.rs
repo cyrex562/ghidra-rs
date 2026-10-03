@@ -381,6 +381,44 @@ fn go_to_bin_ls_entry_shows_its_decoded_first_instruction() {
     }
 }
 
+/// The load address of an x86-64 ELF section (Ghidra's 0x100000 base for PIE).
+fn elf64_section_address(bytes: &[u8], name: &str) -> Option<u64> {
+    let u16_at = |o: usize| Some(u16::from_le_bytes(bytes.get(o..o + 2)?.try_into().ok()?));
+    let u32_at = |o: usize| Some(u32::from_le_bytes(bytes.get(o..o + 4)?.try_into().ok()?));
+    let u64_at = |o: usize| Some(u64::from_le_bytes(bytes.get(o..o + 8)?.try_into().ok()?));
+    let (shoff, shentsize, shnum, shstrndx) = (u64_at(0x28)? as usize, u16_at(0x3a)? as usize, u16_at(0x3c)? as usize, u16_at(0x3e)? as usize);
+    let strtab = u64_at(shoff + shstrndx * shentsize + 0x18)? as usize;
+    let base = if u16_at(16)? == 3 { 0x10_0000 } else { 0 };
+    (0..shnum).find_map(|i| {
+        let sh = shoff + i * shentsize;
+        let n = strtab + u32_at(sh)? as usize;
+        let end = n + bytes.get(n..)?.iter().position(|&b| b == 0)?;
+        (bytes.get(n..end)? == name.as_bytes()).then(|| u64_at(sh + 0x10).map(|a| a + base)).flatten()
+    })
+}
+
+#[test]
+fn disassemble_at_the_cursor_shows_the_decoded_instruction() {
+    let dist = std::env::var("GHIDRA_RS_GHIDRA_DIST")
+        .unwrap_or_else(|_| concat!(env!("CARGO_MANIFEST_DIR"), "/../tools/ghidra-dist/ghidra_12.1.2_PUBLIC").to_string());
+    let Ok(bytes) = std::fs::read("/bin/ls") else { return };
+    if !std::path::Path::new(&dist).is_dir() || bytes.len() < 64 || bytes[..4] != *b"\x7fELF" || bytes[4] != 2 || bytes[18] != 62 {
+        return; // needs the Ghidra dist and an x86-64 /bin/ls
+    }
+    // PLT stubs: code no entry point reaches, so the import leaves them undefined
+    let Some(plt) = elf64_section_address(&bytes, ".plt.sec").or_else(|| elf64_section_address(&bytes, ".plt")) else { return };
+    let out = shell()
+        .env_var("GHIDRA_RS_GHIDRA_DIST", &dist)
+        .args(["--open", "/bin/ls", "--focus", "Listing", "--prompt-answer", &format!("{plt:x}")])
+        .args(["--press", "G,D,Shift-Down,Shift-Down,Shift-Down,Shift-Down,Shift-Down,Shift-Down,Ctrl-C"])
+        .args(["--print-clipboard", "--quit-after-ms", "5000"])
+        .output()
+        .expect("spawn");
+    let text = String::from_utf8_lossy(&out.stdout).to_string();
+    let line = text.lines().find(|l| l.starts_with(&format!("clipboard: {plt:016x}"))).unwrap_or_else(|| panic!("{text}"));
+    assert!(!line.contains("??"), "the PLT is code after D: {text}");
+}
+
 fn options_run(dir: &std::path::Path, answer: &str) -> String {
     let out = shell_with_config(dir)
         .args(["--invoke-menu", "Tool Options", "--prompt-answer", answer, "--press", "Escape", "--quit-after-ms", "2000"])

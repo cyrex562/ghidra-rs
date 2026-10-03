@@ -196,16 +196,7 @@ pub fn build_session_for(program: Option<&ImportedProgram>) -> UiSession {
     // program replaces this once the ELF loader lands).
     let memory: Box<dyn crate::listing::ListingViewModel> = match program {
         // code units + the program's symbols as label rows
-        Some(p) => Box::new(crate::code_unit_listing::CodeUnitListing::with_headers(
-            p.address_bits,
-            p.blocks.clone(),
-            p.instructions.clone(),
-            p.symbols
-                .iter()
-                .map(|s| crate::code_unit_listing::LabelSnapshot { address: s.address, name: s.name.clone(), primary: s.primary })
-                .collect(),
-            p.block_headers.clone(),
-        )),
+        Some(p) => Box::new(code_unit_listing(p, p.instructions.clone())),
         None => Box::new(MemoryListing::new(
             32,
             vec![
@@ -290,12 +281,84 @@ pub fn build_session_for(program: Option<&ImportedProgram>) -> UiSession {
     switch.state_mut().set_menu_bar_data(MenuData::full(&["&Edit", "Theme", "Switch..."], None, Some("theme"), None, Some("1")).ok());
     s.tool_mut().add_action(Box::new(switch));
     let mut config = Vec::new();
+    if let Some(p) = program.filter(|p| p.live.is_some()) {
+        add_disassemble_action(s.tool_mut(), &events, listing.clone(), listing_id, p);
+    }
     let go_to = add_navigation_actions(s.tool_mut(), &events, listing, listing_id, &mut config);
     add_tool_options(s.tool_mut(), &events, go_to, &mut config);
     for (name, state) in config {
         s.add_config_state(&name, state);
     }
     s
+}
+
+/// The code listing of `p` with `instructions` (labels and headers as imported).
+fn code_unit_listing(p: &ImportedProgram, instructions: Vec<crate::code_unit_listing::InstructionSnapshot>) -> crate::code_unit_listing::CodeUnitListing {
+    crate::code_unit_listing::CodeUnitListing::with_headers(
+        p.address_bits,
+        p.blocks.clone(),
+        instructions,
+        p.symbols
+            .iter()
+            .map(|s| crate::code_unit_listing::LabelSnapshot { address: s.address, name: s.name.clone(), primary: s.primary })
+            .collect(),
+        p.block_headers.clone(),
+    )
+}
+
+/// Java `DisassemblerPlugin` "Disassemble" (`D`, listing popup): disassembles
+/// from the selection, else the cursor, following flows, then re-reads the
+/// program's code units into the listing.
+fn add_disassemble_action(tool: &mut DockingTool, events: &UiEventQueue, listing: ListingHandle, listing_id: ProviderId, p: &ImportedProgram) {
+    use ghidra_rs::app::cmd::disassemble::disassemble_command::DisassembleCommand;
+    use ghidra_rs::framework::cmd::background_command::BackgroundCommand;
+    use ghidra_rs::program::model::address::{Address, AddressSet};
+    use ghidra_rs::program::model::lang::language::Language;
+    use ghidra_rs::util::task::DummyMonitor;
+
+    let Some(live) = p.live.clone() else { return };
+    let snapshot = p.clone();
+    let (ev, h, enabled) = (events.clone(), listing.clone(), listing);
+    let mut a = ClosureAction::new("Disassemble", "DisassemblerPlugin", move |_| {
+        let program = live.program();
+        let space = program.get_language().get_default_space();
+        let at = |offset: u64| Address::new(space.clone(), offset as i64);
+        let (cursor, ranges) = {
+            let c = lock(&h);
+            let m = c.model();
+            let cursor = c.cursor().and_then(|cur| m.address_of(cur.index));
+            let ranges: Vec<(u64, u64)> =
+                c.selection().ranges().iter().filter_map(|&(lo, hi)| Some((m.address_of(lo)?, m.address_of(hi)?))).collect();
+            (cursor, ranges)
+        };
+        let mut cmd = if ranges.is_empty() {
+            let Some(cursor) = cursor else { return };
+            DisassembleCommand::new(at(cursor), None, true)
+        } else {
+            let mut set = AddressSet::new();
+            for (lo, hi) in ranges {
+                set.add_range(&at(lo), &at(hi));
+            }
+            DisassembleCommand::with_start_set(set, None, true)
+        };
+        if !cmd.apply(program, &DummyMonitor) {
+            ev.post(UiEvent::Status(cmd.get_status_msg().unwrap_or_else(|| "Disassembly failed".into())));
+            return;
+        }
+        if let Some(msg) = cmd.get_status_msg() {
+            ev.post(UiEvent::Status(msg));
+        }
+        let rebuilt = code_unit_listing(&snapshot, crate::program_import::snapshot_instructions(program));
+        lock(&h).replace_model(Box::new(rebuilt));
+        ev.post(UiEvent::ViewChanged(listing_id.0));
+        ev.post(UiEvent::ActionsChanged);
+    });
+    a.state_mut().enabled_when(Box::new(move |context| {
+        context.component_provider() == Some(listing_id) && lock(&enabled).cursor().is_some()
+    }));
+    a.state_mut().set_popup_menu_data(MenuData::full(&["Disassemble"], None, Some("Disassembly"), None, None).ok());
+    a.state_mut().set_key_binding_data(Some(KeyBindingData::new(KeyStroke::new(vk::D, 0))));
+    tool.add_action(Box::new(a));
 }
 
 /// Go To (`G`) and Previous/Next Location (Alt-Left/Alt-Right) over the
@@ -460,6 +523,7 @@ impl ConfigState for ToolOptionsState {
 mod tests {
     use super::*;
     use ghidra_rs::docking::action::DispatchResult;
+    use crate::listing::CursorPos;
     use ghidra_rs::util::awt::key_stroke::{vk, CTRL_DOWN_MASK};
     use ghidra_rs::util::awt::KeyStroke;
 
@@ -812,6 +876,73 @@ mod tests {
         let symbols = s.tool().find_provider("Demo", "Symbols").unwrap();
         s.tool_mut().dispatch_key(KeyStroke::new(vk::C, CTRL_DOWN_MASK), Some(symbols));
         assert_eq!(s.events().drain(), vec![UiEvent::Status("Copy".into())]);
+    }
+
+    /// `/bin/ls` imported, and the first start of `.fini`/`.plt.sec`/`.plt`/`.init`
+    /// that the import did not disassemble.
+    fn bin_ls_with_undefined_code() -> Option<(ImportedProgram, u64)> {
+        let dist = crate::program_import::default_ghidra_dist()?;
+        let bytes = std::fs::read("/bin/ls").ok()?;
+        if bytes.len() < 64 || bytes[..4] != *b"\x7fELF" || bytes[4] != 2 || bytes[18] != 62 {
+            return None;
+        }
+        let p = crate::program_import::import_elf(std::path::Path::new("/bin/ls"), &dist).ok()?;
+        let target = [".fini", ".plt.sec", ".plt", ".init"].iter().find_map(|name| {
+            let i = p.block_names.iter().position(|n| n == name)?;
+            let a = p.block_starts[i];
+            (!p.instructions.iter().any(|ins| ins.start <= a && a < ins.start + u64::from(ins.len))).then_some(a)
+        })?;
+        Some((p, target))
+    }
+
+    #[test]
+    fn disassemble_at_the_cursor_decodes_there_and_keeps_the_cursor() {
+        let Some((program, target)) = bin_ls_with_undefined_code() else { return };
+        let mut s = build_session_for(Some(&program));
+        let (id, h) = listing(&s);
+        {
+            let mut c = lock(&h);
+            c.set_viewport(400);
+            c.goto_address(target).unwrap();
+        }
+        let before = lock(&h).model().index_count();
+        s.events().drain();
+        let r = s.tool_mut().dispatch_key(KeyStroke::new(vk::D, 0), Some(id));
+        assert!(matches!(r, DispatchResult::Performed(_)), "D performs Disassemble");
+        let c = lock(&h);
+        let cursor = c.cursor().unwrap();
+        assert_eq!(c.model().address_of(cursor.index), Some(target), "cursor stays at the address");
+        assert!(c.model().index_count() < before, "decoded bytes merge into instruction rows");
+        let mut row = cursor.index;
+        while c.model().field_text(CursorPos { index: row, field: 0, col: 0 }).is_some_and(|t| !t.chars().all(|ch| ch.is_ascii_hexdigit())) {
+            row += 1; // past label rows
+        }
+        let mnemonic = c.model().field_text(CursorPos { index: row, field: 2, col: 0 }).unwrap_or_default();
+        assert!(!mnemonic.is_empty() && mnemonic != "??", "an instruction at {target:x}: {mnemonic:?}");
+        drop(c);
+        assert!(s.events().drain().contains(&UiEvent::ViewChanged(id.0)));
+    }
+
+    #[test]
+    fn disassembling_uninitialized_memory_reports_and_leaves_the_listing() {
+        let Some((program, _)) = bin_ls_with_undefined_code() else { return };
+        let Some(bss) = program.block_names.iter().position(|n| n == ".bss").map(|i| program.block_starts[i]) else { return };
+        let mut s = build_session_for(Some(&program));
+        let (id, h) = listing(&s);
+        lock(&h).goto_address(bss).unwrap();
+        let before = lock(&h).model().index_count();
+        s.events().drain();
+        s.tool_mut().dispatch_key(KeyStroke::new(vk::D, 0), Some(id));
+        assert_eq!(lock(&h).model().index_count(), before);
+        let events = s.events().drain();
+        assert!(events.iter().any(|e| matches!(e, UiEvent::Status(m) if !m.is_empty())), "{events:?}");
+    }
+
+    #[test]
+    fn disassemble_needs_a_live_program_and_the_listing() {
+        let s = build_demo_session();
+        let names: Vec<String> = s.tool().actions().global_actions().filter_map(|id| s.tool().actions().get(id).map(|a| a.state().name().to_owned())).collect();
+        assert!(!names.iter().any(|n| n == "Disassemble"), "the fixture listing has no program to disassemble");
     }
 
     #[test]
