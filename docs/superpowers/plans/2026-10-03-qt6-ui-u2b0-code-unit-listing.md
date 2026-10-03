@@ -23,7 +23,7 @@
 
 ## Review Focus
 1. An address inside an instruction: `goto` lands on the instruction row and `address_text` is its start.
-2. Several labels at one address: one row each, primary first, then by name. The order is stable.
+2. Several labels at one address: one row each, in Java's LabelFieldSymbolLoader order: offcut labels, then non-primaries by name, then the primary directly above the code unit.
 3. An instruction crossing a block gap or end is clamped to its block. No panic on a bad snapshot.
 4. Row counts and index ↔ address mapping at block boundaries; empty memory.
 5. `rows()` latency over a 1M-row listing: binary search, never a linear walk.

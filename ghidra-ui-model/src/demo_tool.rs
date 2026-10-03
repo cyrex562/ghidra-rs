@@ -196,7 +196,7 @@ pub fn build_session_for(program: Option<&ImportedProgram>) -> UiSession {
     // program replaces this once the ELF loader lands).
     let memory: Box<dyn crate::listing::ListingViewModel> = match program {
         // code units + the program's symbols as label rows
-        Some(p) => Box::new(crate::code_unit_listing::CodeUnitListing::new(
+        Some(p) => Box::new(crate::code_unit_listing::CodeUnitListing::with_headers(
             p.address_bits,
             p.blocks.clone(),
             p.instructions.clone(),
@@ -204,6 +204,7 @@ pub fn build_session_for(program: Option<&ImportedProgram>) -> UiSession {
                 .iter()
                 .map(|s| crate::code_unit_listing::LabelSnapshot { address: s.address, name: s.name.clone(), primary: s.primary })
                 .collect(),
+            p.block_headers.clone(),
         )),
         None => Box::new(MemoryListing::new(
             32,
@@ -511,6 +512,12 @@ mod tests {
                 crate::program_import::ImportedSymbol { name: "_start".into(), address: 0x10_0001, kind: "Label".into(), source: "Imported".into(), primary: true },
                 crate::program_import::ImportedSymbol { name: "free".into(), address: 0x12_0002, kind: "Label".into(), source: "Imported".into(), primary: true },
             ],
+            block_headers: vec![crate::code_unit_listing::BlockHeader {
+                start: 0x10_0000,
+                name: "segment_1".into(),
+                comment: String::new(),
+                space: "ram".into(),
+            }],
             instructions: vec![],
         };
         let s = build_session_for(Some(&program));
@@ -520,10 +527,11 @@ mod tests {
             c.set_viewport(1000);
             c.frame()
         };
-        assert_eq!(frame.rows.len(), 7, "5 bytes + 2 label rows");
-        assert_eq!(frame.rows[0].row.runs[0].text, "0000000000100000");
-        assert_eq!(frame.rows[1].row.runs[0].text, "_start", "label row above its address");
-        assert_eq!(frame.rows[2].row.runs[0].text, "0000000000100001");
+        assert_eq!(frame.rows.len(), 11, "4 header rows + 5 bytes + 2 label rows");
+        assert_eq!(frame.rows[1].row.runs[0].text, "// segment_1", "block header first");
+        assert_eq!(frame.rows[4].row.runs[0].text, "0000000000100000");
+        assert_eq!(frame.rows[5].row.runs[0].text, "_start", "label row above its address");
+        assert_eq!(frame.rows[6].row.runs[0].text, "0000000000100001");
         let tree = s.tool().find_provider("Demo", "Program Tree").unwrap();
         let Some(ViewModelBox::Tree(t)) = s.model(tree) else { panic!("tree") };
         let root = t.root();

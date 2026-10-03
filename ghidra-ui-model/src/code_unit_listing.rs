@@ -33,6 +33,19 @@ pub struct LabelSnapshot {
     pub primary: bool,
 }
 
+/// What a memory block's start header shows (Java `MemoryBlockStartFieldFactory`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BlockHeader {
+    /// The block's first address.
+    pub start: u64,
+    /// Name plus a type suffix for non-default blocks (" (Bit Mapped)", ...).
+    pub name: String,
+    /// The block comment ("" for none).
+    pub comment: String,
+    /// The address space name ("ram").
+    pub space: String,
+}
+
 /// Code units and labels over memory.
 pub struct CodeUnitListing {
     addr_digits: usize,
@@ -79,13 +92,26 @@ impl CodeUnitListing {
     /// clamped to their block, and labels outside memory are dropped.
     pub fn new(
         address_bits: u32,
+        blocks: Vec<MemoryBlockSnapshot>,
+        instructions: Vec<InstructionSnapshot>,
+        labels: Vec<LabelSnapshot>,
+    ) -> Self {
+        Self::with_headers(address_bits, blocks, instructions, labels, Vec::new())
+    }
+
+    /// [`Self::new`] plus the `//` header Ghidra draws at each block's start.
+    pub fn with_headers(
+        address_bits: u32,
         mut blocks: Vec<MemoryBlockSnapshot>,
         mut instructions: Vec<InstructionSnapshot>,
         mut labels: Vec<LabelSnapshot>,
+        headers: Vec<BlockHeader>,
     ) -> Self {
+        let addr_digits = (address_bits as usize).div_ceil(4).max(1);
         blocks.sort_by_key(|b| b.start);
         instructions.sort_by_key(|i| i.start);
-        labels.sort_by(|a, b| a.address.cmp(&b.address).then(b.primary.cmp(&a.primary)).then(a.name.cmp(&b.name)));
+        // LabelFieldSymbolLoader: non-primaries first, the primary last
+        labels.sort_by(|a, b| a.address.cmp(&b.address).then(a.primary.cmp(&b.primary)).then(a.name.cmp(&b.name)));
         let mut segments = Vec::new();
         let mut next_row: u128 = 0;
         let mut push = |segments: &mut Vec<Segment>, rows: u128, address: u64, block: usize, kind: SegKind| {
@@ -100,6 +126,20 @@ impl CodeUnitListing {
             }
             while li < labels.len() && labels[li].address < start {
                 li += 1;
+            }
+            if let Some(h) = headers.iter().find(|h| h.start == start && b.len() > 0) {
+                // MemoryBlockStartFieldFactory.createBlockStartText
+                let last = start + b.len() - 1;
+                let range = format!("{0}:{1:02$x}-{0}:{3:02$x}", h.space, start, addr_digits, last);
+                let mut lines = vec!["//".to_owned(), format!("// {}", h.name)];
+                if !h.comment.is_empty() {
+                    lines.push(format!("// {}", h.comment));
+                }
+                lines.push(format!("// {range}"));
+                lines.push("//".to_owned());
+                for line in lines {
+                    push(&mut segments, 1, start, bi, SegKind::Label(line));
+                }
             }
             let mut cursor = start;
             loop {
@@ -120,18 +160,23 @@ impl CodeUnitListing {
                 if p >= end {
                     break;
                 }
+                let at = li;
                 while li < labels.len() && labels[li].address == p {
+                    li += 1;
+                }
+                let len = (next_insn == Some(p)).then(|| u64::from(instructions[ii].len.max(1)).min(end - p));
+                // offcut labels inside the instruction first (Symbols lists
+                // offcuts before the code unit's own symbols)
+                let unit_end = p + len.unwrap_or(0);
+                while li < labels.len() && labels[li].address < unit_end {
                     push(&mut segments, 1, p, bi, SegKind::Label(labels[li].name.clone()));
                     li += 1;
                 }
-                if next_insn == Some(p) {
+                for l in labels[at..].iter().take_while(|l| l.address == p) {
+                    push(&mut segments, 1, p, bi, SegKind::Label(l.name.clone()));
+                }
+                if let Some(len) = len {
                     let insn = &instructions[ii];
-                    let len = u64::from(insn.len.max(1)).min(end - p);
-                    // offcut labels inside the instruction show above it
-                    while li < labels.len() && labels[li].address < p + len {
-                        push(&mut segments, 1, p, bi, SegKind::Label(labels[li].name.clone()));
-                        li += 1;
-                    }
                     let kind = SegKind::Instruction { len, mnemonic: insn.mnemonic.clone(), operands: insn.operands.clone() };
                     push(&mut segments, 1, p, bi, kind);
                     cursor = p + len;
@@ -139,7 +184,6 @@ impl CodeUnitListing {
                 }
             }
         }
-        let addr_digits = (address_bits as usize).div_ceil(4).max(1);
         Self { addr_digits, blocks, segments, count: next_row, metrics: FontMetrics::monospace(7, 11, 3) }
     }
 
@@ -383,20 +427,34 @@ mod tests {
     }
 
     #[test]
-    fn labels_get_their_own_rows_above_the_unit_primary_first() {
+    fn labels_get_their_own_rows_above_the_unit_primary_last() {
+        // LabelFieldSymbolLoader: non-primaries first, the primary last (just
+        // above the code unit)
         let l = listing(
             vec![insn(0x1000, 4, "ENDBR64", "")],
             vec![label(0x1000, "entry", false), label(0x1000, "_start", true), label(0x1006, "tail", true)],
         );
         let rows = texts(&l.rows(0, 1000));
-        assert_eq!(rows[0], vec!["_start"]);
-        assert_eq!(rows[1], vec!["entry"]);
+        assert_eq!(rows[0], vec!["entry"]);
+        assert_eq!(rows[1], vec!["_start"]);
         assert_eq!(rows[2][2], "ENDBR64");
         assert_eq!(rows[3][0], "00001004"); // undefined bytes 0x1004..
         assert_eq!(rows[5], vec!["tail"]);
         assert_eq!(rows[6][0], "00001006");
         assert_eq!(l.address_text(0), "00001000");
         assert_eq!(l.address_text(5), "00001006");
+    }
+
+    #[test]
+    fn offcut_labels_sit_above_the_labels_at_the_unit_start() {
+        let l = listing(
+            vec![insn(0x1000, 4, "MOV", "")],
+            vec![label(0x1000, "fn", true), label(0x1002, "mid", true)],
+        );
+        let rows = texts(&l.rows(0, 1000));
+        assert_eq!(rows[0], vec!["mid"]);
+        assert_eq!(rows[1], vec!["fn"]);
+        assert_eq!(rows[2][2], "MOV");
     }
 
     #[test]
@@ -419,6 +477,28 @@ mod tests {
         assert_eq!(big[1], "ed 90"); // clamped to the block
         assert!(rows.iter().all(|r| r.get(2).map(String::as_str) != Some("NOP")), "overlapped instruction skipped");
         assert!(rows.iter().all(|r| r[0] != "nowhere"));
+    }
+
+    #[test]
+    fn a_block_start_gets_ghidras_comment_header_before_its_labels() {
+        let mut l = CodeUnitListing::with_headers(
+            32,
+            vec![MemoryBlockSnapshot::initialized(0x1000, vec![0x90, 0x90]), MemoryBlockSnapshot::uninitialized(0x2000, 1)],
+            vec![],
+            vec![label(0x1000, "_start", true)],
+            vec![
+                BlockHeader { start: 0x1000, name: ".text".into(), comment: "SHT_PROGBITS [0x1000 - 0x1001]".into(), space: "ram".into() },
+                BlockHeader { start: 0x2000, name: ".bss".into(), comment: String::new(), space: "ram".into() },
+            ],
+        );
+        l.set_metrics(metrics());
+        let rows = texts(&l.rows(0, 1000));
+        let first: Vec<&str> = rows.iter().take(6).map(|r| r[0].as_str()).collect();
+        assert_eq!(first, vec!["//", "// .text", "// SHT_PROGBITS [0x1000 - 0x1001]", "// ram:00001000-ram:00001001", "//", "_start"]);
+        let bss = rows.iter().position(|r| r[0] == "// .bss").unwrap();
+        assert_eq!(rows[bss + 1][0], "// ram:00002000-ram:00002000", "no comment line when empty");
+        assert_eq!(l.goto(0x1000), Some(0), "goto lands on the header");
+        assert_eq!(l.address_text(1), "00001000");
     }
 
     #[test]

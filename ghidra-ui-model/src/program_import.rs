@@ -6,7 +6,9 @@
 
 use std::path::{Path, PathBuf};
 
+use crate::code_unit_listing::BlockHeader;
 use crate::listing::MemoryBlockSnapshot;
+use ghidra_rs::program::model::mem::memory_block_type::MemoryBlockType;
 
 /// What the shell shows of an imported program.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -25,6 +27,8 @@ pub struct ImportedProgram {
     pub block_starts: Vec<u64>,
     /// The symbol table in loaded memory, address order (Symbols pane).
     pub symbols: Vec<ImportedSymbol>,
+    /// Each loaded block's `//` start header.
+    pub block_headers: Vec<BlockHeader>,
     /// Decoded instructions (empty until the disassembler runs).
     pub instructions: Vec<crate::code_unit_listing::InstructionSnapshot>,
 }
@@ -128,14 +132,33 @@ pub fn import_elf(path: &Path, dist: &Path) -> Result<ImportedProgram, String> {
     let memory = program.get_memory().ok_or_else(|| "program has no memory".to_string())?;
     let handles = memory.get_block_handles();
     let (address_bits, blocks) = crate::listing::snapshot_blocks(&handles);
-    let mut named: Vec<(u64, String)> = handles
+    let mut block_headers: Vec<BlockHeader> = handles
+        .iter()
+        .filter_map(|h| h.read().ok())
+        .filter(|b| b.get_start().space().is_loaded_memory_space())
+        .map(|b| BlockHeader {
+            start: b.get_start().offset() as u64,
+            // Java names a mapped block's source; the type stands in for it here.
+            name: match b.get_type() {
+                MemoryBlockType::Default => b.get_name().to_owned(),
+                t => format!("{} ({t})", b.get_name()),
+            },
+            comment: b.get_comment().unwrap_or("").to_owned(),
+            space: b.get_start().space().name().to_owned(),
+        })
+        .collect();
+    block_headers.sort_by(|a, b| a.start.cmp(&b.start).then_with(|| a.name.cmp(&b.name)));
+    let block_starts: Vec<(u64, String)> = handles
         .iter()
         .filter_map(|h| h.read().ok())
         .filter(|b| b.get_start().space().is_loaded_memory_space())
         .map(|b| (b.get_start().offset() as u64, b.get_name().to_owned()))
-        .collect();
-    named.sort();
-    let (block_starts, block_names) = named.into_iter().unzip();
+        .collect::<Vec<_>>();
+    let (block_starts, block_names) = {
+        let mut named = block_starts;
+        named.sort();
+        named.into_iter().unzip()
+    };
     // Collect first: the display-name helper takes the symbol table itself.
     let mut defined = Vec::new();
     if let Some(table) = program.get_symbol_table() {
@@ -168,6 +191,7 @@ pub fn import_elf(path: &Path, dist: &Path) -> Result<ImportedProgram, String> {
         block_names,
         block_starts,
         symbols,
+        block_headers,
         instructions: Vec::new(),
     })
 }
@@ -260,6 +284,9 @@ mod tests {
         assert!(p.block_starts.windows(2).all(|w| w[0] <= w[1]));
         let text = p.block_names.iter().position(|n| n == ".text").unwrap();
         assert!(p.blocks.iter().any(|b| b.start == p.block_starts[text]));
+        assert_eq!(p.block_headers.len(), p.block_names.len());
+        let text_header = p.block_headers.iter().find(|h| h.name == ".text").expect(".text header");
+        assert_eq!(text_header.space, "ram");
         assert!(!p.symbols.is_empty(), "ELF symbols are imported");
         assert!(p.symbols.iter().any(|s| s.source == "Imported"));
         // Java display names (SymbolUtilities.getSymbolTypeDisplayName / SourceType.getDisplayString)

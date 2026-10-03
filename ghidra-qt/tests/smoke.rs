@@ -342,13 +342,16 @@ fn opening_bin_ls_lists_its_memory() {
     if !std::path::Path::new(&dist).is_dir() || bytes.len() < 64 || bytes[..4] != *b"\x7fELF" || bytes[18] != 62 {
         return; // needs the Ghidra dist and an x86-64 /bin/ls
     }
-    let out = shell().env_var("GHIDRA_RS_GHIDRA_DIST", &dist).args(["--open", "/bin/ls", "--dump-listing", "2"]).output().expect("spawn");
+    let out = shell().env_var("GHIDRA_RS_GHIDRA_DIST", &dist).args(["--open", "/bin/ls", "--dump-listing", "8"]).output().expect("spawn");
     assert!(out.status.success(), "stderr {}", String::from_utf8_lossy(&out.stderr));
     let text = String::from_utf8_lossy(&out.stdout).to_string();
     let lines: Vec<&str> = text.lines().collect();
-    assert_eq!(lines.len(), 2, "{text}");
-    // first byte of the image at Ghidra's default 64-bit image base: ELF magic
-    assert_eq!(lines[0], "0000000000100000  7f  ??  7Fh");
+    assert_eq!(lines.len(), 8, "{text}");
+    // the first block's `//` header, then the image's first byte at Ghidra's
+    // default 64-bit image base: ELF magic
+    assert_eq!(lines[0].trim(), "//", "{text}");
+    assert!(lines.iter().any(|l| l.contains("ram:0000000000100000-ram:")), "{text}");
+    assert!(lines.contains(&"0000000000100000  7f  ??  7Fh"), "{text}");
 }
 
 fn options_run(dir: &std::path::Path, answer: &str) -> String {
