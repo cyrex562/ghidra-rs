@@ -217,11 +217,15 @@ impl DynamicSymbolSource for ProgramDynamicSymbols {
 }
 
 impl ProgramDB {
-    /// The instruction at `address` as the listing displays it (`CodeUnitFormat` with
-    /// [`CodeUnitFormatOptions::browser_default`]): references on operands read as their
-    /// destinations' symbols, a referenced address without one as its dynamic label (`LAB_`,
-    /// `SUB_`, `DAT_`, ...). `None` when no instruction starts at `address` (or its bytes can
-    /// no longer be read).
+    /// The instruction or defined data at `address` as the listing displays it
+    /// (`CodeUnitFormat` with [`CodeUnitFormatOptions::browser_default`]): references on
+    /// operands read as their destinations' symbols, a referenced address without one as its
+    /// dynamic label (`LAB_`, `SUB_`, `DAT_`, ...), a READ of a pointer to a named symbol as
+    /// `->` and that name. Defined data shows its data type's mnemonic (`addr`, `dq`) and one
+    /// operand, `getDataValueRepresentation`: the symbol its primary reference reaches
+    /// (`__libc_start_main` for a GOT pointer to that import), else its default value
+    /// representation. `None` when no instruction or defined data starts at `address` (or an
+    /// instruction's bytes can no longer be read).
     ///
     /// Takes the listing and memory read locks to build the instruction and releases them
     /// before formatting, which takes the reference, symbol, listing and memory locks in turn;
@@ -230,7 +234,12 @@ impl ProgramDB {
         let instruction = {
             let listing = self.listing.read().unwrap_or_else(|p| p.into_inner());
             let memory = self.memory.read().unwrap_or_else(|p| p.into_inner());
-            let id = listing.instruction_at(address)?;
+            let Some(id) = listing.instruction_at(address) else {
+                let summary = listing.defined_data_at(address)?.summary(&*memory, self.language.is_big_endian());
+                drop(memory);
+                drop(listing);
+                return Some(self.data_operand_display(summary));
+            };
             let program: Arc<dyn Program> = self.clone();
             listing.to_instruction(id, &*memory, Some(program), SleighLanguage::get_address_factory(&self.language))?
         };
@@ -248,6 +257,26 @@ impl ProgramDB {
             }
         }
         Some(OperandDisplay { mnemonic, operands, operand_field })
+    }
+}
+
+impl ProgramDB {
+    /// `CodeUnitFormat.getDataValueRepresentation` for non-composite data under the browser
+    /// options: a memory reference on operand 0 reads as the symbol it reaches (stored or
+    /// dynamic; no namespace or offcut decoration yet), else the default value representation
+    /// in `summary`. Takes the reference and symbol locks in turn.
+    fn data_operand_display(&self, summary: CodeUnitSummary) -> OperandDisplay {
+        let reference = self
+            .references
+            .read()
+            .unwrap_or_else(|p| p.into_inner())
+            .primary_reference_from(&summary.address, 0);
+        let label = reference.and_then(|reference| {
+            let symbols = self.symbol_mgr.read().unwrap_or_else(|p| p.into_inner());
+            symbols.get_symbol_for_reference(&reference).ok().flatten().map(|s| s.get_name().to_string())
+        });
+        let operand = label.unwrap_or(summary.operand_text);
+        OperandDisplay { mnemonic: summary.mnemonic, operands: vec![operand.clone()], operand_field: operand }
     }
 }
 
@@ -475,7 +504,7 @@ mod tests {
             .get_memory()
             .write()
             .unwrap()
-            .create_initialized_block("b", &addr, Some(&mut &[0x00, 0x00, 0x10, 0x00, 0x6a][..]), 5, None, false)
+            .create_initialized_block("b", &addr, Some(&mut &[0x04, 0x10, 0x00, 0x00, 0x6a][..]), 5, None, false) // little-endian 0x1004
             .unwrap();
         let pointer: Arc<dyn DataType> = Arc::new(
             crate::program::model::data::pointer_data_type::PointerDataType::new_with(None::<Arc<dyn DataType>>, 4, None)
@@ -495,8 +524,19 @@ mod tests {
         assert!(units[0].is_defined_data());
         assert_eq!(program.data_summaries(&addr, &addr.add_wrap(4)), units[..1].to_vec());
         assert_eq!(program.defined_data_at(&addr).map(|d| d.length()), Some(4));
-        // the pointer's default reference (to 0x1000, itself)
+        // the pointer's default reference (to 0x1004), which its operand reads as
         assert_eq!(program.references_from(&addr).len(), 1);
+        let program = Arc::new(program);
+        let shown = program.operand_display(&addr).unwrap();
+        assert_eq!((shown.mnemonic.as_str(), shown.operand_field.as_str()), ("addr", "DAT_00001004"));
+        program
+            .get_symbol_table()
+            .write()
+            .unwrap()
+            .create_label(&addr.add_wrap(4), "target", SourceType::UserDefined)
+            .unwrap();
+        assert_eq!(program.operand_display(&addr).unwrap().operands, vec!["target".to_string()]);
+        assert!(program.operand_display(&addr.add_wrap(1)).is_none());
     }
 
     #[test]

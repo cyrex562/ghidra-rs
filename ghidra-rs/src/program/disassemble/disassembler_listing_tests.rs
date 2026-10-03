@@ -699,6 +699,11 @@ fn bin_ls_start_calls_libc_start_main_through_a_got_pointer() {
     let summary = program.data_summaries(&slot, &slot).pop().unwrap();
     assert_eq!((summary.mnemonic.as_str(), summary.operand_text.clone()), ("addr", target.to_string()));
 
+    // the slot itself reads as Java's listing shows a pointer: `addr` and the symbol it reaches
+    let pointer = program.operand_display(&slot).unwrap();
+    assert_eq!((pointer.mnemonic.as_str(), pointer.operand_field.as_str()), ("addr", "__libc_start_main"));
+    assert_eq!(pointer.operands, vec!["__libc_start_main".to_string()]);
+
     let shown = program.operand_display(&call.address).unwrap();
     assert_eq!((shown.mnemonic.as_str(), shown.operand_field.as_str()), ("CALL", "qword ptr [->__libc_start_main]"));
 }
