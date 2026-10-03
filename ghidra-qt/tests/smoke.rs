@@ -351,6 +351,27 @@ fn opening_bin_ls_lists_its_memory() {
     assert_eq!(lines[0], "0000000000100000  7f  ??  7Fh");
 }
 
+fn options_run(dir: &std::path::Path, answer: &str) -> String {
+    let out = shell_with_config(dir)
+        .args(["--invoke-menu", "Tool Options", "--prompt-answer", answer, "--press", "Escape", "--quit-after-ms", "2000"])
+        .output()
+        .expect("spawn");
+    assert!(out.status.success(), "stderr {}", String::from_utf8_lossy(&out.stderr));
+    String::from_utf8_lossy(&out.stdout).to_string()
+}
+
+#[test]
+fn tool_options_dialog_edits_persist_across_restarts() {
+    let dir = tmp("config-options");
+    let _ = std::fs::remove_dir_all(&dir);
+    let first = options_run(&dir, "Max Goto Entries=4");
+    assert!(first.lines().any(|l| l == "dialog: Options for Ghidra-rs"), "{first}");
+    assert!(first.lines().any(|l| l == "tree: Tool"), "{first}");
+    assert!(first.lines().any(|l| l == "form: Max Goto Entries=10"), "{first}");
+    let second = options_run(&dir, "none");
+    assert!(second.lines().any(|l| l == "form: Max Goto Entries=4"), "{second}");
+}
+
 #[test]
 fn listing_dock_renders_undefined_bytes() {
     let out = shell().args(["--dump-listing", "3"]).output().expect("spawn");

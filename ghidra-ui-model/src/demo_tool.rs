@@ -11,6 +11,10 @@ use crate::demo::{LinesText, MapForm, StaticTree, VecTable};
 use crate::events::{UiEvent, UiEventQueue};
 use crate::listing::{MemoryBlockSnapshot, MemoryListing};
 use crate::go_to_dialog::{GoToAddressLabelDialog, QueryData, SharedGoToDialog};
+use crate::options_dialog::{OptionsDialog, OptionsDialogState};
+use ghidra_rs::framework::options::option_type::OptionValue;
+use ghidra_rs::framework::options::options_change_listener::OptionsChangeListener;
+use ghidra_rs::framework::options::{SharedOptionsListener, ToolOptions};
 use crate::program_import::ImportedProgram;
 use crate::session::ConfigState;
 use std::sync::{Arc, Mutex};
@@ -227,7 +231,8 @@ pub fn build_session_for(program: Option<&ImportedProgram>) -> UiSession {
         s.set_icon_resolver(theme);
     }
     let mut config = Vec::new();
-    add_navigation_actions(s.tool_mut(), &events, listing, listing_id, &mut config);
+    let go_to = add_navigation_actions(s.tool_mut(), &events, listing, listing_id, &mut config);
+    add_tool_options(s.tool_mut(), &events, go_to, &mut config);
     for (name, state) in config {
         s.add_config_state(&name, state);
     }
@@ -242,7 +247,7 @@ fn add_navigation_actions(
     listing: ListingHandle,
     listing_id: ProviderId,
     config: &mut Vec<(String, Box<dyn ConfigState>)>,
-) {
+) -> SharedGoToDialog {
     tool.set_menu_group(&["&Navigation"], Some("2"), None);
     // GoToService.goToQuery for the listing: addresses only until symbols land
     // (a label finds nothing, as Ghidra reports for an unknown label).
@@ -257,6 +262,7 @@ fn add_navigation_actions(
         Ok(true)
     })))));
     config.push(("GoToAddressLabelPlugin".to_owned(), Box::new(dialog.clone())));
+    let shared_dialog = dialog.clone();
     let ev = events.clone();
     let mut go_to = ClosureAction::new("Go To Address/Label", OWNER, move |_| {
         ev.open_dialog(Box::new(dialog.clone()));
@@ -287,6 +293,80 @@ fn add_navigation_actions(
         a.state_mut().set_tool_bar_data(Some(ToolBarData::new(IconId::new(icon), Some("Navigation"), Some(sub_group))));
         a.state_mut().set_key_binding_data(Some(KeyBindingData::new(KeyStroke::new(key, ALT_DOWN_MASK))));
         tool.add_action(Box::new(a));
+    }
+    shared_dialog
+}
+
+/// Java `GhidraOptions.OPTION_MAX_GO_TO_ENTRIES`.
+const MAX_GOTO_ENTRIES: &str = "Max Goto Entries";
+
+/// The tool's "Tool" options (Java `ToolConstants.TOOL_OPTIONS`) and
+/// `Edit > Tool Options` (Java `PluginTool.addOptionsAction`).
+fn add_tool_options(
+    tool: &mut DockingTool,
+    events: &UiEventQueue,
+    go_to: SharedGoToDialog,
+    config: &mut Vec<(String, Box<dyn ConfigState>)>,
+) {
+    let options = Arc::new(ToolOptions::new("Tool"));
+    // GoToAddressLabelPlugin.initOptions
+    let _ = options.register_option(
+        MAX_GOTO_ENTRIES,
+        Some(OptionValue::Int(crate::go_to_dialog::DEFAULT_MAX_GOTO_ENTRIES as i32)),
+        None,
+        "Max number of entries remembered in the go to list.",
+    );
+    let listener: SharedOptionsListener = Arc::new(Mutex::new(MaxGotoListener(go_to)));
+    options.add_options_change_listener(&listener);
+    config.push(("OPTIONS".to_owned(), Box::new(ToolOptionsState { options: options.clone(), _listener: listener })));
+
+    let (ev, tool_name) = (events.clone(), tool.name().to_owned());
+    let mut edit = ClosureAction::new("Edit Options", OWNER, move |_| {
+        ev.open_dialog(Box::new(OptionsDialog(OptionsDialogState::shared(&tool_name, vec![options.clone()]))));
+    });
+    edit.state_mut().set_menu_bar_data(MenuData::full(&["&Edit", "&Tool Options"], None, Some("AOptions"), None, Some("AOptions")).ok());
+    tool.add_action(Box::new(edit));
+}
+
+/// GoToAddressLabelPlugin.optionsChanged: the history follows Max Goto Entries.
+struct MaxGotoListener(SharedGoToDialog);
+
+impl OptionsChangeListener for MaxGotoListener {
+    fn options_changed(
+        &mut self,
+        _options: &dyn ghidra_rs::framework::seam_stubs::ToolOptions,
+        option_name: &str,
+        _old_value: Option<&dyn std::any::Any>,
+        new_value: Option<&dyn std::any::Any>,
+    ) -> Result<(), Box<dyn ghidra_rs::framework::seam_stubs::OptionsVetoException>> {
+        if option_name == MAX_GOTO_ENTRIES {
+            if let Some(OptionValue::Int(n)) = new_value.and_then(|v| v.downcast_ref::<OptionValue>()) {
+                self.0 .0.lock().unwrap_or_else(std::sync::PoisonError::into_inner).set_max_entries((*n).max(0) as usize);
+            }
+        }
+        Ok(())
+    }
+}
+
+/// The options saved with the tool config; also keeps their listener alive
+/// (ToolOptions holds listeners weakly, as Java's WeakSet).
+struct ToolOptionsState {
+    options: Arc<ToolOptions>,
+    _listener: SharedOptionsListener,
+}
+
+impl ConfigState for ToolOptionsState {
+    fn write_config_state(&self, state: &mut ghidra_rs::framework::options::SaveState) {
+        state.put_xml_element(&self.options.get_name(), self.options.get_xml_root(false));
+    }
+    fn read_config_state(&mut self, state: &ghidra_rs::framework::options::SaveState) {
+        let Some(e) = state.get_xml_element(&self.options.get_name()) else { return };
+        let saved = ToolOptions::from_xml(e);
+        for name in saved.get_option_names() {
+            if let (Some(_), Ok(Some(value))) = (self.options.find_option(&name), saved.get_object(&name, None)) {
+                let _ = self.options.put_object(&name, Some(value)); // listeners see the restored value
+            }
+        }
     }
 }
 
@@ -346,6 +426,74 @@ mod tests {
             .filter(|t| t.ends_with("Location"))
             .collect();
         assert_eq!(tips, vec!["Previous Location", "Next Location"]);
+    }
+
+    fn edit_options_dialog(s: &mut UiSession) -> u64 {
+        let action = s
+            .tool()
+            .actions()
+            .global_actions()
+            .find(|&id| s.tool().actions().get(id).is_some_and(|a| a.state().name() == "Edit Options"))
+            .expect("Edit Options action");
+        let ctx = ghidra_rs::docking::DefaultActionContext::new();
+        s.tool_mut().actions_mut().get_mut(action).unwrap().action_performed(&ctx);
+        take_dialog(s)
+    }
+
+    fn set_max_goto_entries(s: &mut UiSession, n: &str) {
+        let d = edit_options_dialog(s);
+        let (_, form) = s.dialog_pane_ids(d).unwrap();
+        let Some(ViewModelBox::Form(f)) = s.model_mut(form) else { panic!("form") };
+        let key = f.fields().into_iter().find(|f| f.label == "Max Goto Entries").expect("field").key;
+        f.set(&key, n).unwrap();
+        assert_eq!(s.events().dialog_ok(d, "", &[]).unwrap(), crate::dialogs::DialogReply::Close);
+        s.release_dialog(d);
+    }
+
+    #[test]
+    fn edit_options_lives_in_the_edit_menu_and_shows_tool_options() {
+        let mut s = build_demo_session();
+        let action = s.tool().actions().global_actions().find(|&id| s.tool().actions().get(id).is_some_and(|a| a.state().name() == "Edit Options")).unwrap();
+        let md = s.tool().actions().get(action).unwrap().state().menu_bar_data().unwrap().clone();
+        assert_eq!(md.menu_path(), &["&Edit".to_string(), "Tool Options".to_string()]);
+        let d = edit_options_dialog(&mut s);
+        assert_eq!(s.events().dialog_spec(d).unwrap().title, "Options for Ghidra-rs");
+        let (_, form) = s.dialog_pane_ids(d).unwrap();
+        let Some(ViewModelBox::Form(f)) = s.model(form) else { panic!("form") };
+        let goto = f.fields().into_iter().find(|f| f.label == "Max Goto Entries").expect("Max Goto Entries");
+        assert_eq!(goto.value, "10");
+        assert!(!goto.tooltip.is_empty());
+    }
+
+    #[test]
+    fn max_goto_entries_truncates_the_go_to_history() {
+        let mut s = build_demo_session();
+        let (id, _) = listing(&s);
+        for a in ["401000", "401001", "401002"] {
+            s.tool_mut().dispatch_key(KeyStroke::new(vk::G, 0), Some(id));
+            let d = take_dialog(&s);
+            s.events().dialog_ok(d, a, &[]).unwrap();
+        }
+        set_max_goto_entries(&mut s, "2");
+        s.tool_mut().dispatch_key(KeyStroke::new(vk::G, 0), Some(id));
+        let d = take_dialog(&s);
+        assert_eq!(s.events().dialog_spec(d).unwrap().combo.unwrap().items, vec!["401002", "401001"]);
+    }
+
+    #[test]
+    fn tool_options_are_saved_with_the_tool_config() {
+        let dir = std::env::temp_dir().join(format!("ghidra-ui-model-opts-{}", std::process::id()));
+        let path = dir.join("tool.xml");
+        let mut s = build_demo_session();
+        set_max_goto_entries(&mut s, "25");
+        s.save_tool_config(&path).unwrap();
+        let mut s2 = build_demo_session();
+        s2.load_tool_config(&path).unwrap();
+        let d = edit_options_dialog(&mut s2);
+        let (_, form) = s2.dialog_pane_ids(d).unwrap();
+        let Some(ViewModelBox::Form(f)) = s2.model(form) else { panic!("form") };
+        assert_eq!(f.fields().into_iter().find(|f| f.label == "Max Goto Entries").unwrap().value, "25");
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

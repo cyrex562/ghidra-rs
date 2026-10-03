@@ -3,6 +3,13 @@
 #include <QTimer>
 
 #include <QInputDialog>
+#include <QItemSelectionModel>
+#include <QFormLayout>
+#include <QTreeView>
+#include <QSplitter>
+#include <QScrollArea>
+#include <QPushButton>
+#include <QMessageBox>
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QHBoxLayout>
@@ -25,6 +32,7 @@
 #include "DockWidget.h"
 #include "ghidra-qt/cpp/bridge_call.h"
 #include "ghidra-qt/cpp/main_window.h"
+#include "ghidra-qt/cpp/views/views.h"
 #include "ghidra-qt/src/bridge.rs.h"
 
 namespace ghidra_qt {
@@ -154,10 +162,14 @@ public:
         layout->addWidget(m_combo);
         m_checkRow = new QHBoxLayout();
         layout->addLayout(m_checkRow);
+        m_panes = new QSplitter(Qt::Horizontal, this);
+        m_panes->setVisible(false);
+        layout->addWidget(m_panes, 1);
         m_statusLine = new QLabel(this);
         m_statusLine->setStyleSheet(QStringLiteral("color: palette(link)"));
         layout->addWidget(m_statusLine);
         auto* buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
+        m_buttonBox = buttons;
         layout->addWidget(buttons);
         connect(buttons, &QDialogButtonBox::accepted, this, [this] { okPressed(); });
         connect(buttons, &QDialogButtonBox::rejected, this, &QDialog::reject);
@@ -166,7 +178,7 @@ public:
 
     bool loaded() const { return m_loaded; }
 
-protected:
+public:
     void reject() override {
         bridgeCall(m_status, [&] { dialog_cancel(m_id); });
         QDialog::reject();
@@ -189,15 +201,117 @@ private:
                 m_checks << box;
             }
             m_combo->setVisible(d.has_combo);
+            m_message->setVisible(!d.message.empty());
+            for (const ButtonInfo& b : d.buttons) addExtraButton(qs(b.key), qs(b.label), qs(b.confirm));
+            if (d.has_panes) buildPanes();
         }
         const QString typed = m_combo->currentText();
         m_combo->clear();
         for (const rust::String& item : d.combo_items) m_combo->addItem(qs(item));
         m_combo->setEditText(first ? qs(d.combo_text) : typed);
         m_statusLine->setText(qs(d.status));
-        m_combo->lineEdit()->selectAll();
-        m_combo->setFocus();
+        if (d.has_combo) {
+            m_combo->lineEdit()->selectAll();
+            m_combo->setFocus();
+        }
     }
+
+    // Tree (categories) beside the form for the selected node; the views are
+    // the generic provider views over dialog-scoped view models (Rust ids).
+    void buildPanes() {
+        PaneIds ids{};
+        if (!bridgeCall(m_status, [&] { ids = dialog_panes(m_id); })) return;
+        m_formPid = ids.form;
+        QWidget* tree = createProviderView(ids.tree, 1, m_status, m_panes);
+        m_panes->addWidget(tree);
+        m_formHost = new QScrollArea(m_panes);
+        m_formHost->setWidgetResizable(true);
+        m_panes->addWidget(m_formHost);
+        m_panes->setStretchFactor(1, 1);
+        m_panes->setVisible(true);
+        rebuildForm();
+        if (auto* view = qobject_cast<QTreeView*>(tree)) {
+            const uint64_t treePid = ids.tree;
+            view->setCurrentIndex(view->model()->index(0, 0));
+            view->expand(view->model()->index(0, 0));
+            connect(view->selectionModel(), &QItemSelectionModel::currentChanged, this, [this, treePid](const QModelIndex& index) {
+                if (!index.isValid()) return;
+                bridgeCall(m_status, [&] { tree_select(treePid, static_cast<uint64_t>(index.internalId())); });
+                rebuildForm();
+            });
+        }
+        resize(820, 520);
+    }
+
+    void rebuildForm() {
+        if (!m_formHost) return;
+        m_formHost->setWidget(createProviderView(m_formPid, 3, m_status, m_formHost));
+    }
+
+    void addExtraButton(const QString& key, const QString& label, const QString& confirm) {
+        QPushButton* b = m_buttonBox->addButton(label, QDialogButtonBox::ActionRole);
+        connect(b, &QPushButton::clicked, this, [this, key, label, confirm] {
+            if (!confirm.isEmpty() &&
+                QMessageBox::question(this, label + QLatin1Char('?'), confirm) != QMessageBox::Yes) {
+                return;
+            }
+            pressButton(key);
+        });
+    }
+
+public:
+    // Presses an extra button (smoke tests skip the confirmation).
+    void pressButton(const QString& key) {
+        const QByteArray k = key.toUtf8();
+        bool done = false;
+        if (!bridgeCall(m_status, [&] { done = dialog_button(m_id, rust::Str(k.constData(), static_cast<size_t>(k.size()))); })) return;
+        m_pump->pump();
+        if (done) {
+            QDialog::accept();
+        } else {
+            load(false);
+            rebuildForm();
+        }
+    }
+
+    // "tree: <root>" and "form: <label>=<value>" lines (smoke tests).
+    QStringList summary() const {
+        QStringList out;
+        if (auto* view = m_panes->findChild<QTreeView*>()) out << QStringLiteral("tree: ") + view->model()->index(0, 0).data().toString();
+        if (m_formHost && m_formHost->widget()) {
+            if (auto* form = qobject_cast<QFormLayout*>(m_formHost->widget()->layout())) {
+                for (int r = 0; r < form->rowCount(); ++r) {
+                    auto* l = qobject_cast<QLabel*>(form->itemAt(r, QFormLayout::LabelRole)->widget());
+                    QWidget* e = form->itemAt(r, QFormLayout::FieldRole)->widget();
+                    QString v;
+                    if (auto* le = qobject_cast<QLineEdit*>(e)) v = le->text();
+                    else if (auto* cb = qobject_cast<QCheckBox*>(e)) v = cb->isChecked() ? QStringLiteral("true") : QStringLiteral("false");
+                    else if (auto* co = qobject_cast<QComboBox*>(e)) v = co->currentText();
+                    out << QStringLiteral("form: %1=%2").arg(l ? l->text() : QString(), v);
+                }
+            }
+        }
+        return out;
+    }
+
+    // Edits form row `label` as a user would, then presses OK (smoke tests).
+    void setFieldAndOk(const QString& label, const QString& value) {
+        if (m_formHost && m_formHost->widget()) {
+            if (auto* form = qobject_cast<QFormLayout*>(m_formHost->widget()->layout())) {
+                for (int r = 0; r < form->rowCount(); ++r) {
+                    auto* l = qobject_cast<QLabel*>(form->itemAt(r, QFormLayout::LabelRole)->widget());
+                    if (!l || l->text() != label) continue;
+                    if (auto* le = qobject_cast<QLineEdit*>(form->itemAt(r, QFormLayout::FieldRole)->widget())) {
+                        le->setText(value);
+                        emit le->editingFinished();
+                    }
+                }
+            }
+        }
+        okPressed();
+    }
+
+private:
 
     void okPressed() {
         rust::Vec<CheckInfo> checks;
@@ -213,6 +327,7 @@ private:
             QDialog::accept();
         } else {
             load(false);
+            rebuildForm();
         }
     }
 
@@ -225,11 +340,32 @@ private:
     QLabel* m_statusLine;
     QList<QCheckBox*> m_checks;
     bool m_loaded = false;
+    QSplitter* m_panes = nullptr;
+    QScrollArea* m_formHost = nullptr;
+    QDialogButtonBox* m_buttonBox = nullptr;
+    uint64_t m_formPid = 0;
 };
 }  // namespace
 
 void EventPump::showDialog(uint64_t id) {
     if (m_autoAnswer) {
+        DialogInfo probe;
+        if (bridgeCall(m_window->statusBar(), [&] { probe = dialog_spec(id); }) && probe.has_panes) {
+            // Build the real dialog (unshown), report it, apply "label=value" via its form.
+            auto* dialog = new RustDialog(id, m_window->statusBar(), this, m_window);
+            std::printf("dialog: %s\n", qs(probe.title).toUtf8().constData());
+            for (const QString& line : dialog->summary()) std::printf("%s\n", line.toUtf8().constData());
+            const int eq = m_promptAnswer.indexOf(QLatin1Char('='));
+            if (eq > 0) {
+                dialog->setFieldAndOk(m_promptAnswer.left(eq), m_promptAnswer.mid(eq + 1));
+            } else {
+                dialog->reject();
+            }
+            std::fflush(stdout);
+            dialog->deleteLater();
+            QTimer::singleShot(0, this, [this] { pump(); });
+            return;
+        }
         DialogInfo d;
         if (!bridgeCall(m_window->statusBar(), [&] { d = dialog_spec(id); })) return;
         std::printf("dialog: %s\n", qs(d.title).toUtf8().constData());

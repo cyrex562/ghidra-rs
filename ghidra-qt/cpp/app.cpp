@@ -1,6 +1,9 @@
 #include "ghidra-qt/cpp/app.h"
 
 #include <QApplication>
+#include <QMenu>
+#include <QMenuBar>
+#include <functional>
 #include <QFont>
 #include <QFile>
 #include <QPixmap>
@@ -148,6 +151,23 @@ int32_t run_app(const UiSession& session, const AppOptions& options) {
         });
     }
 
+    if (!options.invoke_menu.empty()) {
+        const QString text = toQString(options.invoke_menu);
+        QTimer::singleShot(200, &window, [&window, text, pump] {
+            std::function<bool(const QList<QAction*>&)> find = [&](const QList<QAction*>& actions) {
+                for (QAction* a : actions) {
+                    if (a->menu() && find(a->menu()->actions())) return true;
+                    if (!a->menu() && QString(a->text()).remove(QLatin1Char('&')).section(QLatin1Char('\t'), 0, 0) == text) {
+                        a->trigger();
+                        return true;
+                    }
+                }
+                return false;
+            };
+            if (!find(window.menuBar()->actions())) std::fprintf(stderr, "ghidra-qt: no menu item %s\n", text.toUtf8().constData());
+            QTimer::singleShot(100, pump, [pump] { pump->pump(); });
+        });
+    }
     if (options.invoke_missing_action) {
         QTimer::singleShot(100, &window, [&window] {
             bridgeCall(window.statusBar(), [&] { invoke_action(0xFFFFFFFFull, -1); });

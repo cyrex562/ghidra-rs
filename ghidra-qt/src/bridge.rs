@@ -117,6 +117,8 @@ pub mod ffi {
         pub print_listing_state: bool,
         /// Float this dock before pressing keys; empty = none.
         pub float_dock: String,
+        /// Trigger the menu-bar item with this text; empty = none.
+        pub invoke_menu: String,
     }
 
     /// A provider as the shell needs it.
@@ -151,6 +153,8 @@ pub mod ffi {
         pub kind: u8,
         pub value: String,
         pub choices: Vec<String>,
+        pub tooltip: String,
+        pub read_only: bool,
     }
 
     /// A flattened (depth-first) menu entry.
@@ -241,6 +245,19 @@ pub mod ffi {
         pub checked: bool,
     }
 
+    /// An extra dialog button; empty `confirm` = no confirmation.
+    pub struct ButtonInfo {
+        pub key: String,
+        pub label: String,
+        pub confirm: String,
+    }
+
+    /// View-model ids of a dialog's tree and form panes.
+    pub struct PaneIds {
+        pub tree: u64,
+        pub form: u64,
+    }
+
     /// A Rust-described dialog.
     pub struct DialogInfo {
         pub title: String,
@@ -250,6 +267,8 @@ pub mod ffi {
         pub combo_items: Vec<String>,
         pub checks: Vec<CheckInfo>,
         pub status: String,
+        pub buttons: Vec<ButtonInfo>,
+        pub has_panes: bool,
     }
 
     /// A drained UI event.
@@ -310,6 +329,11 @@ pub mod ffi {
         /// OK; true when the dialog is done (else re-read its spec).
         fn dialog_ok(id: u64, text: &str, checks: Vec<CheckInfo>) -> Result<bool>;
         fn dialog_cancel(id: u64) -> Result<()>;
+        /// An extra button; true when the dialog is done.
+        fn dialog_button(id: u64, key: &str) -> Result<bool>;
+        fn dialog_panes(id: u64) -> Result<PaneIds>;
+        /// The renderer selected a tree node (single selection).
+        fn tree_select(pid: u64, node: u64) -> Result<()>;
 
         fn menu_bar(focused_pid: i64) -> Result<Vec<MenuItemInfo>>;
         fn popup_menu(pid: u64) -> Result<Vec<MenuItemInfo>>;
@@ -335,7 +359,7 @@ pub mod ffi {
     }
 }
 
-use ffi::{CheckInfo, DialogInfo, EventInfo, FieldInfo, FrameInfo, FrameRowInfo, KeyResult, MenuItemInfo, MetricsInfo, ProviderInfo, RunInfo, RunPosInfo, SpanInfo, ToolBarInfo};
+use ffi::{ButtonInfo, CheckInfo, DialogInfo, EventInfo, FieldInfo, PaneIds, FrameInfo, FrameRowInfo, KeyResult, MenuItemInfo, MetricsInfo, ProviderInfo, RunInfo, RunPosInfo, SpanInfo, ToolBarInfo};
 use ghidra_ui_model::listing::{FontMetrics, Move};
 use ghidra_ui_model::listing_controller::ListingController;
 
@@ -472,7 +496,7 @@ fn form_fields(pid: u64) -> Result<Vec<FieldInfo>, String> {
                     FormFieldKind::Bool => (2, Vec::new()),
                     FormFieldKind::Choice(c) => (3, c),
                 };
-                FieldInfo { key: f.key, label: f.label, kind, value: f.value, choices }
+                FieldInfo { key: f.key, label: f.label, kind, value: f.value, choices, tooltip: f.tooltip, read_only: f.read_only }
             })
             .collect())
     })
@@ -591,6 +615,12 @@ fn dialog_spec(id: u64) -> Result<DialogInfo, String> {
             combo_items,
             checks: d.checks.into_iter().map(|c| CheckInfo { key: c.key, label: c.label, tooltip: c.tooltip, checked: c.checked }).collect(),
             status: d.status,
+            buttons: d
+                .buttons
+                .into_iter()
+                .map(|b| ButtonInfo { key: b.key, label: b.label, confirm: b.confirm.unwrap_or_default() })
+                .collect(),
+            has_panes: d.has_panes,
         })
     })
 }
@@ -598,12 +628,44 @@ fn dialog_spec(id: u64) -> Result<DialogInfo, String> {
 fn dialog_ok(id: u64, text: &str, checks: Vec<CheckInfo>) -> Result<bool, String> {
     with("dialog_ok", |s| {
         let checks: Vec<(String, bool)> = checks.into_iter().map(|c| (c.key, c.checked)).collect();
-        Ok(s.events().dialog_ok(id, text, &checks)? == ghidra_ui_model::dialogs::DialogReply::Close)
+        let done = s.events().dialog_ok(id, text, &checks)? == ghidra_ui_model::dialogs::DialogReply::Close;
+        if done {
+            s.release_dialog(id);
+        }
+        Ok(done)
     })
 }
 
 fn dialog_cancel(id: u64) -> Result<(), String> {
-    with("dialog_cancel", |s| s.events().dialog_cancel(id))
+    with("dialog_cancel", |s| {
+        let r = s.events().dialog_cancel(id);
+        s.release_dialog(id);
+        r
+    })
+}
+
+fn dialog_button(id: u64, key: &str) -> Result<bool, String> {
+    with("dialog_button", |s| {
+        let done = s.events().dialog_button(id, key)? == ghidra_ui_model::dialogs::DialogReply::Close;
+        if done {
+            s.release_dialog(id);
+        }
+        Ok(done)
+    })
+}
+
+fn dialog_panes(id: u64) -> Result<PaneIds, String> {
+    with("dialog_panes", |s| {
+        let (tree, form) = s.dialog_pane_ids(id)?;
+        Ok(PaneIds { tree: tree.0, form: form.0 })
+    })
+}
+
+fn tree_select(pid: u64, node: u64) -> Result<(), String> {
+    with("tree_select", |s| {
+        model!(s, pid, Tree, "tree").select(NodeId(node));
+        Ok(())
+    })
 }
 
 fn prompt_reply(id: u64, accepted: bool, text: &str) -> Result<(), String> {
@@ -940,6 +1002,29 @@ mod tests {
         table_activate(symbols, row, 0).unwrap();
         assert_eq!(listing_frame(pid("Listing")).unwrap().location, "00402000");
         assert!(drain_events().unwrap().iter().any(|e| e.kind == 7 && e.task == pid("Listing")));
+    }
+
+    #[test]
+    fn the_options_dialog_has_panes_buttons_and_releases_them() {
+        let _g = SESSION_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        drain_events().unwrap();
+        let menu = menu_bar(-1).unwrap();
+        let entry = menu.iter().find(|m| m.text == "Tool Options").expect("Edit > Tool Options");
+        invoke_action(entry.action, -1).unwrap();
+        let dialog = drain_events().unwrap().into_iter().find(|e| e.kind == 9).expect("dialog").task;
+        let spec = dialog_spec(dialog).unwrap();
+        assert!(spec.has_panes);
+        assert_eq!(spec.buttons.iter().map(|b| b.label.as_str()).collect::<Vec<_>>(), vec!["Apply", "Restore Defaults"]);
+        assert!(spec.buttons[1].confirm.contains("Restore"));
+        let panes = dialog_panes(dialog).unwrap();
+        assert_eq!(tree_label(panes.tree, tree_root(panes.tree).unwrap()).unwrap(), "Tool");
+        tree_select(panes.tree, tree_root(panes.tree).unwrap()).unwrap();
+        let fields = form_fields(panes.form).unwrap();
+        let goto = fields.iter().find(|f| f.label == "Max Goto Entries").unwrap();
+        assert!(!goto.tooltip.is_empty() && !goto.read_only);
+        assert!(!dialog_button(dialog, "apply").unwrap());
+        dialog_cancel(dialog).unwrap();
+        assert!(form_fields(panes.form).is_err(), "panes released with the dialog");
     }
 
     #[test]

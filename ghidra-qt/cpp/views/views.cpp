@@ -230,7 +230,11 @@ QWidget* makeForm(uint64_t pid, QStatusBar* status, QWidget* parent) {
                 QObject::connect(line, &QLineEdit::editingFinished, line, [line, commit] { commit(line->text()); });
                 editor = line;
             }
-            form->addRow(qs(f.label), editor);
+            editor->setToolTip(qs(f.tooltip));
+            editor->setEnabled(!f.read_only);
+            auto* label = new QLabel(qs(f.label), box);
+            label->setToolTip(qs(f.tooltip));
+            form->addRow(label, editor);
         }
     });
     return box;

@@ -62,6 +62,10 @@ pub struct Args {
     #[arg(long = "float", hide = true, value_name = "TITLE")]
     pub float_dock: Option<String>,
 
+    /// Trigger the menu-bar item with this text after showing (smoke tests).
+    #[arg(long, hide = true, value_name = "TEXT")]
+    pub invoke_menu: Option<String>,
+
     /// At quit, print the Listing's "top=.. cursor=.. selected=.." (smoke tests).
     #[arg(long, hide = true)]
     pub print_listing_state: bool,
