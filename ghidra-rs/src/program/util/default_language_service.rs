@@ -130,11 +130,7 @@ impl DefaultLanguageService {
     /// [`LanguageNotFoundException`] if the language is unknown, fails to load, or is not a
     /// shared Sleigh language.
     pub fn get_sleigh_language(&self, language_id: &LanguageID) -> Result<Arc<SleighLanguage>, LanguageNotFoundException> {
-        let language = self.get_language(language_id)?;
-        language
-            .as_sleigh()
-            .and_then(SleighLanguage::shared)
-            .ok_or_else(|| LanguageNotFoundException(format!("Language '{language_id}' is not a Sleigh language")))
+        crate::program::model::lang::language_service::get_sleigh_language(self, language_id)
     }
 
     /// The descriptions matching every non-`None` criterion. Port of the four-argument
@@ -507,6 +503,49 @@ mod tests {
         assert_eq!(s.get_language_description(&LanguageID::new("x86:LE:32:default").unwrap()).unwrap().get_size(), 32);
     }
 
+    /// A provider of one language (the generated x86-64 test language), handed out either as
+    /// the shared language or as an unshared copy (which cannot be recovered as an `Arc`).
+    struct OneLanguage {
+        description: BasicLanguageDescription,
+        shared: bool,
+    }
+
+    impl LanguageProvider for OneLanguage {
+        fn get_language_with_monitor(
+            &self,
+            _language_id: &LanguageID,
+            _monitor: &dyn TaskMonitor,
+        ) -> Result<Option<Box<dyn Language>>, LanguageNotFoundException> {
+            let language = crate::program::model::lang::cspec_test_support::sleigh_x86_64_language(None);
+            if self.shared {
+                return Ok(Some(Box::new(language)));
+            }
+            let unshared = Arc::try_unwrap(language).ok().expect("only reference");
+            Ok(Some(Box::new(unshared)))
+        }
+        fn get_language_descriptions(&self) -> Vec<Box<dyn LanguageDescription>> {
+            vec![Box::new(self.description.clone())]
+        }
+        fn had_load_failure(&self) -> bool {
+            false
+        }
+        fn is_language_loaded(&self, _language_id: &LanguageID) -> bool {
+            true
+        }
+    }
+
+    #[test]
+    fn get_sleigh_language_recovers_the_shared_sleigh_language_only() {
+        let id = LanguageID::new("x86:LE:64:default").unwrap();
+        let description = description("x86:LE:64:default", Endian::Little, 64, false, &["gcc"], None);
+        let shared = DefaultLanguageService::new(Arc::new(OneLanguage { description: description.clone(), shared: true }));
+        let language = shared.get_sleigh_language(&id).unwrap();
+        assert!(language.get_register_by_name("RAX").is_some());
+        let unshared = DefaultLanguageService::new(Arc::new(OneLanguage { description, shared: false }));
+        let err = unshared.get_sleigh_language(&id).err().unwrap();
+        assert!(err.0.contains("not a shared Sleigh language"), "{}", err.0);
+    }
+
     #[test]
     fn unloadable_or_unknown_languages_are_not_found() {
         let s = service();
@@ -546,6 +585,14 @@ mod tests {
         // Asking again hands out the same, cached language.
         let again = service.get_sleigh_language(&LanguageID::new("x86:LE:64:default").unwrap()).unwrap();
         assert!(Arc::ptr_eq(&language, &again));
+        // Loaders get a `&dyn LanguageService`; the free helper gives them the same language.
+        let as_dyn: &dyn LanguageService = &service;
+        let via_dyn = crate::program::model::lang::language_service::get_sleigh_language(
+            as_dyn,
+            &LanguageID::new("x86:LE:64:default").unwrap(),
+        )
+        .unwrap();
+        assert!(Arc::ptr_eq(&language, &via_dyn));
 
         let program: Arc<dyn Program> = Arc::new(ProgramDB::new("ls".into(), language).unwrap());
         let options: Vec<Box<dyn crate::app::seam_stubs::Option>> =

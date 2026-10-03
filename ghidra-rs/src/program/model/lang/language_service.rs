@@ -87,6 +87,25 @@ pub trait LanguageService {
     ) -> Vec<Box<dyn LanguageDescription>>;
 }
 
+/// The language `language_id` from `service`, as the shared
+/// [`SleighLanguage`](crate::program::model::lang::sleigh::SleighLanguage) it is -- what Java
+/// callers get by casting `getLanguage`'s result, and what `ProgramDB::new` takes. Works with any
+/// service whose provider hands out shared Sleigh languages (as `SleighLanguageProvider` does).
+///
+/// # Errors
+/// [`LanguageNotFoundException`] if the service cannot provide the language, or it is not a
+/// shared Sleigh language.
+pub fn get_sleigh_language(
+    service: &dyn LanguageService,
+    language_id: &LanguageID,
+) -> Result<std::sync::Arc<crate::program::model::lang::sleigh::SleighLanguage>, LanguageNotFoundException> {
+    service
+        .get_language(language_id)?
+        .as_sleigh()
+        .and_then(crate::program::model::lang::sleigh::SleighLanguage::shared)
+        .ok_or_else(|| LanguageNotFoundException(format!("Language '{language_id}' is not a shared Sleigh language")))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
