@@ -77,6 +77,18 @@ impl PartialEq for Memento {
     }
 }
 
+/// The first and last row of the code unit holding `address` (its label and
+/// header rows, then the unit), if listed.
+fn rows_at(m: &dyn ListingViewModel, address: u64) -> Option<(u128, u128)> {
+    let first = m.goto(address)?;
+    let unit = m.address_of(first);
+    let mut last = first;
+    while last + 1 < m.index_count() && m.address_of(last + 1) == unit {
+        last += 1;
+    }
+    Some((first, last))
+}
+
 /// Listing view state over a [`ListingViewModel`].
 pub struct ListingController {
     model: Box<dyn ListingViewModel>,
@@ -298,21 +310,26 @@ impl ListingController {
     pub fn replace_model(&mut self, mut model: Box<dyn ListingViewModel>) {
         model.set_metrics(self.metrics);
         let old = std::mem::replace(&mut self.model, model);
+        let new = self.model.as_ref();
+        // Rows keep their place counted from the end of their address's rows
+        // (the code unit row is last, labels and headers above it).
+        let row = |i: u128| {
+            let a = old.address_of(i)?;
+            let (_, old_last) = rows_at(old.as_ref(), a)?;
+            let (first, last) = rows_at(new, a)?;
+            Some(last.saturating_sub(old_last.saturating_sub(i)).max(first))
+        };
         let first = |m: &dyn ListingViewModel, i: u128| old.address_of(i).and_then(|a| m.goto(a));
-        let top = first(self.model.as_ref(), self.top).unwrap_or(0);
-        self.cursor = self.cursor.and_then(|c| first(self.model.as_ref(), c.index)).map(|index| CursorPos { index, field: 0, col: 0 });
-        self.anchor = self.anchor.and_then(|a| first(self.model.as_ref(), a));
+        let top = row(self.top).unwrap_or(0);
+        self.cursor = self.cursor.and_then(|c| row(c.index)).map(|index| CursorPos { index, field: 0, col: 0 });
+        self.anchor = self.anchor.and_then(row);
         let ranges: Vec<(u128, u128)> = self
             .selection
             .ranges()
             .iter()
             .filter_map(|&(a, b)| {
                 let start = first(self.model.as_ref(), a)?;
-                let end_address = old.address_of(b)?;
-                let mut end = self.model.goto(end_address)?;
-                while self.model.address_of(end + 1) == Some(end_address) {
-                    end += 1;
-                }
+                let (_, end) = rows_at(self.model.as_ref(), old.address_of(b)?)?;
                 Some((start, end.max(start)))
             })
             .collect();
@@ -574,6 +591,46 @@ mod tests {
         assert_eq!(at(&c), 2);
         assert!(c.forward());
         assert_eq!(at(&c), 3);
+    }
+
+    /// [`disassembled`] after Clear Code Bytes: label f, then one row per byte.
+    fn cleared() -> Box<dyn ListingViewModel> {
+        use crate::code_unit_listing::{CodeUnitListing, LabelSnapshot};
+        Box::new(CodeUnitListing::new(
+            32,
+            vec![
+                MemoryBlockSnapshot::initialized(0x401000, vec![0x55, 0x48, 0x89, 0x55]),
+                MemoryBlockSnapshot::initialized(0x402000, vec![0xc3]),
+            ],
+            vec![],
+            vec![LabelSnapshot { address: 0x401000, name: "f".into(), primary: true }],
+        ))
+    }
+
+    #[test]
+    fn a_cursor_on_the_code_unit_row_stays_on_it_not_on_its_label() {
+        let mut c = ListingController::new(disassembled());
+        c.set_metrics(FontMetrics::monospace(7, 11, 3));
+        c.set_viewport(10 * H);
+        c.click(1, H + 1, false); // the instruction row, under label f
+        c.replace_model(cleared());
+        assert_eq!(at(&c), 1, "the byte row at 0x401000, not the label");
+        c.click(1, 1, false); // on the label
+        c.replace_model(disassembled());
+        assert_eq!(at(&c), 0, "a label row stays the label row");
+    }
+
+    #[test]
+    fn the_selection_anchor_keeps_its_row_kind_too() {
+        let mut c = ListingController::new(disassembled());
+        c.set_metrics(FontMetrics::monospace(7, 11, 3));
+        c.set_viewport(10 * H);
+        c.click(1, H + 1, false); // anchor: the instruction row
+        c.key(Move::Down, true);
+        c.replace_model(disassembled());
+        c.key(Move::Down, true);
+        assert!(!c.selection().contains(0), "the label above the anchor is not pulled in");
+        assert!(c.selection().contains(1));
     }
 
     #[test]
