@@ -1,6 +1,7 @@
 pub mod address_set_filtered_symbol_iterator;
 pub mod class_symbol;
 pub mod code_symbol;
+pub mod dynamic_symbol;
 pub mod equate_db;
 pub mod equate_store;
 pub mod equate_db_adapter;
@@ -45,6 +46,7 @@ pub mod variable_symbol_db;
 pub use address_set_filtered_symbol_iterator::AddressSetFilteredSymbolIterator;
 pub use class_symbol::ClassSymbol;
 pub use code_symbol::{CodeSymbol, CodeSymbolObject};
+pub use dynamic_symbol::{DynamicSymbol, DynamicSymbolSource};
 pub use equate_db::{EquateDb, RenameEquateError};
 pub use equate_store::{EquateData, EquateDatabase, EquateError, EquateId, EquateReference, EquateStore};
 pub use equate_db_adapter::{EquateDBAdapter, GetRecordKeyError};

@@ -416,5 +416,8 @@ pub fn combine_reference_type(new_type: RefType, old_type: RefType) -> RefType {
     new_type
 }
 
+mod reference_manager;
+pub use reference_manager::reference_level_of;
+
 #[cfg(test)]
 mod tests;

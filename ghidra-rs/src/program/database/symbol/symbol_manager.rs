@@ -3,6 +3,8 @@ use crate::framework::db::{DBHandle, Field, FieldType, Schema};
 use crate::program::database::map::AddressMapDB;
 use crate::program::database::symbol::namespace_manager::NamespaceManagerDB;
 use crate::program::database::symbol::symbol_db::SymbolDB;
+use crate::program::database::symbol::dynamic_symbol::{dynamic_name, DynamicSymbol, DynamicSymbolSource};
+use crate::program::model::symbol::Reference;
 use crate::program::database::symbol::variable_storage_manager::VariableStorageManager;
 use crate::program::database::ManagerDB;
 use crate::program::model::address::{Address, AddressSpace};
@@ -28,6 +30,10 @@ pub struct SymbolManagerDB {
     /// symbol manager holds the entry point set itself, in address order as Java's
     /// `getExternalEntryIterator` returns it.
     external_entry_points: BTreeSet<Address>,
+    /// What the rest of the program says about an address with no stored symbol, for dynamic
+    /// symbols (Java's `refManager` and `program.getListing()` as `SymbolManager` uses them).
+    /// Without one -- a symbol manager outside a program -- there are no dynamic symbols.
+    dynamic_source: Option<Arc<dyn DynamicSymbolSource>>,
 }
 
 impl SymbolManagerDB {
@@ -84,7 +90,50 @@ impl SymbolManagerDB {
             addr_map,
             namespace_mgr,
             external_entry_points: BTreeSet::new(),
+            dynamic_source: None,
         })
+    }
+
+    /// Installs what dynamic symbols are decided and named from (see [`DynamicSymbolSource`]).
+    /// `ProgramDB` installs one over its listing and reference stores; a dynamic symbol query
+    /// then takes their read locks, so do not ask for one while holding either for writing.
+    pub fn set_dynamic_symbol_source(&mut self, source: Arc<dyn DynamicSymbolSource>) {
+        self.dynamic_source = Some(source);
+    }
+
+    /// Port of the private `SymbolManager.getDynamicSymbol(Address)` guarded by
+    /// `refManager.hasReferencesTo(addr)`: the dynamic symbol of a referenced memory address
+    /// (the caller has found no stored primary symbol there), named by
+    /// `SymbolUtilities.getDynamicName(Program, Address)`.
+    fn dynamic_symbol(&self, addr: &Address) -> io::Result<Option<Arc<dyn Symbol>>> {
+        let Some(source) = self.dynamic_source.as_ref() else { return Ok(None) };
+        if !addr.is_memory_address() {
+            return Ok(None);
+        }
+        let Some(level) = source.reference_level(addr) else { return Ok(None) };
+        let start = source.instruction_containing(addr);
+        let mut start_label = None;
+        let mut is_function = false;
+        if let Some(start) = start.as_ref() {
+            if start != addr {
+                start_label = self.stored_primary_symbol(start)?.map(|s| s.get_name().to_string());
+            } else {
+                is_function = source.is_function_at(start);
+            }
+        }
+        let name = dynamic_name(addr, level, start.as_ref(), start_label.as_deref(), is_function);
+        let id = i64::MIN | self.addr_map.read().unwrap().get_key(addr, false);
+        Ok(Some(Arc::new(DynamicSymbol::new(id, name, addr.clone()))))
+    }
+
+    /// The stored (non-dynamic) primary symbol at the memory address `addr`.
+    fn stored_primary_symbol(&self, addr: &Address) -> io::Result<Option<Arc<dyn Symbol>>> {
+        for rec in self.records_at(addr)? {
+            if rec.get_long(Self::SYMBOL_PRIMARY_COL).unwrap_or(0) != 0 {
+                return Ok(Some(self.record_to_symbol(rec)?));
+            }
+        }
+        Ok(None)
     }
 
     pub fn create_symbol_record(
@@ -341,18 +390,31 @@ impl SymbolTable for SymbolManagerDB {
         Box::new(SymbolIteratorAdapter::new(symbols))
     }
 
-    /// Mirrors `SymbolManager.getPrimarySymbol(Address)` for memory addresses (no dynamic
-    /// symbols: there is no reference manager to ask whether `addr` is referenced).
+    /// Mirrors `SymbolManager.getPrimarySymbol(Address)` for memory addresses: the stored
+    /// primary symbol, else -- with a [`DynamicSymbolSource`] installed -- the dynamic symbol of a
+    /// referenced address.
     fn get_primary_symbol(&self, addr: &Address) -> io::Result<Option<Arc<dyn Symbol>>> {
         if !addr.is_memory_address() {
             return Ok(None);
         }
-        for rec in self.records_at(addr)? {
-            if rec.get_long(Self::SYMBOL_PRIMARY_COL).unwrap_or(0) != 0 {
-                return Ok(Some(self.record_to_symbol(rec)?));
+        match self.stored_primary_symbol(addr)? {
+            Some(symbol) => Ok(Some(symbol)),
+            None => self.dynamic_symbol(addr),
+        }
+    }
+
+    /// Port of `SymbolManager.getSymbol(Reference)`: a memory reference's associated symbol
+    /// when it is still at the reference's destination, else the destination's primary symbol
+    /// (dynamic ones included). No variables are stored, so none is checked for.
+    fn get_symbol_for_reference(&self, reference: &dyn Reference) -> io::Result<Option<Arc<dyn Symbol>>> {
+        if reference.is_memory_reference() && reference.symbol_id() >= 0 {
+            if let Some(symbol) = self.get_symbol(reference.symbol_id())? {
+                if symbol.get_address() == reference.to_address() {
+                    return Ok(Some(symbol));
+                }
             }
         }
-        Ok(None)
+        self.get_primary_symbol(&reference.to_address())
     }
 
     /// Mirrors `CodeSymbol.setPrimary()`: false if the symbol is missing or already primary;
@@ -904,6 +966,65 @@ mod symbol_manager_db_tests {
             out.push(s.get_name().to_string());
         }
         out
+    }
+
+    /// Instructions at 0x100 (4 bytes) and 0x200; 0x100, 0x102 and 0x300 are referenced.
+    struct TestDynamicSource;
+
+    impl DynamicSymbolSource for TestDynamicSource {
+        fn reference_level(&self, addr: &Address) -> Option<i8> {
+            use crate::program::model::symbol::symbol_utilities::{DAT_LEVEL, LAB_LEVEL, SUB_LEVEL};
+            match addr.offset() {
+                0x100 => Some(SUB_LEVEL as i8),
+                0x102 => Some(LAB_LEVEL as i8),
+                0x300 => Some(DAT_LEVEL as i8),
+                _ => None,
+            }
+        }
+
+        fn instruction_containing(&self, addr: &Address) -> Option<Address> {
+            match addr.offset() {
+                0x100..=0x103 => Some(addr.add_wrap(0x100 - addr.offset())),
+                0x200..=0x201 => Some(addr.add_wrap(0x200 - addr.offset())),
+                _ => None,
+            }
+        }
+    }
+
+    #[test]
+    fn a_referenced_address_without_a_symbol_has_a_dynamic_primary_symbol() {
+        let (mut mgr, space) = manager();
+        let at = |offset: i64| Address::new(space.clone(), offset);
+        assert!(mgr.get_primary_symbol(&at(0x100)).unwrap().is_none(), "no source, no dynamic symbols");
+        mgr.set_dynamic_symbol_source(Arc::new(TestDynamicSource));
+
+        let sub = mgr.get_primary_symbol(&at(0x100)).unwrap().unwrap();
+        assert_eq!((sub.get_name(), sub.is_dynamic(), sub.get_address()), ("SUB_00000100", true, at(0x100)));
+        assert_eq!(mgr.get_primary_symbol(&at(0x102)).unwrap().unwrap().get_name(), "LAB_00000100+2");
+        assert_eq!(mgr.get_primary_symbol(&at(0x300)).unwrap().unwrap().get_name(), "DAT_00000300");
+        assert!(mgr.get_primary_symbol(&at(0x200)).unwrap().is_none(), "unreferenced");
+
+        // a stored symbol wins, and names the offcut addresses of its instruction
+        mgr.create_label(&at(0x100), "entry", SourceType::Imported).unwrap();
+        let entry = mgr.get_primary_symbol(&at(0x100)).unwrap().unwrap();
+        assert_eq!((entry.get_name(), entry.is_dynamic()), ("entry", false));
+        assert_eq!(mgr.get_primary_symbol(&at(0x102)).unwrap().unwrap().get_name(), "entry+2");
+    }
+
+    #[test]
+    fn a_references_symbol_is_its_destinations_primary_symbol() {
+        use crate::program::database::references::ReferenceStore;
+        use crate::program::model::symbol::RefType;
+        let (mut mgr, space) = manager();
+        let at = |offset: i64| Address::new(space.clone(), offset);
+        mgr.set_dynamic_symbol_source(Arc::new(TestDynamicSource));
+        let mut refs = ReferenceStore::new();
+        let to_data = refs.add_memory_reference(at(0x200), at(0x300), RefType::Read, SourceType::Default, 0).unwrap();
+        let to_none = refs.add_memory_reference(at(0x200), at(0x400), RefType::Read, SourceType::Default, 1).unwrap();
+        assert_eq!(mgr.get_symbol_for_reference(&to_data).unwrap().unwrap().get_name(), "DAT_00000300");
+        assert!(mgr.get_symbol_for_reference(&to_none).unwrap().is_none());
+        mgr.create_label(&at(0x300), "table", SourceType::UserDefined).unwrap();
+        assert_eq!(mgr.get_symbol_for_reference(&to_data).unwrap().unwrap().get_name(), "table");
     }
 
     #[test]
