@@ -1,0 +1,386 @@
+//! Port of `ghidra.app.util.bin.format.macho.commands.LoadCommand`.
+//!
+//! Represents a `load_command` structure. See
+//! <https://github.com/apple-oss-distributions/xnu/blob/main/EXTERNAL_HEADERS/mach-o/loader.h>.
+//!
+//! Java's `LoadCommand` is an abstract class carrying three instance fields (`startIndex`, `cmd`,
+//! `cmdsize`) plus a mix of abstract and concrete/overridable behaviour, with ~29 in-repo
+//! subclasses. That shared state is split into [`LoadCommandBase`]; the trait [`LoadCommand`]
+//! declares the abstract members and provides the concrete ones (as default methods) via
+//! [`LoadCommand::base`].
+
+use std::io;
+
+use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::struct_converter::StructConverter;
+use crate::format::macho::commands::load_command_types::get_load_command_name;
+use crate::format::macho::commands::segment_names;
+use crate::app::util::importer::message_log::MessageLog;
+use crate::format::macho::commands::segment_command::SegmentCommand;
+use crate::format::macho::mach_header::MachHeader;
+use crate::format::seam_stubs::FlatProgramAPI;
+use crate::program::model::address::Address;
+use crate::program::model::listing::comment_type::CommentType;
+use crate::program::model::listing::program::Program;
+use crate::program::model::listing::program_fragment::ProgramFragment;
+use crate::program::model::listing::program_module::ProgramModule;
+use crate::util::exception::CancelledException;
+use crate::util::task::TaskMonitor;
+
+/// The shared state every [`LoadCommand`] implementor carries.
+///
+/// Java: the private `startIndex`/`cmd`/`cmdsize` fields on the abstract `LoadCommand` class.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LoadCommandBase {
+    start_index: u64,
+    cmd: i32,
+    cmdsize: i32,
+}
+
+impl LoadCommandBase {
+    /// Java: `LoadCommand(BinaryReader reader)`.
+    pub fn new(reader: &mut BinaryReader) -> io::Result<Self> {
+        let start_index = reader.get_pointer_index();
+        let cmd = reader.read_next_int()?;
+        let cmdsize = reader.read_next_int()?;
+        Ok(LoadCommandBase { start_index, cmd, cmdsize })
+    }
+
+    /// Java: `getStartIndex()`.
+    pub fn get_start_index(&self) -> u64 {
+        self.start_index
+    }
+
+    /// Java: `getCommandType()`.
+    pub fn get_command_type(&self) -> i32 {
+        self.cmd
+    }
+
+    /// Java: `getCommandSize()`.
+    pub fn get_command_size(&self) -> i32 {
+        self.cmdsize
+    }
+}
+
+/// Port of the abstract `ghidra.app.util.bin.format.macho.commands.LoadCommand` class.
+pub trait LoadCommand: StructConverter + Send + Sync {
+    /// Accessor to the shared state every load command carries.
+    fn base(&self) -> &LoadCommandBase;
+
+    /// Java: `getStartIndex()`.
+    fn get_start_index(&self) -> u64 {
+        self.base().get_start_index()
+    }
+
+    /// Java: `getCommandType()`.
+    fn get_command_type(&self) -> i32 {
+        self.base().get_command_type()
+    }
+
+    /// Java: `getCommandSize()`.
+    fn get_command_size(&self) -> i32 {
+        self.base().get_command_size()
+    }
+
+    /// Java: `getCommandName()` (abstract).
+    fn get_command_name(&self) -> String;
+
+    /// Java: `getLinkerDataOffset()`. Not all load commands with data have linker data (typically
+    /// in the `__LINKEDIT` segment); defaults to 0, overridable.
+    fn get_linker_data_offset(&self) -> i64 {
+        0
+    }
+
+    /// Java: `getLinkerDataSize()`. Defaults to 0, overridable.
+    fn get_linker_data_size(&self) -> i64 {
+        0
+    }
+
+    /// Java: `markup(Program, MachHeader, String, TaskMonitor, MessageLog)`. Marks up this load
+    /// command's data with data structures and comments, assuming the program was imported as a
+    /// Mach-O. Default is no markup, overridable.
+    fn markup(
+        &self,
+        program: &mut dyn Program,
+        header: &MachHeader,
+        source: Option<&str>,
+        monitor: &dyn TaskMonitor,
+        log: &MessageLog,
+    ) -> Result<(), CancelledException> {
+        let _ = (program, header, source, monitor, log);
+        Ok(())
+    }
+
+    /// Java: `markupPlateComment(Program, Address, String, String)`. Creates a plate comment at
+    /// the given address based on this load command's name.
+    fn markup_plate_comment(
+        &self,
+        program: &dyn Program,
+        address: Option<&Address>,
+        source: Option<&str>,
+        additional_description: Option<&str>,
+    ) {
+        let Some(address) = address else {
+            return;
+        };
+        let comment = self.get_contextual_name(source, additional_description);
+        if let Some(mut listing) = program.get_listing() {
+            listing.set_comment(address, CommentType::Plate, Some(comment));
+        }
+    }
+
+    /// Java: `getContextualName(String, String)`. The name of this load command, including
+    /// contextual information.
+    fn get_contextual_name(
+        &self,
+        source: Option<&str>,
+        additional_description: Option<&str>,
+    ) -> String {
+        let mut markup_name = get_load_command_name(self.get_command_type() as u32);
+        if let Some(desc) = additional_description {
+            if !desc.trim().is_empty() {
+                markup_name.push_str(&format!(" ({desc})"));
+            }
+        }
+        if let Some(src) = source {
+            if !src.trim().is_empty() {
+                markup_name.push_str(&format!(" - {src}"));
+            }
+        }
+        markup_name
+    }
+
+    /// Java: `fileOffsetToAddress(Program, MachHeader, long, long)`. Converts the given Mach-O
+    /// file offset to an address, or `None` if there is no corresponding address.
+    fn file_offset_to_address(
+        &self,
+        program: &dyn Program,
+        header: &MachHeader,
+        file_offset: i64,
+        size: i64,
+    ) -> Option<Address> {
+        if file_offset == 0 || size == 0 {
+            return None;
+        }
+        let space = program.get_address_factory()?.get_default_address_space()?;
+        let mut segment = if self.get_linker_data_offset() != 0 {
+            header.get_segment(segment_names::LINKEDIT)
+        } else {
+            None
+        };
+        if segment.is_none() {
+            segment = self.get_containing_segment(header, file_offset);
+        }
+        segment.map(|seg| {
+            space.address(seg.get_vm_address().wrapping_add(file_offset - seg.get_file_offset()))
+        })
+    }
+
+    /// Java: `checkCount(long)`. Checks that the given count value isn't larger than
+    /// `Integer.MAX_VALUE`.
+    fn check_count(&self, count: i64) -> io::Result<i64> {
+        if count > i32::MAX as i64 {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!(
+                    "Count value {count:#x} in {} is greater than Integer.MAX_VALUE",
+                    self.get_command_name()
+                ),
+            ));
+        }
+        Ok(count)
+    }
+
+    /// Java: `getContainingSegment(MachHeader, long)`. The segment that contains the given file
+    /// offset, or `None` if one was not found.
+    fn get_containing_segment<'h>(
+        &self,
+        header: &'h MachHeader,
+        file_offset: i64,
+    ) -> Option<&'h SegmentCommand> {
+        header.get_all_segments().into_iter().find(|segment| {
+            file_offset >= segment.get_file_offset()
+                && file_offset < segment.get_file_offset() + segment.get_file_size()
+        })
+    }
+
+    /// Java: `markupRawBinary(MachHeader, FlatProgramAPI, Address, ProgramModule, TaskMonitor,
+    /// MessageLog)`. Marks up this load command with data structures and comments, assuming the
+    /// program was imported as a Raw Binary. Legacy code to support Raw Binary markup.
+    fn markup_raw_binary(
+        &self,
+        header: &MachHeader,
+        api: &dyn FlatProgramAPI,
+        base_address: &Address,
+        parent_module: &mut dyn ProgramModule,
+        monitor: &dyn TaskMonitor,
+        log: &MessageLog,
+    ) {
+        markup_raw_binary_base(self, header, api, base_address, parent_module, monitor, log);
+    }
+
+    /// Java: `createFragment(FlatProgramAPI, Address, ProgramModule)`.
+    fn create_fragment(
+        &self,
+        api: &dyn FlatProgramAPI,
+        base_address: &Address,
+        module: &mut dyn ProgramModule,
+    ) -> io::Result<Box<dyn ProgramFragment>> {
+        let start = base_address.space().address(self.get_start_index() as i64);
+        api.create_fragment(
+            module,
+            &get_load_command_name(self.get_command_type() as u32),
+            &start,
+            self.get_command_size() as i64,
+        )
+    }
+
+    /// Java: `createPlateComment(FlatProgramAPI, Address)`.
+    fn create_plate_comment(&self, api: &dyn FlatProgramAPI, addr: &Address) {
+        api.set_plate_comment(addr, &get_load_command_name(self.get_command_type() as u32));
+    }
+
+    /// Java: `updateMonitor(TaskMonitor)`.
+    fn update_monitor(&self, monitor: &dyn TaskMonitor) {
+        monitor.set_message(&format!("Processing {}...", self.get_command_name()));
+    }
+}
+
+/// The body of Java's `LoadCommand.markupRawBinary`, callable from overriding implementations
+/// the way Java's `super.markupRawBinary(...)` is (a Rust trait's default method cannot be invoked
+/// from the method that overrides it). Failures are logged, never propagated.
+pub fn markup_raw_binary_base<C: LoadCommand + ?Sized>(
+    cmd: &C,
+    header: &MachHeader,
+    api: &dyn FlatProgramAPI,
+    base_address: &Address,
+    parent_module: &mut dyn ProgramModule,
+    monitor: &dyn TaskMonitor,
+    log: &MessageLog,
+) {
+    let _ = header;
+    cmd.update_monitor(monitor);
+    let result: Result<(), String> = (|| {
+        cmd.create_fragment(api, base_address, parent_module).map_err(|e| e.to_string())?;
+        let addr = base_address.space().address(cmd.get_start_index() as i64);
+        let data_type = cmd.to_data_type().map_err(|e| e.to_string())?;
+        api.create_data(&addr, data_type).map_err(|e| e.to_string())?;
+        cmd.create_plate_comment(api, &addr);
+        Ok(())
+    })();
+    if let Err(message) = result {
+        log.append_msg(&format!("Unable to create {} - {message}", cmd.get_command_name()));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    use crate::format::macho::commands::load_command_types::LC_SEGMENT;
+    use crate::program::model::data::data_type::DataType;
+
+    struct DummyDataType;
+    impl DataType for DummyDataType {}
+
+    struct TestLoadCommand {
+        base: LoadCommandBase,
+    }
+
+    impl StructConverter for TestLoadCommand {
+        fn to_data_type(
+            &self,
+        ) -> Result<Box<dyn DataType>, crate::app::util::bin::struct_converter::ToDataTypeError>
+        {
+            Ok(Box::new(DummyDataType))
+        }
+    }
+
+    impl LoadCommand for TestLoadCommand {
+        fn base(&self) -> &LoadCommandBase {
+            &self.base
+        }
+
+        fn get_command_name(&self) -> String {
+            get_load_command_name(self.get_command_type() as u32)
+        }
+    }
+
+    fn command_bytes(cmd: u32, cmdsize: i32) -> Vec<u8> {
+        let mut v = Vec::new();
+        v.extend_from_slice(&(cmd as i32).to_le_bytes());
+        v.extend_from_slice(&cmdsize.to_le_bytes());
+        v
+    }
+
+    #[test]
+    fn constructor_reads_start_index_cmd_and_cmdsize() {
+        let mut reader = BinaryReader::from_bytes(command_bytes(LC_SEGMENT, 56), true);
+        let cmd = TestLoadCommand { base: LoadCommandBase::new(&mut reader).unwrap() };
+        assert_eq!(cmd.get_start_index(), 0);
+        assert_eq!(cmd.get_command_type(), LC_SEGMENT as i32);
+        assert_eq!(cmd.get_command_size(), 56);
+    }
+
+    #[test]
+    fn constructor_captures_start_index_mid_stream() {
+        let mut bytes = vec![0u8; 4];
+        bytes.extend(command_bytes(LC_SEGMENT, 56));
+        let mut reader = BinaryReader::from_bytes(bytes, true);
+        reader.set_pointer_index(4);
+        let cmd = TestLoadCommand { base: LoadCommandBase::new(&mut reader).unwrap() };
+        assert_eq!(cmd.get_start_index(), 4);
+    }
+
+    #[test]
+    fn default_linker_data_offset_and_size_are_zero() {
+        let cmd = TestLoadCommand { base: LoadCommandBase { start_index: 0, cmd: 0, cmdsize: 0 } };
+        assert_eq!(cmd.get_linker_data_offset(), 0);
+        assert_eq!(cmd.get_linker_data_size(), 0);
+    }
+
+    #[test]
+    fn contextual_name_matches_java_formatting() {
+        let cmd = TestLoadCommand {
+            base: LoadCommandBase { start_index: 0, cmd: LC_SEGMENT as i32, cmdsize: 0 },
+        };
+        assert_eq!(cmd.get_contextual_name(None, None), "LC_SEGMENT");
+        assert_eq!(cmd.get_contextual_name(Some("foo.dylib"), None), "LC_SEGMENT - foo.dylib");
+        assert_eq!(cmd.get_contextual_name(None, Some("extra")), "LC_SEGMENT (extra)");
+        assert_eq!(
+            cmd.get_contextual_name(Some("foo.dylib"), Some("extra")),
+            "LC_SEGMENT (extra) - foo.dylib"
+        );
+        // Blank strings are treated like "not present", mirroring Java's `isBlank()` checks.
+        assert_eq!(cmd.get_contextual_name(Some("  "), Some("  ")), "LC_SEGMENT");
+    }
+
+    #[test]
+    fn check_count_rejects_values_over_i32_max() {
+        let cmd = TestLoadCommand { base: LoadCommandBase { start_index: 0, cmd: 0, cmdsize: 0 } };
+        assert_eq!(cmd.check_count(42).unwrap(), 42);
+        assert!(cmd.check_count(i32::MAX as i64 + 1).is_err());
+    }
+
+    #[test]
+    fn containing_segment_finds_the_segment_holding_the_offset() {
+        use crate::format::macho::commands::load_command_types::LC_SEGMENT_64;
+        use crate::format::macho::mach_constants::MH_CIGAM_64;
+        use crate::format::macho::mach_header::test_support::{provider, Bytes};
+
+        let mut b = Bytes::new(true);
+        b.u32(MH_CIGAM_64.swap_bytes()).u32(0x0100_0007).u32(3).u32(2).u32(2).u32(144).u32(0).u32(0);
+        for (name, vm, off, size) in [("__A", 0x1000u64, 0u64, 0x100u64), ("__B", 0x2000, 0x100, 0x200)] {
+            b.u32(LC_SEGMENT_64).u32(72).name(name, 16).u64(vm).u64(size).u64(off).u64(size);
+            b.u32(0).u32(0).u32(0).u32(0);
+        }
+        let mut header = MachHeader::new(provider(b.buf)).unwrap();
+        header.parse().unwrap();
+        let cmd = TestLoadCommand { base: LoadCommandBase { start_index: 0, cmd: 0, cmdsize: 0 } };
+
+        let found = cmd.get_containing_segment(&header, 0x150).unwrap();
+        assert_eq!(found.get_vm_address(), 0x2000);
+
+        assert!(cmd.get_containing_segment(&header, 0x9999).is_none());
+    }
+}

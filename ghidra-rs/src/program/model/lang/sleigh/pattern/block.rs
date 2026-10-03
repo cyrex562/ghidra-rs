@@ -172,35 +172,37 @@ impl PatternBlock {
         res >> (32 - size)
     }
 
-    pub fn is_instruction_match(&self, walker: &ParserWalker) -> bool {
+    /// Port of `PatternBlock.isInstructionMatch(ParserWalker)`.
+    ///
+    /// # Errors
+    /// [`MemoryAccessException`] if the instruction bytes cannot be read.
+    pub fn is_instruction_match(
+        &self,
+        walker: &ParserWalker<'_>,
+    ) -> Result<bool, crate::program::model::mem::MemoryAccessException> {
         if self.nonzerosize <= 0 {
-            return self.nonzerosize == 0;
+            return Ok(self.nonzerosize == 0);
         }
         let mut off = self.offset;
-        for &mask in &self.maskvec {
-            let data = match walker.get_instruction_bits(off * 8, 32) {
-                Ok(d) => d,
-                Err(_) => return false,
-            };
-            // Need to handle bit order correctly, Ghidra's getInstructionBytes is 4 bytes big endian
-            // Our get_instruction_bits handles bit extraction.
-            // Simplified for now: assume mask is aligned
-            if (mask & data) != self.valvec[((off - self.offset) / 4) as usize] {
-                return false;
+        for (mask, val) in self.maskvec.iter().zip(&self.valvec) {
+            let data = walker.get_instruction_bytes(off, 4)? as u32;
+            if (mask & data) != *val {
+                return Ok(false);
             }
             off += 4;
         }
-        true
+        Ok(true)
     }
 
-    pub fn is_context_match(&self, walker: &ParserWalker) -> bool {
+    /// Port of `PatternBlock.isContextMatch(ParserWalker)`.
+    pub fn is_context_match(&self, walker: &ParserWalker<'_>) -> bool {
         if self.nonzerosize <= 0 {
             return self.nonzerosize == 0;
         }
         let mut off = self.offset;
-        for &mask in &self.maskvec {
-            let data = walker.get_context_bits(off * 8, 32);
-            if (mask & data) != self.valvec[((off - self.offset) / 4) as usize] {
+        for (mask, val) in self.maskvec.iter().zip(&self.valvec) {
+            let data = walker.get_context_bytes(off, 4) as u32;
+            if (mask & data) != *val {
                 return false;
             }
             off += 4;

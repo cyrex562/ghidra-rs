@@ -83,7 +83,7 @@ mod tests {
                 name: "MyClass".to_string(),
             }),
         };
-        assert_eq!(ghidra_class.get_type(), NamespaceType::Class);
+        assert_eq!(GhidraClass::get_type(&ghidra_class), NamespaceType::Class);
     }
 
     #[test]
@@ -94,7 +94,7 @@ mod tests {
                 name: "MyClass".to_string(),
             }),
         });
-        assert_eq!(ghidra_class.get_type(), NamespaceType::Class);
+        assert_eq!(GhidraClass::get_type(ghidra_class.as_ref()), NamespaceType::Class);
         assert_eq!(ghidra_class.get_name(), "MyClass");
     }
 

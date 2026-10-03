@@ -36,7 +36,7 @@ impl Omf51Fixup {
     ///
     /// # Errors
     /// Returns `Err` if there is an IO-related error reading from the reader.
-    pub fn new(reader: &mut dyn BinaryReader, large_block_id: bool) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader, large_block_id: bool) -> io::Result<Self> {
         let ref_loc = reader.read_next_unsigned_short()?;
         let ref_type = reader.read_next_byte()? as i8;
         let block_type = reader.read_next_byte()? as i8;
@@ -85,96 +85,7 @@ impl Omf51Fixup {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
-    use std::rc::Rc;
 
-    use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
-
-    struct VecProvider(Vec<u8>);
-
-    impl ByteProvider for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            self.0
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            unimplemented!()
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            unimplemented!()
-        }
-    }
-
-    struct MockReader {
-        provider: Rc<RefCell<dyn ByteProvider>>,
-        little_endian: bool,
-        current_index: u64,
-    }
-
-    impl MockReader {
-        fn new(data: Vec<u8>) -> Self {
-            MockReader {
-                provider: Rc::new(RefCell::new(VecProvider(data))),
-                little_endian: true,
-                current_index: 0,
-            }
-        }
-    }
-
-    impl BinaryReader for MockReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.current_index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.current_index;
-            self.current_index = index;
-            old
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn ByteProvider>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
-            Box::new(MockReader {
-                provider: Rc::clone(&self.provider),
-                little_endian: self.little_endian,
-                current_index: new_index,
-            })
-        }
-    }
 
     #[test]
     fn reads_small_block_id_fixup() {
@@ -185,7 +96,7 @@ mod tests {
         data.push(7u8); // small block id
         data.extend_from_slice(&(0x00ABu16).to_le_bytes());
 
-        let mut r = MockReader::new(data);
+        let mut r = BinaryReader::from_bytes(data, true);
         let fixup = Omf51Fixup::new(&mut r, false).unwrap();
 
         assert_eq!(fixup.ref_loc(), 0x1234);
@@ -204,7 +115,7 @@ mod tests {
         data.extend_from_slice(&(0x0102u16).to_le_bytes()); // large block id
         data.extend_from_slice(&(0xFFFFu16).to_le_bytes());
 
-        let mut r = MockReader::new(data);
+        let mut r = BinaryReader::from_bytes(data, true);
         let fixup = Omf51Fixup::new(&mut r, true).unwrap();
 
         assert_eq!(fixup.ref_loc(), 0x5678);
@@ -224,9 +135,10 @@ mod tests {
         data.extend_from_slice(&(0u16).to_le_bytes());
         data.push(99);
 
-        let mut r = MockReader::new(data);
+        let mut r = BinaryReader::from_bytes(data, true);
         let _ = Omf51Fixup::new(&mut r, false).unwrap();
-        assert_eq!(r.get_pointer_index(), 6);
+        // 2 (ref_loc) + 1 (ref_type) + 1 (block_type) + 1 (small block_id) + 2 (offset) = 7
+        assert_eq!(r.get_pointer_index(), 7);
     }
 
     #[test]
@@ -239,9 +151,10 @@ mod tests {
         data.extend_from_slice(&(0u16).to_le_bytes());
         data.push(99);
 
-        let mut r = MockReader::new(data);
+        let mut r = BinaryReader::from_bytes(data, true);
         let _ = Omf51Fixup::new(&mut r, true).unwrap();
-        assert_eq!(r.get_pointer_index(), 7);
+        // 2 (ref_loc) + 1 (ref_type) + 1 (block_type) + 2 (large block_id) + 2 (offset) = 8
+        assert_eq!(r.get_pointer_index(), 8);
     }
 
     #[test]
@@ -253,7 +166,7 @@ mod tests {
         data.push(0);
         data.extend_from_slice(&(0u16).to_le_bytes());
 
-        let mut r = MockReader::new(data);
+        let mut r = BinaryReader::from_bytes(data, true);
         let fixup = Omf51Fixup::new(&mut r, false).unwrap();
 
         assert_eq!(fixup.ref_type(), -1);

@@ -1,1 +1,5 @@
+pub mod constructor_entry_visitor;
+pub mod pcode_op_entry_visitor;
+pub mod sleigh_languages;
+pub mod subtable_entry_visitor;
 pub mod visitor_results;

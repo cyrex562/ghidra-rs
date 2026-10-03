@@ -1,23 +1,23 @@
 use std::io;
 use std::io::Read;
 
-use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
+use crate::filesystem::ghidra::g_binary_reader::GByteStore;
 
-/// Wraps a [`ByteProvider`] and presents it as a [`Read`] stream.
+/// Wraps a [`GByteStore`] and presents it as a [`Read`] stream.
 ///
 /// The stream is limited to a region of the underlying provider, with an optional
 /// zero-filled padding appended after the real data. The provider is **not** closed
 /// when this reader is dropped.
 ///
 /// Total bytes readable: `length + pad_count`.
-pub struct ByteProviderPaddedInputStream<'a, P: ByteProvider> {
+pub struct ByteProviderPaddedInputStream<'a, P: GByteStore> {
     provider: &'a mut P,
     current_bp_offset: u64,
     bp_end_offset: u64,
     bp_end_pad_offset: u64,
 }
 
-impl<'a, P: ByteProvider> ByteProviderPaddedInputStream<'a, P> {
+impl<'a, P: GByteStore> ByteProviderPaddedInputStream<'a, P> {
     /// Creates a new padded stream over `provider`.
     ///
     /// - `start_offset`: first byte position within the provider to expose.
@@ -42,7 +42,7 @@ impl<'a, P: ByteProvider> ByteProviderPaddedInputStream<'a, P> {
     }
 }
 
-impl<'a, P: ByteProvider> Read for ByteProviderPaddedInputStream<'a, P> {
+impl<'a, P: GByteStore> Read for ByteProviderPaddedInputStream<'a, P> {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         if buf.is_empty() || self.current_bp_offset >= self.bp_end_pad_offset {
             return Ok(0);
@@ -84,7 +84,7 @@ mod tests {
         data: Vec<u8>,
     }
 
-    impl ByteProvider for VecProvider {
+    impl GByteStore for VecProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.data.len() as u64)
         }

@@ -226,7 +226,10 @@ fn to_12_hour(hour24: i64) -> (i64, &'static str) {
 
 /// Converts a proleptic-Gregorian civil date (1-based month, 1-based day) into the
 /// number of days since the Unix epoch. Based on Howard Hinnant's `days_from_civil`.
-fn days_from_civil(y: i32, m: u32, d: u32) -> i64 {
+///
+/// `pub(crate)` for the same reason as [`civil_from_days`]: shared with date-formatting `BuiltIn`
+/// data types elsewhere in this crate.
+pub(crate) fn days_from_civil(y: i32, m: u32, d: u32) -> i64 {
     let y = if m <= 2 { y as i64 - 1 } else { y as i64 };
     let era = if y >= 0 { y } else { y - 399 } / 400;
     let yoe = y - era * 400;
@@ -239,7 +242,12 @@ fn days_from_civil(y: i32, m: u32, d: u32) -> i64 {
 /// Converts a day count since the Unix epoch into a proleptic-Gregorian civil date
 /// `(year, month, day)`, with a 1-based month and day. Based on Howard Hinnant's
 /// `civil_from_days`.
-fn civil_from_days(z: i64) -> (i32, u32, u32) {
+///
+/// `pub(crate)` so date-formatting `BuiltIn` data types (e.g.
+/// [`MacintoshTimeStampDataType`](crate::program::model::data::macintosh_time_stamp_data_type::MacintoshTimeStampDataType),
+/// [`FileTimeDataType`](crate::program::model::data::file_time_data_type::FileTimeDataType)) can
+/// reuse this same well-tested calendar conversion instead of duplicating it.
+pub(crate) fn civil_from_days(z: i64) -> (i32, u32, u32) {
     let z = z + 719468;
     let era = if z >= 0 { z } else { z - 146096 } / 146097;
     let doe = z - era * 146097;

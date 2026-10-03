@@ -27,7 +27,7 @@ impl CFragLocatorKind {
     /// # Errors
     /// Returns `Err` if reading from the reader fails, or if the byte value
     /// does not correspond to a valid `CFragLocatorKind` variant.
-    pub fn get(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn get(reader: &mut BinaryReader) -> io::Result<Self> {
         let value = reader.read_next_byte()? & 0xff;
         Self::find(value).ok_or_else(|| {
             io::Error::new(
@@ -66,81 +66,6 @@ impl CFragLocatorKind {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
-    use std::rc::Rc;
-
-    struct MockReader {
-        bytes: Vec<u8>,
-        position: usize,
-    }
-
-    impl MockReader {
-        fn new(bytes: Vec<u8>) -> Self {
-            Self {
-                bytes,
-                position: 0,
-            }
-        }
-    }
-
-    impl BinaryReader for MockReader {
-        fn length(&self) -> io::Result<u64> {
-            Ok(self.bytes.len() as u64)
-        }
-
-        fn is_valid_index(&self, index: u64) -> bool {
-            (index as usize) < self.bytes.len()
-        }
-
-        fn get_pointer_index(&self) -> u64 {
-            self.position as u64
-        }
-
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.position;
-            self.position = index as usize;
-            old as u64
-        }
-
-        fn is_little_endian(&self) -> bool {
-            false
-        }
-
-        fn set_little_endian(&mut self, _is_little_endian: bool) {}
-
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.bytes
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "index out of range"))
-        }
-
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start.checked_add(n_elements).ok_or_else(|| {
-                io::Error::new(io::ErrorKind::InvalidData, "overflow")
-            })?;
-            if end > self.bytes.len() {
-                return Err(io::Error::new(io::ErrorKind::InvalidData, "range out of bounds"));
-            }
-            Ok(self.bytes[start..end].to_vec())
-        }
-
-        fn get_byte_provider(
-            &self,
-        ) -> Rc<RefCell<dyn crate::filesystem::ghidra::g_binary_reader::ByteProvider>> {
-            panic!("not implemented for mock")
-        }
-
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
-            let mut clone = Self {
-                bytes: self.bytes.clone(),
-                position: new_index as usize,
-            };
-            clone.position = new_index as usize;
-            Box::new(clone)
-        }
-    }
 
     #[test]
     fn find_all_variants() {
@@ -192,15 +117,15 @@ mod tests {
 
     #[test]
     fn get_reads_byte() {
-        let mut reader = MockReader::new(vec![0]);
+        let mut reader = BinaryReader::from_bytes(vec![0], false);
         let result = CFragLocatorKind::get(&mut reader);
-        assert_eq!(result, Ok(CFragLocatorKind::KMemoryCFragLocator));
-        assert_eq!(reader.position, 1);
+        assert_eq!(result.unwrap(), CFragLocatorKind::KMemoryCFragLocator);
+        assert_eq!(reader.get_pointer_index(), 1);
     }
 
     #[test]
     fn get_masks_byte() {
-        let mut reader = MockReader::new(vec![0xFF]);
+        let mut reader = BinaryReader::from_bytes(vec![0xFF], false);
         let result = CFragLocatorKind::get(&mut reader);
         assert!(result.is_err());
     }
@@ -217,9 +142,9 @@ mod tests {
         ];
 
         for (byte_val, expected) in &test_cases {
-            let mut reader = MockReader::new(vec![*byte_val]);
+            let mut reader = BinaryReader::from_bytes(vec![*byte_val], false);
             let result = CFragLocatorKind::get(&mut reader);
-            assert_eq!(result, Ok(*expected));
+            assert_eq!(result.unwrap(), *expected);
         }
     }
 

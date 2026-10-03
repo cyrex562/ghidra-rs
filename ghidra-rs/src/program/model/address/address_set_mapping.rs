@@ -25,7 +25,7 @@ impl AddressSetMapping {
         }
         let mut range_iterator = set.address_ranges();
         let mut ranges = Vec::new();
-        while let Some(range) = range_iterator.next_range() {
+        while let Some(range) = range_iterator.next() {
             ranges.push(range);
         }
 

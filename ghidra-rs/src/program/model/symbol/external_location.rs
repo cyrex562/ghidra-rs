@@ -141,6 +141,20 @@ pub trait ExternalLocation: Send + Sync {
         unimplemented!("create_function must be overridden by a concrete ExternalLocation")
     }
 
+    /// Mutable counterpart of [`create_function`](Self::create_function).
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`AbstractOrdinalSupportLoader`](crate::app::util::opinion::abstract_ordinal_support_loader::AbstractOrdinalSupportLoader)'s
+    /// port of `applyImports`, which sets the created function's stack purge size and no-return
+    /// flag and so needs `&mut`, where the `Arc`-returning form above only permits reads. Java
+    /// needs no such split: `createFunction()` hands back a freely mutable reference.
+    ///
+    /// Defaults to `None` so existing implementors are unaffected; a caller that gets `None`
+    /// leaves the function unmodified.
+    fn create_function_mut(&mut self) -> Option<&mut dyn Function> {
+        None
+    }
+
     /// Returns the address in "External" (fake) space where this location is stored.
     fn get_external_space_address(&self) -> Option<Address> {
         None

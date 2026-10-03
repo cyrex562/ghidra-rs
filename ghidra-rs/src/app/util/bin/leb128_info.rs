@@ -1,14 +1,14 @@
 use std::fmt;
 use std::io::{self, Read};
 
-use crate::app::util::bin::binary_reader::BinaryReader;
+use crate::app::util::bin::binary_reader::LegacyBinaryReader;
 use crate::app::util::bin::invalid_data_exception::InvalidDataException;
 use crate::program::model::data::leb128::Leb128;
 
 /// Adapts a [`BinaryReader`] into a [`Read`] stream, advancing the reader's pointer index one
 /// byte at a time. Used to feed [`Leb128::read`], which only knows how to read from a stream.
 struct ReaderAdapter<'a> {
-    reader: &'a mut dyn BinaryReader,
+    reader: &'a mut dyn LegacyBinaryReader,
 }
 
 impl<'a> Read for ReaderAdapter<'a> {
@@ -34,19 +34,19 @@ pub struct LEB128Info {
 impl LEB128Info {
     /// Reads an unsigned LEB128 value from `reader` and returns a `LEB128Info` instance
     /// that contains the value along with size and position metadata.
-    pub fn unsigned(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn unsigned(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         Self::read_value(reader, false)
     }
 
     /// Reads a signed LEB128 value from `reader` and returns a `LEB128Info` instance
     /// that contains the value along with size and position metadata.
-    pub fn signed(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn signed(reader: &mut dyn LegacyBinaryReader) -> io::Result<Self> {
         Self::read_value(reader, true)
     }
 
     /// Reads a LEB128 value from `reader` and returns a `LEB128Info` instance that contains the
     /// value along with size and position metadata.
-    pub fn read_value(reader: &mut dyn BinaryReader, is_signed: bool) -> io::Result<Self> {
+    pub fn read_value(reader: &mut dyn LegacyBinaryReader, is_signed: bool) -> io::Result<Self> {
         let offset = reader.get_pointer_index();
         let value = Leb128::read(&mut ReaderAdapter { reader }, is_signed)?;
         let byte_length = (reader.get_pointer_index() - offset) as i32;
@@ -108,112 +108,13 @@ impl fmt::Display for LEB128Info {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
-    use std::rc::Rc;
+    use crate::app::util::bin::binary_reader::BinaryReader;
 
-    use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
-
-    /// Minimal in-memory [`ByteProvider`] used only to back the mock reader below.
-    struct VecProvider(Vec<u8>);
-
-    impl ByteProvider for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::new(io::ErrorKind::UnexpectedEof, "eof"))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            if end > self.0.len() {
-                return Err(io::Error::new(io::ErrorKind::UnexpectedEof, "eof"));
-            }
-            Ok(self.0[start..end].to_vec())
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-    }
-
-    /// Minimal `BinaryReader` implementation backed by an in-memory byte vector, for testing.
-    struct TestReader {
-        provider: Rc<RefCell<dyn ByteProvider>>,
-        index: u64,
-        little_endian: bool,
-    }
-
-    impl TestReader {
-        fn new(bytes: Vec<u8>) -> Self {
-            Self {
-                provider: Rc::new(RefCell::new(VecProvider(bytes))),
-                index: 0,
-                little_endian: true,
-            }
-        }
-    }
-
-    impl BinaryReader for TestReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-
-        fn get_pointer_index(&self) -> u64 {
-            self.index
-        }
-
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let prev = self.index;
-            self.index = index;
-            prev
-        }
-
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn ByteProvider>> {
-            Rc::clone(&self.provider)
-        }
-
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
-            Box::new(TestReader {
-                provider: Rc::clone(&self.provider),
-                index: new_index,
-                little_endian: self.little_endian,
-            })
-        }
-    }
 
     #[test]
     fn test_unsigned_read_value() {
         // 624485 = 0x98765 -> LEB128 unsigned: 0xE5 0x8E 0x26
-        let mut reader = TestReader::new(vec![0xE5, 0x8E, 0x26, 0xFF]);
+        let mut reader = BinaryReader::from_bytes(vec![0xE5, 0x8E, 0x26, 0xFF], true);
         let info = LEB128Info::unsigned(&mut reader).unwrap();
         assert_eq!(info.as_long(), 624485);
         assert_eq!(info.get_offset(), 0);
@@ -224,7 +125,7 @@ mod tests {
     #[test]
     fn test_signed_read_value() {
         // -624485 -> LEB128 signed: 0x9B 0xF1 0x59
-        let mut reader = TestReader::new(vec![0x9B, 0xF1, 0x59]);
+        let mut reader = BinaryReader::from_bytes(vec![0x9B, 0xF1, 0x59], true);
         let info = LEB128Info::signed(&mut reader).unwrap();
         assert_eq!(info.as_long(), -624485);
         assert_eq!(info.get_length(), 3);
@@ -232,7 +133,7 @@ mod tests {
 
     #[test]
     fn test_offset_reflects_reader_position() {
-        let mut reader = TestReader::new(vec![0x00, 0xE5, 0x8E, 0x26]);
+        let mut reader = BinaryReader::from_bytes(vec![0x00, 0xE5, 0x8E, 0x26], true);
         reader.set_pointer_index(1);
         let info = LEB128Info::unsigned(&mut reader).unwrap();
         assert_eq!(info.get_offset(), 1);
@@ -241,14 +142,14 @@ mod tests {
 
     #[test]
     fn test_as_u_int32_in_range() {
-        let mut reader = TestReader::new(vec![0x01]);
+        let mut reader = BinaryReader::from_bytes(vec![0x01], true);
         let info = LEB128Info::unsigned(&mut reader).unwrap();
         assert_eq!(info.as_u_int32().unwrap(), 1);
     }
 
     #[test]
     fn test_as_u_int32_out_of_range_for_negative_value() {
-        let mut reader = TestReader::new(vec![0x7F]);
+        let mut reader = BinaryReader::from_bytes(vec![0x7F], true);
         let info = LEB128Info::signed(&mut reader).unwrap();
         assert_eq!(info.as_long(), -1);
         assert!(info.as_u_int32().is_err());
@@ -256,7 +157,7 @@ mod tests {
 
     #[test]
     fn test_as_int32_in_range() {
-        let mut reader = TestReader::new(vec![0x7F]);
+        let mut reader = BinaryReader::from_bytes(vec![0x7F], true);
         let info = LEB128Info::signed(&mut reader).unwrap();
         assert_eq!(info.as_int32().unwrap(), -1);
     }
@@ -265,14 +166,14 @@ mod tests {
     fn test_as_int32_out_of_range() {
         // A value larger than i32::MAX encoded as unsigned LEB128.
         let encoded = Leb128::encode(i32::MAX as i64 + 1, false);
-        let mut reader = TestReader::new(encoded);
+        let mut reader = BinaryReader::from_bytes(encoded, true);
         let info = LEB128Info::unsigned(&mut reader).unwrap();
         assert!(info.as_int32().is_err());
     }
 
     #[test]
     fn test_display() {
-        let mut reader = TestReader::new(vec![0x01]);
+        let mut reader = BinaryReader::from_bytes(vec![0x01], true);
         let info = LEB128Info::unsigned(&mut reader).unwrap();
         assert_eq!(format!("{}", info), "LEB128: value: 1, offset: 0, byteLength: 1");
     }

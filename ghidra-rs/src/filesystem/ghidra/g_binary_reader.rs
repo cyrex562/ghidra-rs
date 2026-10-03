@@ -1,19 +1,104 @@
 use std::cell::RefCell;
 use std::io;
+use std::path::PathBuf;
 use std::rc::Rc;
+
+use crate::filesystem::gfilesystem::fsrl::Fsrl;
 
 /// Abstracts seekable, index-addressed byte storage consumed by [`GBinaryReader`].
 ///
 /// Implementors provide random-access reads and writes by absolute byte index.
 /// Because most concrete providers (e.g. file-backed ones) mutate internal seek
 /// position on every access, all methods take `&mut self`.
-pub trait ByteProvider {
+pub trait GByteStore {
     fn length(&mut self) -> io::Result<u64>;
     fn is_valid_index(&mut self, index: u64) -> bool;
     fn read_byte(&mut self, index: u64) -> io::Result<u8>;
     fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>>;
     fn write_byte(&mut self, index: u64, value: u8) -> io::Result<()>;
     fn write_bytes(&mut self, index: u64, values: &[u8]) -> io::Result<()>;
+
+    /// The [`Fsrl`] this provider's bytes came from, if it has one.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`DecompileDebugFormatManager::from_byte_provider`](crate::app::util::opinion::decompile_debug_format_manager::DecompileDebugFormatManager::from_byte_provider),
+    /// which prefers a simple local FSRL path over [`get_file`](Self::get_file). Stands in for
+    /// `GByteStore.getFSRL()`.
+    ///
+    /// Defaults to `None`, which is exactly the `null` Java's default implementation returns.
+    fn get_fsrl(&self) -> Option<&Fsrl> {
+        None
+    }
+
+    /// The local file backing this provider, if it has one.
+    ///
+    /// Grown (defaulted) alongside [`get_fsrl`](Self::get_fsrl) for the same caller. Stands in
+    /// for `GByteStore.getFile()`, which likewise defaults to `null` -- and which, for a
+    /// provider obtained from the filesystem service, points into the file cache rather than at
+    /// the original path.
+    fn get_file(&self) -> Option<PathBuf> {
+        None
+    }
+}
+
+/// Presents a legacy [`GByteStore`] as the real
+/// [`ByteProvider`](crate::app::util::bin::byte_provider::ByteProvider), so code still reading
+/// through [`GBinaryReader`] can hand its bytes to APIs ported against `ByteProvider` (e.g.
+/// `MemoryBlockUtils.createFileBytes`).
+///
+/// No Java counterpart: Java has one `ByteProvider`. This is the migration bridge the 2026-09-26
+/// decision ("migrate ad-hoc readers onto the real ByteProvider/BinaryReader") calls for, until
+/// the `GBinaryReader` users are moved over. The name is the [`Fsrl`]'s, else the backing file's.
+pub struct GByteStoreByteProvider {
+    store: Rc<RefCell<dyn GByteStore>>,
+}
+
+impl GByteStoreByteProvider {
+    pub fn new(store: Rc<RefCell<dyn GByteStore>>) -> Self {
+        GByteStoreByteProvider { store }
+    }
+}
+
+impl crate::app::util::bin::byte_provider::ByteProvider for GByteStoreByteProvider {
+    fn get_file(&self) -> Option<PathBuf> {
+        self.store.borrow().get_file()
+    }
+
+    fn get_name(&self) -> Option<String> {
+        let store = self.store.borrow();
+        if let Some(name) = store.get_fsrl().and_then(|fsrl| fsrl.name()) {
+            return Some(name);
+        }
+        store
+            .get_file()
+            .and_then(|f| f.file_name().map(|n| n.to_string_lossy().into_owned()))
+    }
+
+    fn get_absolute_path(&self) -> Option<String> {
+        self.store.borrow().get_file().map(|f| f.display().to_string())
+    }
+
+    fn length(&self) -> u64 {
+        self.store.borrow_mut().length().unwrap_or(0)
+    }
+
+    fn is_valid_index(&self, index: u64) -> bool {
+        self.store.borrow_mut().is_valid_index(index)
+    }
+
+    fn close(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+
+    fn read_byte(&self, index: u64) -> io::Result<u8> {
+        self.store.borrow_mut().read_byte(index)
+    }
+
+    fn read_bytes(&self, index: u64, length: u64) -> io::Result<Vec<u8>> {
+        let length = usize::try_from(length)
+            .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "length too large"))?;
+        self.store.borrow_mut().read_bytes(index, length)
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -22,13 +107,13 @@ enum Endian {
     Big,
 }
 
-/// Reads and writes typed values from a [`ByteProvider`] in a chosen byte order.
+/// Reads and writes typed values from a [`GByteStore`] in a chosen byte order.
 ///
 /// The reader maintains a current index that `readNext*` methods advance
 /// automatically.  The `clone_at` method creates a second reader sharing the
 /// same provider but starting at a different position.
 pub struct GBinaryReader {
-    provider: Rc<RefCell<dyn ByteProvider>>,
+    provider: Rc<RefCell<dyn GByteStore>>,
     endian: Endian,
     current_index: u64,
 }
@@ -40,7 +125,7 @@ impl GBinaryReader {
     pub const SIZEOF_LONG: u64 = 8;
 
     /// Creates a reader over `provider` in the specified byte order.
-    pub fn new(provider: Rc<RefCell<dyn ByteProvider>>, is_little_endian: bool) -> Self {
+    pub fn new(provider: Rc<RefCell<dyn GByteStore>>, is_little_endian: bool) -> Self {
         GBinaryReader {
             provider,
             endian: if is_little_endian { Endian::Little } else { Endian::Big },
@@ -470,7 +555,7 @@ impl GBinaryReader {
         self.provider.borrow_mut().write_bytes(index, &bytes)
     }
 
-    pub fn get_byte_provider(&self) -> Rc<RefCell<dyn ByteProvider>> {
+    pub fn get_byte_provider(&self) -> Rc<RefCell<dyn GByteStore>> {
         Rc::clone(&self.provider)
     }
 
@@ -525,11 +610,11 @@ impl GBinaryReader {
 mod tests {
     use super::*;
 
-    // ── test helper: in-memory ByteProvider ──────────────────────────────────
+    // ── test helper: in-memory GByteStore ──────────────────────────────────
 
     struct VecProvider(Vec<u8>);
 
-    impl ByteProvider for VecProvider {
+    impl GByteStore for VecProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.0.len() as u64)
         }
@@ -986,5 +1071,20 @@ mod tests {
         let r = reader(vec![42], false);
         let prov = r.get_byte_provider();
         assert_eq!(prov.borrow_mut().read_byte(0).unwrap(), 42);
+    }
+
+    #[test]
+    fn gbytestore_bridge_reads_through_as_a_byte_provider() {
+        use crate::app::util::bin::byte_provider::ByteProvider;
+        let store: Rc<RefCell<dyn GByteStore>> = Rc::new(RefCell::new(VecProvider(vec![1, 2, 3, 4])));
+        let provider = GByteStoreByteProvider::new(store);
+        assert_eq!(provider.length(), 4);
+        assert!(provider.is_valid_index(3) && !provider.is_valid_index(4));
+        assert_eq!(provider.read_byte(2).unwrap(), 3);
+        assert_eq!(provider.read_bytes(1, 3).unwrap(), vec![2, 3, 4]);
+        let mut all = Vec::new();
+        std::io::Read::read_to_end(&mut provider.get_input_stream(0).unwrap(), &mut all).unwrap();
+        assert_eq!(all, vec![1, 2, 3, 4]);
+        assert_eq!(provider.get_name(), None);
     }
 }

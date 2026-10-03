@@ -1,7 +1,7 @@
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_with_charset::DataTypeEncodeError;
 use crate::docking::settings::settings::Settings;
-use crate::program::seam_stubs::MemBuffer;
+use crate::program::model::mem::MemBuffer;
 
 /// Port of `ghidra.program.model.data.IntegerDataTypeTest`.
 ///
@@ -260,7 +260,20 @@ mod tests {
     }
 
     struct MockBuf;
-    impl MemBuffer for MockBuf {}
+    impl MemBuffer for MockBuf {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_address(&self) -> crate::program::model::address::Address {
+            crate::program::model::address::SpecialAddress::no_address()
+        }
+    }
 
     struct MockSettings;
     impl Settings for MockSettings {}
@@ -305,5 +318,125 @@ mod tests {
     fn usable_as_trait_object_and_runs_a_conformance_check() {
         let fixture: &dyn IntegerDataTypeTest = &MockFixture;
         fixture.test_encode_value_unsigned_byte_be();
+    }
+
+    /// A `Box<dyn DataType>` view of a shared built-in, since the Java fixture's factories return
+    /// the `dataType` singletons (`Arc` handles here).
+    struct Shared(std::sync::Arc<dyn DataType>);
+
+    impl DataType for Shared {
+        fn get_name(&self) -> String {
+            self.0.get_name()
+        }
+        fn get_length(&self) -> i32 {
+            self.0.get_length()
+        }
+        fn is_encodable(&self) -> bool {
+            self.0.is_encodable()
+        }
+        fn encode_value(
+            &self,
+            value: &dyn Any,
+            buf: &dyn MemBuffer,
+            settings: &dyn Settings,
+            length: i32,
+        ) -> Result<Vec<u8>, DataTypeEncodeError> {
+            self.0.encode_value(value, buf, settings, length)
+        }
+        fn get_representation(&self, buf: &dyn MemBuffer, settings: &dyn Settings, length: i32) -> String {
+            self.0.get_representation(buf, settings, length)
+        }
+        fn encode_representation(
+            &self,
+            repr: &str,
+            buf: &dyn MemBuffer,
+            settings: &dyn Settings,
+            length: i32,
+        ) -> Result<Vec<u8>, DataTypeEncodeError> {
+            self.0.encode_representation(repr, buf, settings, length)
+        }
+    }
+
+    /// The real fixture: `AbstractIntegerDataType.getUnsignedDataType`/`getSignedDataType`,
+    /// `ByteMemBufferImpl` buffers and settings carrying one `format` value.
+    struct RealFixture;
+
+    impl IntegerDataTypeTest for RealFixture {
+        fn unsigned_data_type(&self, length: i32) -> Box<dyn DataType> {
+            Box::new(Shared(crate::program::model::data::abstract_integer_data_type::get_unsigned_data_type(length, None)))
+        }
+        fn signed_data_type(&self, length: i32) -> Box<dyn DataType> {
+            Box::new(Shared(crate::program::model::data::abstract_integer_data_type::get_signed_data_type(length, None)))
+        }
+        fn buf(&self, big_endian: bool, bytes: &[u8]) -> Box<dyn MemBuffer> {
+            Box::new(test_support::buf(bytes, big_endian))
+        }
+        fn hex_settings(&self) -> Box<dyn Settings> {
+            Box::new(test_support::LongSettings::of(&[("format", 0)]))
+        }
+        fn dec_settings(&self) -> Box<dyn Settings> {
+            Box::new(test_support::LongSettings::of(&[("format", 1)]))
+        }
+        fn bin_settings(&self) -> Box<dyn Settings> {
+            Box::new(test_support::LongSettings::of(&[("format", 2)]))
+        }
+        fn oct_settings(&self) -> Box<dyn Settings> {
+            Box::new(test_support::LongSettings::of(&[("format", 3)]))
+        }
+        fn char_settings(&self) -> Box<dyn Settings> {
+            Box::new(test_support::LongSettings::of(&[("format", 4)]))
+        }
+    }
+
+    use crate::program::model::data::abstract_integer_data_type::test_support;
+
+    #[test]
+    fn java_encode_value_unsigned_byte_be() {
+        RealFixture.test_encode_value_unsigned_byte_be();
+    }
+
+    #[test]
+    fn java_encode_representation_unsigned_byte_hex_be() {
+        RealFixture.test_encode_representation_unsigned_byte_hex_be();
+    }
+
+    #[test]
+    fn java_encode_representation_signed_short_hex_be() {
+        RealFixture.test_encode_representation_signed_short_hex_be();
+    }
+
+    #[test]
+    fn java_encode_representation_signed_short_hex_le() {
+        RealFixture.test_encode_representation_signed_short_hex_le();
+    }
+
+    #[test]
+    fn java_encode_representation_unsigned_short_hex_be() {
+        RealFixture.test_encode_representation_unsigned_short_hex_be();
+    }
+
+    #[test]
+    fn java_encode_representation_signed_short_dec_be() {
+        RealFixture.test_encode_representation_signed_short_dec_be();
+    }
+
+    #[test]
+    fn java_encode_representation_unsigned_short_dec_be() {
+        RealFixture.test_encode_representation_unsigned_short_dec_be();
+    }
+
+    #[test]
+    fn java_encode_representation_signed_short_bin_be() {
+        RealFixture.test_encode_representation_signed_short_bin_be();
+    }
+
+    #[test]
+    fn java_encode_representation_signed_short_oct_be() {
+        RealFixture.test_encode_representation_signed_short_oct_be();
+    }
+
+    #[test]
+    fn java_encode_representation_char() {
+        RealFixture.test_encode_representation_char();
     }
 }

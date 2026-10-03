@@ -1,36 +1,176 @@
+pub mod binary_coded_field;
+pub mod binary_data_buffer;
+pub mod binary_field;
+pub mod boolean_field;
 pub mod buffer;
 pub mod buffer_mgr;
 pub mod buffers;
+pub mod byte_field;
 pub mod chained_buffer;
+pub mod constrained_forward_record_iterator;
+pub mod converted_record_iterator;
+pub mod database;
+pub mod database_utils;
+pub mod db_buffer;
+pub mod db_buffer_impl;
+pub mod db_change_set;
+pub mod db_field_iterator;
+pub mod db_file_listener;
 pub mod db_handle;
+pub mod db_initializer;
+pub mod db_listener;
 pub mod db_parms;
 pub mod db_rollback_exception;
 pub mod field;
+pub mod field_index_table;
+pub mod field_key_interior_node;
+pub mod field_key_node;
+pub mod field_key_record_node;
+pub mod fixed_field;
+pub mod fixed_field10;
+pub mod fixed_key_fixed_rec_node;
+pub mod fixed_key_interior_node;
+pub mod fixed_key_node;
+pub mod fixed_key_record_node;
+pub mod fixed_key_var_rec_node;
+pub mod fixed_rec_node;
 pub mod illegal_field_access_exception;
+pub mod index_field;
+pub mod index_table;
+pub mod int_field;
+pub mod interior_node;
+pub mod key_to_record_iterator;
+pub mod legacy_index_field;
+pub mod long_field;
+pub mod long_key_record_node;
 pub mod master_table;
+pub mod no_transaction_exception;
 pub mod nodes;
+pub mod object_storage_adapter_db;
+pub mod primitive_field;
 pub mod record;
+pub mod record_node;
+pub mod record_translator;
+pub mod recovery_db_test;
 pub mod schema;
+pub mod short_field;
+pub mod sparse_record;
+pub mod string_field;
 pub mod table;
+pub mod table_record;
+pub mod table_statistics;
+pub mod terminated_transaction_exception;
 pub mod test_speed;
+pub mod transaction;
+pub mod translated_record_iterator;
 pub mod util;
+pub mod var_key_interior_node;
+pub mod var_key_node;
+pub mod var_key_record_node;
+pub mod var_rec_node;
 
+pub use binary_coded_field::BinaryCodedField;
+pub use binary_data_buffer::BinaryDataBuffer;
+pub use binary_field::BinaryField;
+pub use boolean_field::BooleanField;
 pub use buffer::{Buffer, DataBuffer};
 pub use buffer_mgr::BufferMgr;
-pub use buffers::{BufferFile, LocalBufferFile};
+pub use buffers::{BlockStream, BufferFile, LocalBufferFile};
+pub use byte_field::ByteField;
 pub use chained_buffer::ChainedBuffer;
+pub use constrained_forward_record_iterator::ConstrainedForwardRecordIterator;
+pub use converted_record_iterator::ConvertedRecordIterator;
+pub use database::{Database, OpenError};
+pub use database_utils::DatabaseUtils;
+pub use db_buffer::DBBuffer;
+pub use db_buffer_impl::DBBufferImpl;
+pub use db_change_set::DBChangeSet;
+pub use db_field_iterator::DBFieldIterator;
+pub use db_file_listener::DBFileListener;
 pub use db_handle::DBHandle;
+pub use db_initializer::DBInitializer;
+pub use db_listener::DBListener;
 pub use db_parms::DBParms;
 pub use db_rollback_exception::DBRollbackException;
-pub use field::{Field, FieldType};
+pub use field::{Field, FieldType, UnsupportedFieldException};
+pub use field_index_table::FieldIndexTable;
+pub use field_key_interior_node::FieldKeyInteriorNode;
+pub use field_key_node::FieldKeyNode;
+pub use field_key_record_node::FieldKeyRecordNode;
+pub use fixed_field::FixedField;
+pub use fixed_field10::FixedField10;
+pub use fixed_key_fixed_rec_node::FixedKeyFixedRecNode;
+pub use fixed_key_interior_node::FixedKeyInteriorNode;
+pub use fixed_key_node::FixedKeyNode;
+pub use fixed_key_record_node::FixedKeyRecordNode;
+pub use fixed_key_var_rec_node::FixedKeyVarRecNode;
+pub use fixed_rec_node::FixedRecNode;
 pub use illegal_field_access_exception::IllegalFieldAccessException;
+pub use index_field::{IndexField, MAX_INDEX_FIELD_LENGTH};
+pub use int_field::IntField;
+pub use interior_node::InteriorNode;
+pub use key_to_record_iterator::KeyToRecordIterator;
+pub use legacy_index_field::LegacyIndexField;
+pub use long_field::LongField;
+pub use long_key_record_node::LongKeyRecordNode;
+pub use no_transaction_exception::NoTransactionException;
+pub use object_storage_adapter_db::ObjectStorageAdapterDB;
+pub use primitive_field::PrimitiveField;
 pub use record::DBRecord;
+pub use record_node::RecordNode;
+pub use record_translator::RecordTranslator;
+pub use recovery_db_test::RecoveryDbTest;
 pub use schema::Schema;
+pub use short_field::ShortField;
+pub use sparse_record::SparseRecord;
+pub use string_field::StringField;
 pub use table::Table;
+pub use table_record::TableRecord;
+pub use table_statistics::TableStatistics;
+pub use terminated_transaction_exception::TerminatedTransactionException;
+pub use transaction::{EndTransaction, Transaction};
+pub use translated_record_iterator::TranslatedRecordIterator;
+pub use var_key_interior_node::VarKeyInteriorNode;
+pub use var_key_node::VarKeyNode;
+pub use var_key_record_node::VarKeyRecordNode;
+pub use var_rec_node::VarRecNode;
 
+/// Iterate over data records within a table.
+///
+/// Port of `db.RecordIterator`. Java's interface also declares `hasPrevious()`, `previous()` and
+/// `delete()`; this trait originally modeled only the forward-iteration half (`next`/`has_next`),
+/// which is all most implementors in this port need. `has_previous`/`previous`/`delete` were
+/// added later, as default methods, specifically so existing implementors (which only provide
+/// `next`/`has_next`) keep compiling unchanged: the defaults report "nothing available"/"not
+/// deleted" rather than requiring every call site to opt in. Implementors that back a genuinely
+/// bidirectional, mutable source (e.g. `AddressKeyRecordIterator` in
+/// `program::database::map::address_key_record_iterator`) should override all three to match
+/// Java's real contract.
 pub trait RecordIterator {
     fn next(&mut self) -> std::io::Result<Option<DBRecord>>;
     fn has_next(&self) -> bool;
+
+    /// Return true if a Record is available in the reverse direction.
+    ///
+    /// Defaults to `false`: see the trait-level doc comment.
+    fn has_previous(&self) -> std::io::Result<bool> {
+        Ok(false)
+    }
+
+    /// Return the previous Record or `None` if one is not available.
+    ///
+    /// Defaults to `Ok(None)`: see the trait-level doc comment.
+    fn previous(&mut self) -> std::io::Result<Option<DBRecord>> {
+        Ok(None)
+    }
+
+    /// Delete the last Record read via [`next`](Self::next) or [`previous`](Self::previous).
+    /// Returns true if the record was successfully deleted.
+    ///
+    /// Defaults to `Ok(false)`: see the trait-level doc comment.
+    fn delete(&mut self) -> std::io::Result<bool> {
+        Ok(false)
+    }
 }
 
 /// Bidirectional iterator over `i64` key values within a database table.

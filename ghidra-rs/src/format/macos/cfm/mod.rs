@@ -1,7 +1,13 @@
 pub mod c_frag_architecture;
 pub mod c_frag_locator_kind;
+pub mod c_frag_resource;
+pub mod c_frag_resource_member;
 pub mod c_frag_symbol_class;
 pub mod c_frag_update_level;
 pub mod c_frag_usage;
+pub mod c_frag_usage1_union;
+pub mod c_frag_usage2_union;
+pub mod c_frag_where1_union;
+pub mod c_frag_where2_union;
 pub mod cfm_util;
 pub mod code_fragment_manager;

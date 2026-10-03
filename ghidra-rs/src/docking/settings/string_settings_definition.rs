@@ -171,10 +171,10 @@ mod tests {
         };
         let mut settings = MockSettings::new();
 
-        assert_eq!(def.get_value_string(&settings), Some(String::new()));
+        assert_eq!(StringSettingsDefinition::get_value_string(&def, &settings), Some(String::new()));
 
         def.set_value(&mut settings, "test_value");
-        assert_eq!(def.get_value_string(&settings), Some("test_value".to_string()));
+        assert_eq!(StringSettingsDefinition::get_value_string(&def, &settings), Some("test_value".to_string()));
     }
 
     #[test]
@@ -189,7 +189,7 @@ mod tests {
         def.set_value(&mut settings1, "active");
         def.set_value(&mut settings2, "active");
 
-        assert!(def.has_same_value(&settings1, &settings2));
+        assert!(StringSettingsDefinition::has_same_value(&def, &settings1, &settings2));
     }
 
     #[test]
@@ -204,7 +204,7 @@ mod tests {
         def.set_value(&mut settings1, "active");
         def.set_value(&mut settings2, "inactive");
 
-        assert!(!def.has_same_value(&settings1, &settings2));
+        assert!(!StringSettingsDefinition::has_same_value(&def, &settings1, &settings2));
     }
 
     #[test]
@@ -216,7 +216,7 @@ mod tests {
         let settings1 = MockSettings::new();
         let settings2 = MockSettings::new();
 
-        assert!(def.has_same_value(&settings1, &settings2));
+        assert!(StringSettingsDefinition::has_same_value(&def, &settings1, &settings2));
     }
 
     #[test]

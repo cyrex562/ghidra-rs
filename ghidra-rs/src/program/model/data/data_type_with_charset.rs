@@ -1,20 +1,56 @@
-use crate::program::model::data::data_type::DataType;
-use crate::docking::settings::settings::Settings;
-use crate::program::seam_stubs::{MemBuffer, StringDataInstance, DEFAULT_CHARSET_NAME};
+//! Port of `ghidra.program.model.data.DataTypeWithCharset`.
 
-/// A character value to encode, standing in for the `Object value` parameter of
-/// `DataTypeWithCharset.encodeCharacterValue`, which Java accepts as either a `Character` or a
-/// `char[]` representing a single code point.
+use std::any::Any;
+
+use crate::docking::settings::settings::Settings;
+use crate::program::model::data::data_type::DataType;
+use crate::program::model::data::data_type_encode_exception::DataTypeEncodeException;
+use crate::program::model::data::string_data_instance::{StringDataInstance, DEFAULT_CHARSET_NAME};
+use crate::program::model::mem::MemBuffer;
+
+/// A character value to encode: the `Object value` of `DataTypeWithCharset.encodeCharacterValue`,
+/// which Java accepts as a `Character` or as a `char[]` holding a single code point. Both are Java
+/// chars (UTF-16 code units).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CharacterValue {
-    /// A single character.
-    Char(char),
-    /// A short run of chars representing one code point (mirrors a Java UTF-16 surrogate pair).
-    CodePoint(Vec<char>),
+    /// A `Character`.
+    Char(u16),
+    /// A `char[]`; it must represent a single code point (at most 2 chars).
+    Chars(Vec<u16>),
 }
 
-/// Error returned when a character value or representation cannot be encoded, standing in for
-/// `ghidra.program.model.data.DataTypeEncodeException` before that class is ported.
+impl CharacterValue {
+    /// Converts the value a caller passes to [`DataType::encode_value`]: a [`CharacterValue`], a
+    /// Rust `char` (its UTF-16 form), a `u16` (`Character`) or a `Vec<u16>` (`char[]`). `None`
+    /// is Java's "Requires Character or char[] with a single code point".
+    pub fn from_any(value: &dyn Any) -> Option<CharacterValue> {
+        if let Some(v) = value.downcast_ref::<CharacterValue>() {
+            return Some(v.clone());
+        }
+        if let Some(c) = value.downcast_ref::<char>() {
+            let mut buf = [0u16; 2];
+            let units = c.encode_utf16(&mut buf);
+            return Some(if units.len() == 1 { CharacterValue::Char(units[0]) } else { CharacterValue::Chars(units.to_vec()) });
+        }
+        if let Some(c) = value.downcast_ref::<u16>() {
+            return Some(CharacterValue::Char(*c));
+        }
+        value.downcast_ref::<Vec<u16>>().map(|chars| CharacterValue::Chars(chars.clone()))
+    }
+}
+
+impl std::fmt::Display for CharacterValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let units: &[u16] = match self {
+            CharacterValue::Char(c) => std::slice::from_ref(c),
+            CharacterValue::Chars(chars) => chars,
+        };
+        f.write_str(&String::from_utf16_lossy(units))
+    }
+}
+
+/// The error the `DataType` encode methods report, carrying the message of the Java
+/// `DataTypeEncodeException` they throw.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DataTypeEncodeError(pub String);
 
@@ -26,146 +62,128 @@ impl std::fmt::Display for DataTypeEncodeError {
 
 impl std::error::Error for DataTypeEncodeError {}
 
-/// Extension of [`DataType`] for character-oriented data types that can encode a character
-/// value or representation into bytes using an associated charset.
+impl From<DataTypeEncodeException> for DataTypeEncodeError {
+    fn from(e: DataTypeEncodeException) -> Self {
+        DataTypeEncodeError(e.to_string())
+    }
+}
+
+/// A [`DataType`] with a charset: string and character data types.
 ///
 /// Port of `ghidra.program.model.data.DataTypeWithCharset`.
 pub trait DataTypeWithCharset: DataType {
-    /// Builds the (not yet ported) `StringDataInstance` used to perform the actual encoding for
-    /// this data type, settings, and buffer, mirroring
-    /// `new StringDataInstance(this, settings, buf, getLength())` from the Java default methods
-    /// below. Required until `StringDataInstance` itself is ported.
-    fn string_data_instance(
-        &self,
-        settings: &dyn Settings,
-        buf: &dyn MemBuffer,
-    ) -> Box<dyn StringDataInstance>;
-
-    /// Utility for character data types to encode a value.
+    /// Utility for character data types to encode a value (`encodeCharacterValue`).
     fn encode_character_value(
         &self,
         value: CharacterValue,
         buf: &dyn MemBuffer,
         settings: &dyn Settings,
     ) -> Result<Vec<u8>, DataTypeEncodeError> {
-        let normalized_value = match value {
-            CharacterValue::Char(c) => vec![c],
-            CharacterValue::CodePoint(chars) => {
+        let normalized_value = match &value {
+            CharacterValue::Char(c) => vec![*c],
+            CharacterValue::Chars(chars) => {
                 if chars.len() > 2 {
-                    return Err(DataTypeEncodeError(
-                        "char[] must represent a single code point".to_string(),
-                    ));
+                    return Err(DataTypeEncodeException::new(
+                        "char[] must represent a single code point",
+                        &value,
+                        self.get_display_name(),
+                    )
+                    .into());
                 }
-                chars
+                chars.clone()
             }
         };
-        let sdi = self.string_data_instance(settings, buf);
+        let sdi = StringDataInstance::new(self, settings, buf, self.get_length());
         sdi.encode_replacement_from_char_value(&normalized_value)
-            .map_err(DataTypeEncodeError)
+            .map_err(|e| DataTypeEncodeException::with_cause_only(&value, self.get_display_name(), Box::new(e)).into())
     }
 
-    /// Utility for character data types to encode a representation.
+    /// Utility for character data types to encode a representation
+    /// (`encodeCharacterRepresentation`).
     fn encode_character_representation(
         &self,
         repr: &str,
         buf: &dyn MemBuffer,
         settings: &dyn Settings,
     ) -> Result<Vec<u8>, DataTypeEncodeError> {
-        let sdi = self.string_data_instance(settings, buf);
+        let sdi = StringDataInstance::new(self, settings, buf, self.get_length());
         sdi.encode_replacement_from_char_representation(repr)
-            .map_err(DataTypeEncodeError)
+            .map_err(|e| DataTypeEncodeException::with_cause_only(repr, self.get_display_name(), Box::new(e)).into())
     }
 
-    /// Get the character set for a specific data type and settings.
-    fn get_charset_name(&self, _settings: &dyn Settings) -> String {
+    /// Get the character set for a specific data type and settings (`getCharsetName`).
+    fn get_charset_name(&self, settings: &dyn Settings) -> String {
+        let _ = settings;
         DEFAULT_CHARSET_NAME.to_string()
+    }
+}
+
+/// [`DataTypeWithCharset::encode_character_value`] for the `&dyn Any` a
+/// [`DataType::encode_value`] receives.
+pub fn encode_character_value_from_any<T: DataTypeWithCharset + ?Sized>(
+    dt: &T,
+    value: &dyn Any,
+    buf: &dyn MemBuffer,
+    settings: &dyn Settings,
+) -> Result<Vec<u8>, DataTypeEncodeError> {
+    match CharacterValue::from_any(value) {
+        Some(value) => dt.encode_character_value(value, buf, settings),
+        None => Err(DataTypeEncodeException::new(
+            "Requires Character or char[] with a single code point",
+            "?",
+            dt.get_display_name(),
+        )
+        .into()),
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::program::model::data::string_data_instance::test_support::{mb, SettingsBuilder};
 
-    struct MockSettings;
-    impl Settings for MockSettings {}
-
-    struct MockMemBuffer;
-    impl MemBuffer for MockMemBuffer {}
-
-    struct MockStringDataInstance;
-    impl StringDataInstance for MockStringDataInstance {
-        fn encode_replacement_from_char_value(&self, value: &[char]) -> Result<Vec<u8>, String> {
-            Ok(value.iter().collect::<String>().into_bytes())
+    struct AsciiChar;
+    impl DataType for AsciiChar {
+        fn get_name(&self) -> String {
+            "achar".into()
         }
-
-        fn encode_replacement_from_char_representation(
-            &self,
-            repr: &str,
-        ) -> Result<Vec<u8>, String> {
-            Ok(repr.as_bytes().to_vec())
-        }
-    }
-
-    struct MockCharDataType;
-    impl DataType for MockCharDataType {
         fn get_length(&self) -> i32 {
             1
         }
-    }
-    impl DataTypeWithCharset for MockCharDataType {
-        fn string_data_instance(
-            &self,
-            _settings: &dyn Settings,
-            _buf: &dyn MemBuffer,
-        ) -> Box<dyn StringDataInstance> {
-            Box::new(MockStringDataInstance)
+        fn as_data_type_with_charset(&self) -> Option<&dyn DataTypeWithCharset> {
+            Some(self)
         }
     }
+    impl DataTypeWithCharset for AsciiChar {}
 
     #[test]
-    fn encodes_single_char_value() {
-        let dt = MockCharDataType;
-        let encoded = dt
-            .encode_character_value(CharacterValue::Char('a'), &MockMemBuffer, &MockSettings)
-            .unwrap();
-        assert_eq!(encoded, b"a".to_vec());
+    fn encodes_a_char_value_with_the_default_charset() {
+        let dt = AsciiChar;
+        let buf = mb(false, &[]);
+        let settings = SettingsBuilder::new();
+        assert_eq!(dt.encode_character_value(CharacterValue::Char(b'a' as u16), &buf, &settings).unwrap(), b"a");
+        assert_eq!(dt.get_charset_name(&settings), "US-ASCII");
+        let err = dt.encode_character_value(CharacterValue::Chars(vec![1, 2, 3]), &buf, &settings).unwrap_err();
+        assert!(err.0.contains("char[] must represent a single code point"));
+        assert!(dt.encode_character_value(CharacterValue::Char(0xE9), &buf, &settings).is_err());
     }
 
     #[test]
-    fn rejects_code_point_longer_than_two_chars() {
-        let dt = MockCharDataType;
-        let err = dt
-            .encode_character_value(
-                CharacterValue::CodePoint(vec!['a', 'b', 'c']),
-                &MockMemBuffer,
-                &MockSettings,
-            )
-            .unwrap_err();
-        assert_eq!(err.to_string(), "char[] must represent a single code point");
+    fn encodes_a_char_representation() {
+        let dt = AsciiChar;
+        let buf = mb(false, &[]);
+        assert_eq!(dt.encode_character_representation("'a'", &buf, &SettingsBuilder::new()).unwrap(), b"a");
+        assert_eq!(dt.encode_character_representation("41h", &buf, &SettingsBuilder::new()).unwrap(), b"A");
+        assert!(dt.encode_character_representation("'a", &buf, &SettingsBuilder::new()).is_err());
     }
 
     #[test]
-    fn encodes_character_representation() {
-        let dt = MockCharDataType;
-        let encoded = dt
-            .encode_character_representation("z", &MockMemBuffer, &MockSettings)
-            .unwrap();
-        assert_eq!(encoded, b"z".to_vec());
-    }
-
-    #[test]
-    fn default_charset_name_matches_string_data_instance_default() {
-        let dt = MockCharDataType;
-        assert_eq!(dt.get_charset_name(&MockSettings), "US-ASCII");
-    }
-
-    #[test]
-    fn usable_as_trait_object() {
-        let dt = MockCharDataType;
-        let dyn_dt: &dyn DataTypeWithCharset = &dt;
-        assert_eq!(dyn_dt.get_length(), 1);
-        assert!(dyn_dt
-            .encode_character_value(CharacterValue::Char('x'), &MockMemBuffer, &MockSettings)
-            .is_ok());
+    fn character_value_from_any() {
+        assert_eq!(CharacterValue::from_any(&'a'), Some(CharacterValue::Char(0x61)));
+        assert_eq!(CharacterValue::from_any(&'\u{1F600}'), Some(CharacterValue::Chars(vec![0xD83D, 0xDE00])));
+        assert_eq!(CharacterValue::from_any(&vec![0x41u16]), Some(CharacterValue::Chars(vec![0x41])));
+        assert_eq!(CharacterValue::from_any(&5i32), None);
+        let dt = AsciiChar;
+        assert!(encode_character_value_from_any(&dt, &5i32, &mb(false, &[]), &SettingsBuilder::new()).is_err());
     }
 }

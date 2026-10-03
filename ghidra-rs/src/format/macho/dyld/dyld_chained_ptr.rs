@@ -139,7 +139,7 @@ impl DyldChainType {
     /// Reads the raw chain entry value at `chain_loc` for this pointer format.
     pub fn chain_value(
         self,
-        reader: &dyn BinaryReader,
+        reader: &BinaryReader,
         chain_loc: u64,
     ) -> io::Result<i64> {
         match self {

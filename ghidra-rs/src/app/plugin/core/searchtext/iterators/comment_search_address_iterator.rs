@@ -1,28 +1,26 @@
-use crate::program::model::address::{Address, AddressIterator};
+use crate::program::model::address::{Address, BoxedAddressIterator};
 
-/// Wrapper around an AddressIterator for searching comments.
+/// Wrapper around an BoxedAddressIterator for searching comments.
 ///
 /// Port of `ghidra.app.plugin.core.searchtext.iterators.CommentSearchAddressIterator`.
 /// This is a simple delegation wrapper that allows comment search operations to use
-/// any AddressIterator implementation transparently.
+/// any BoxedAddressIterator implementation transparently.
 pub struct CommentSearchAddressIterator {
-    iterator: Box<dyn AddressIterator>,
+    iterator: BoxedAddressIterator,
 }
 
 impl CommentSearchAddressIterator {
     /// Creates a new comment search iterator wrapping the given address iterator.
-    pub fn new(iterator: Box<dyn AddressIterator>) -> Self {
+    pub fn new(iterator: BoxedAddressIterator) -> Self {
         Self { iterator }
     }
 }
 
-impl AddressIterator for CommentSearchAddressIterator {
-    fn has_next(&self) -> bool {
-        self.iterator.has_next()
-    }
+impl Iterator for CommentSearchAddressIterator {
+    type Item = Address;
 
-    fn next_address(&mut self) -> Option<Address> {
-        self.iterator.next_address()
+    fn next(&mut self) -> Option<Address> {
+        self.iterator.next()
     }
 }
 
@@ -42,16 +40,11 @@ mod tests {
         }
     }
 
-    impl AddressIterator for TestIterator {
-        fn has_next(&self) -> bool {
-            self.index < self.addresses.len()
-        }
+    impl Iterator for TestIterator {
+        type Item = Address;
 
-        fn next_address(&mut self) -> Option<Address> {
-            if !self.has_next() {
-                return None;
-            }
-            let addr = self.addresses[self.index].clone();
+        fn next(&mut self) -> Option<Address> {
+            let addr = self.addresses.get(self.index)?.clone();
             self.index += 1;
             Some(addr)
         }
@@ -66,8 +59,8 @@ mod tests {
     fn empty_iterator_has_no_next() {
         let inner = TestIterator::new(vec![]);
         let mut iter = CommentSearchAddressIterator::new(Box::new(inner));
-        assert!(!iter.has_next());
-        assert!(iter.next_address().is_none());
+        assert_eq!(iter.next(), None);
+        assert!(iter.next().is_none());
     }
 
     #[test]
@@ -76,21 +69,18 @@ mod tests {
         let addr2 = test_address(0x1008);
         let inner = TestIterator::new(vec![addr1.clone(), addr2.clone()]);
         let mut iter = CommentSearchAddressIterator::new(Box::new(inner));
-
-        assert!(iter.has_next());
-        assert_eq!(iter.next_address(), Some(addr1));
-        assert!(iter.has_next());
-        assert_eq!(iter.next_address(), Some(addr2));
-        assert!(!iter.has_next());
-        assert!(iter.next_address().is_none());
+        assert_eq!(iter.next(), Some(addr1));
+        assert_eq!(iter.next(), Some(addr2));
+        assert_eq!(iter.next(), None);
+        assert!(iter.next().is_none());
     }
 
     #[test]
     fn multiple_next_calls_when_empty() {
         let inner = TestIterator::new(vec![]);
         let mut iter = CommentSearchAddressIterator::new(Box::new(inner));
-        assert!(iter.next_address().is_none());
-        assert!(iter.next_address().is_none());
-        assert!(iter.next_address().is_none());
+        assert!(iter.next().is_none());
+        assert!(iter.next().is_none());
+        assert!(iter.next().is_none());
     }
 }

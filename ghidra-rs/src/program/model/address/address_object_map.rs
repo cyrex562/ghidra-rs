@@ -38,7 +38,7 @@ impl<T: Clone + Eq> AddressObjectMap<T> {
 
     pub fn add_object_to_set(&mut self, object: T, set: &dyn AddressSetView) {
         let mut ranges = set.address_ranges();
-        while let Some(range) = ranges.next_range() {
+        while let Some(range) = ranges.next() {
             self.add_object(object.clone(), range.min_address(), range.max_address());
         }
     }
@@ -51,7 +51,7 @@ impl<T: Clone + Eq> AddressObjectMap<T> {
 
     pub fn remove_object_from_set(&mut self, object: &T, set: &dyn AddressSetView) {
         let mut ranges = set.address_ranges();
-        while let Some(range) = ranges.next_range() {
+        while let Some(range) = ranges.next() {
             self.remove_object(object, range.min_address(), range.max_address());
         }
     }

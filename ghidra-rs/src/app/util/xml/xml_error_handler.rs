@@ -99,6 +99,37 @@ impl XmlErrorHandler {
     }
 }
 
+/// The `org.xml.sax.ErrorHandler` contract: a caller-supplied sink for parse diagnostics,
+/// handed to Ghidra's XML pull parsers
+/// ([`NonThreadedXmlPullParserImpl`](crate::util::xml::non_threaded_xml_pull_parser_impl::NonThreadedXmlPullParserImpl),
+/// [`ThreadedXmlPullParserImpl`](crate::util::xml::threaded_xml_pull_parser_impl::ThreadedXmlPullParserImpl)).
+///
+/// Returning `Err` corresponds to the Java handler throwing a `SAXException`, which replaces
+/// the parse exception that would otherwise be reported. For a non-validating parse only
+/// [`fatal_error`](Self::fatal_error) is ever called, and the parse stops afterwards either way.
+pub trait SaxErrorHandler {
+    /// Port of `ErrorHandler.warning(SAXParseException)`.
+    fn warning(&self, exception: &XmlParseException) -> Result<(), XmlError>;
+    /// Port of `ErrorHandler.error(SAXParseException)`.
+    fn error(&self, exception: &XmlParseException) -> Result<(), XmlError>;
+    /// Port of `ErrorHandler.fatalError(SAXParseException)`.
+    fn fatal_error(&self, exception: &XmlParseException) -> Result<(), XmlError>;
+}
+
+impl SaxErrorHandler for XmlErrorHandler {
+    fn warning(&self, exception: &XmlParseException) -> Result<(), XmlError> {
+        XmlErrorHandler::warning(self, exception)
+    }
+
+    fn error(&self, exception: &XmlParseException) -> Result<(), XmlError> {
+        XmlErrorHandler::error(self, exception)
+    }
+
+    fn fatal_error(&self, exception: &XmlParseException) -> Result<(), XmlError> {
+        XmlErrorHandler::fatal_error(self, exception)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

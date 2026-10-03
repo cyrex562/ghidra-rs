@@ -1,5 +1,16 @@
 pub mod bootstrap_info_exception;
+pub mod go_build_id;
+pub mod go_build_info;
 pub mod go_build_settings;
+pub mod go_constants;
+pub mod go_function_multi_return;
 pub mod go_module_info;
+pub mod go_param_storage_allocator;
+pub mod go_register_info;
+pub mod go_register_info_manager;
+pub mod go_ver;
+pub mod go_ver_range;
+pub mod go_ver_set;
 pub mod rtti;
 pub mod structmapping;
+pub mod note_go_build_id;

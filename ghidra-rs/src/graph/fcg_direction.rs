@@ -1,6 +1,10 @@
 /// Represents whether a vertex is an incoming vertex (the start or from) on an edge,
 /// an outgoing vertex (the end or to) on an edge, or if it is both.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+///
+/// Derives `PartialOrd`/`Ord` in declaration order (`In` < `InAndOut` < `Out`), matching Java
+/// enum `compareTo`'s ordinal-based ordering; [`crate::graph::fcg_level::FcgLevel`]'s own `Ord`
+/// impl relies on this to put "In on top; Out on bottom" per `FcgLevel.compareTo`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum FcgDirection {
     In,
     InAndOut,

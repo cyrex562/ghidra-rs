@@ -21,7 +21,7 @@ impl RelocationInternalRef {
     ///
     /// # Errors
     /// Returns `Err` if there is an IO-related error reading from the reader.
-    pub fn new(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn new(reader: &mut BinaryReader) -> io::Result<Self> {
         let segment = reader.read_next_byte()? as i8;
         let zeropad = reader.read_next_byte()? as i8;
         let offset = reader.read_next_short()?;
@@ -64,96 +64,7 @@ impl RelocationInternalRef {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
-    use std::rc::Rc;
 
-    use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
-
-    struct VecProvider(Vec<u8>);
-
-    impl ByteProvider for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            self.0
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            unimplemented!()
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            unimplemented!()
-        }
-    }
-
-    struct MockReader {
-        provider: Rc<RefCell<dyn ByteProvider>>,
-        little_endian: bool,
-        current_index: u64,
-    }
-
-    impl MockReader {
-        fn new(data: Vec<u8>) -> Self {
-            MockReader {
-                provider: Rc::new(RefCell::new(VecProvider(data))),
-                little_endian: true,
-                current_index: 0,
-            }
-        }
-    }
-
-    impl BinaryReader for MockReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-        fn get_pointer_index(&self) -> u64 {
-            self.current_index
-        }
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let old = self.current_index;
-            self.current_index = index;
-            old
-        }
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn ByteProvider>> {
-            Rc::clone(&self.provider)
-        }
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
-            Box::new(MockReader {
-                provider: Rc::clone(&self.provider),
-                little_endian: self.little_endian,
-                current_index: new_index,
-            })
-        }
-    }
 
     #[test]
     fn reads_fixed_segment() {
@@ -162,7 +73,7 @@ mod tests {
         data.push(0);
         data.extend_from_slice(&(0x1000u16).to_le_bytes());
 
-        let mut r = MockReader::new(data);
+        let mut r = BinaryReader::from_bytes(data, true);
         let rel = RelocationInternalRef::new(&mut r).unwrap();
 
         assert_eq!(rel.segment(), 1);
@@ -178,7 +89,7 @@ mod tests {
         data.push(0);
         data.extend_from_slice(&(42i16).to_le_bytes());
 
-        let mut r = MockReader::new(data);
+        let mut r = BinaryReader::from_bytes(data, true);
         let rel = RelocationInternalRef::new(&mut r).unwrap();
 
         assert_eq!(rel.segment(), -1i8);
@@ -194,7 +105,7 @@ mod tests {
         data.push(0);
         data.extend_from_slice(&(0i16).to_le_bytes());
 
-        let mut r = MockReader::new(data);
+        let mut r = BinaryReader::from_bytes(data, true);
         let rel = RelocationInternalRef::new(&mut r).unwrap();
 
         assert_eq!(rel.segment(), 2);
@@ -208,7 +119,7 @@ mod tests {
         data.push(0);
         data.extend_from_slice(&(-1i16).to_le_bytes());
 
-        let mut r = MockReader::new(data);
+        let mut r = BinaryReader::from_bytes(data, true);
         let rel = RelocationInternalRef::new(&mut r).unwrap();
 
         assert_eq!(rel.segment(), 3);
@@ -222,7 +133,7 @@ mod tests {
         data.push(5);
         data.extend_from_slice(&(0x2000i16).to_le_bytes());
 
-        let mut r = MockReader::new(data);
+        let mut r = BinaryReader::from_bytes(data, true);
         let rel = RelocationInternalRef::new(&mut r).unwrap();
 
         assert_eq!(rel.segment(), 1);
@@ -238,7 +149,7 @@ mod tests {
         data.extend_from_slice(&(100i16).to_le_bytes());
         data.push(99);
 
-        let mut r = MockReader::new(data);
+        let mut r = BinaryReader::from_bytes(data, true);
         let _ = RelocationInternalRef::new(&mut r).unwrap();
         assert_eq!(r.get_pointer_index(), 4);
     }
@@ -251,7 +162,7 @@ mod tests {
         data.push(0);
         data.extend_from_slice(&(77i16).to_le_bytes());
 
-        let mut r = MockReader::new(data);
+        let mut r = BinaryReader::from_bytes(data, true);
         r.set_pointer_index(3);
         let rel = RelocationInternalRef::new(&mut r).unwrap();
 
@@ -266,7 +177,7 @@ mod tests {
         data.push(0);
         data.extend_from_slice(&(9i16).to_le_bytes());
 
-        let mut r = MockReader::new(data.clone());
+        let mut r = BinaryReader::from_bytes(data.clone(), true);
         let rel1 = RelocationInternalRef::new(&mut r).unwrap();
         let rel2 = rel1;
 
@@ -282,7 +193,7 @@ mod tests {
         data1.push(0);
         data1.extend_from_slice(&(20i16).to_le_bytes());
 
-        let mut r1 = MockReader::new(data1);
+        let mut r1 = BinaryReader::from_bytes(data1, true);
         let rel1 = RelocationInternalRef::new(&mut r1).unwrap();
 
         let mut data2 = Vec::new();
@@ -290,7 +201,7 @@ mod tests {
         data2.push(0);
         data2.extend_from_slice(&(20i16).to_le_bytes());
 
-        let mut r2 = MockReader::new(data2);
+        let mut r2 = BinaryReader::from_bytes(data2, true);
         let rel2 = RelocationInternalRef::new(&mut r2).unwrap();
 
         assert_eq!(rel1, rel2);
@@ -303,7 +214,7 @@ mod tests {
         data.push(0);
         data.extend_from_slice(&(100i16).to_le_bytes());
 
-        let mut r = MockReader::new(data);
+        let mut r = BinaryReader::from_bytes(data, true);
         let rel = RelocationInternalRef::new(&mut r).unwrap();
 
         assert!(!rel.is_moveable());

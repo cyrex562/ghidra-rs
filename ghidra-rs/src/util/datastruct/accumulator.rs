@@ -14,7 +14,14 @@ pub trait Accumulator<T> {
     /// Adds every item produced by `iter` to this accumulator.
     ///
     /// The default implementation calls [`add`](Self::add) for each item.
-    fn add_all(&mut self, iter: impl IntoIterator<Item = T>) {
+    ///
+    /// `where Self: Sized` excludes this method from the vtable so `dyn Accumulator<T>` remains
+    /// constructible (an `impl IntoIterator` argument is otherwise not object-safe); every
+    /// concrete/generic caller is unaffected since they are always `Sized`.
+    fn add_all(&mut self, iter: impl IntoIterator<Item = T>)
+    where
+        Self: Sized,
+    {
         for item in iter {
             self.add(item);
         }

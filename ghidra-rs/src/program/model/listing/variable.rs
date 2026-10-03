@@ -9,7 +9,7 @@ use crate::program::model::listing::{Function, Program};
 use crate::program::model::pcode::Varnode;
 use crate::program::model::symbol::{SourceType, Symbol};
 use crate::program::model::address::Address;
-use crate::program::seam_stubs::VariableStorage;
+use crate::program::model::listing::variable_storage::VariableStorage;
 use crate::util::exception::{DuplicateNameException, InvalidInputException};
 
 /// Error produced when [`Variable::set_name`] fails.
@@ -216,6 +216,16 @@ pub trait Variable {
     fn is_auto_parameter(&self) -> bool {
         false
     }
+
+    /// Returns this variable's ordinal if it is a [`Parameter`](crate::program::model::listing::Parameter),
+    /// or `None` otherwise. Stands in for the `instanceof Parameter` check (followed by
+    /// `((Parameter) v).getOrdinal()`) used by
+    /// [`VariableUtilities::compare`](crate::program::model::listing::variable_utilities::VariableUtilities::compare)
+    /// before a downcast from `&dyn Variable` to `&dyn Parameter` is available. `Parameter`
+    /// implementors are expected to override this to return `Some(self.get_ordinal())`.
+    fn parameter_ordinal(&self) -> Option<i32> {
+        None
+    }
 }
 
 #[cfg(test)]
@@ -283,12 +293,13 @@ mod tests {
 
         fn get_program(&self) -> Arc<dyn Program> {
             struct MockProgram;
+            impl crate::framework::model::DomainObject for MockProgram {}
             impl Program for MockProgram {
-                fn get_name(&self) -> &str {
-                    "mock"
+                fn get_name(&self) -> String {
+                    "mock".to_string()
                 }
-                fn get_language_id(&self) -> &str {
-                    "mock:LE:32:default"
+                fn get_language_id(&self) -> String {
+                    "mock:LE:32:default".to_string()
                 }
             }
             Arc::new(MockProgram)

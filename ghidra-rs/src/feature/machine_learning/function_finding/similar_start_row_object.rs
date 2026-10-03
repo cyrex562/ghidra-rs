@@ -33,11 +33,10 @@ impl SimilarStartRowObject {
 mod tests {
     use super::*;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
-    use std::sync::Arc;
 
     #[test]
     fn new_stores_fields() {
-        let space = Arc::new(AddressSpace::new("ram", 64, 1, AddressSpaceType::Ram, 0));
+        let space = AddressSpace::new("ram", 64, 1, AddressSpaceType::Ram, 0);
         let addr = Address::new(space, 0x1000);
         let row = SimilarStartRowObject::new(addr.clone(), 5);
         assert_eq!(row.func_start(), addr);
@@ -46,7 +45,7 @@ mod tests {
 
     #[test]
     fn zero_agreements() {
-        let space = Arc::new(AddressSpace::new("ram", 64, 1, AddressSpaceType::Ram, 0));
+        let space = AddressSpace::new("ram", 64, 1, AddressSpaceType::Ram, 0);
         let addr = Address::new(space, 0x2000);
         let row = SimilarStartRowObject::new(addr.clone(), 0);
         assert_eq!(row.func_start(), addr);
@@ -55,7 +54,7 @@ mod tests {
 
     #[test]
     fn equality() {
-        let space = Arc::new(AddressSpace::new("ram", 64, 1, AddressSpaceType::Ram, 0));
+        let space = AddressSpace::new("ram", 64, 1, AddressSpaceType::Ram, 0);
         let addr1 = Address::new(space.clone(), 0x3000);
         let addr2 = Address::new(space, 0x3000);
         let row_a = SimilarStartRowObject::new(addr1, 10);
@@ -65,7 +64,7 @@ mod tests {
 
     #[test]
     fn inequality_different_addresses() {
-        let space = Arc::new(AddressSpace::new("ram", 64, 1, AddressSpaceType::Ram, 0));
+        let space = AddressSpace::new("ram", 64, 1, AddressSpaceType::Ram, 0);
         let addr1 = Address::new(space.clone(), 0x4000);
         let addr2 = Address::new(space, 0x5000);
         let row_a = SimilarStartRowObject::new(addr1, 10);
@@ -75,7 +74,7 @@ mod tests {
 
     #[test]
     fn inequality_different_agreements() {
-        let space = Arc::new(AddressSpace::new("ram", 64, 1, AddressSpaceType::Ram, 0));
+        let space = AddressSpace::new("ram", 64, 1, AddressSpaceType::Ram, 0);
         let addr = Address::new(space, 0x6000);
         let row_a = SimilarStartRowObject::new(addr.clone(), 10);
         let row_b = SimilarStartRowObject::new(addr, 20);
@@ -84,7 +83,7 @@ mod tests {
 
     #[test]
     fn clone() {
-        let space = Arc::new(AddressSpace::new("ram", 64, 1, AddressSpaceType::Ram, 0));
+        let space = AddressSpace::new("ram", 64, 1, AddressSpaceType::Ram, 0);
         let addr = Address::new(space, 0x7000);
         let row = SimilarStartRowObject::new(addr.clone(), 15);
         let cloned = row.clone();

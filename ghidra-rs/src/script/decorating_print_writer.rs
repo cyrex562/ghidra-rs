@@ -1,4 +1,4 @@
-use egui::Color32;
+use crate::util::awt::Color;
 use std::io::Write;
 
 /// A print writer that allows clients to specify the text color.
@@ -6,10 +6,10 @@ use std::io::Write;
 /// Ported from `ghidra.app.script.DecoratingPrintWriter`.
 pub trait DecoratingPrintWriter: Write {
     /// Print a line of text with the given color.
-    fn println(&mut self, s: &str, c: Color32) -> std::io::Result<()>;
+    fn println(&mut self, s: &str, c: Color) -> std::io::Result<()>;
 
     /// Print text with the given color.
-    fn print(&mut self, s: &str, c: Color32) -> std::io::Result<()>;
+    fn print(&mut self, s: &str, c: Color) -> std::io::Result<()>;
 }
 
 /// A generic decorating print writer implementation that wraps any `Write` type.
@@ -40,11 +40,11 @@ impl<W: Write> Write for DecoratingWriter<W> {
 }
 
 impl<W: Write> DecoratingPrintWriter for DecoratingWriter<W> {
-    fn println(&mut self, s: &str, _c: Color32) -> std::io::Result<()> {
+    fn println(&mut self, s: &str, _c: Color) -> std::io::Result<()> {
         writeln!(self.writer, "{}", s)
     }
 
-    fn print(&mut self, s: &str, _c: Color32) -> std::io::Result<()> {
+    fn print(&mut self, s: &str, _c: Color) -> std::io::Result<()> {
         write!(self.writer, "{}", s)
     }
 }
@@ -64,7 +64,7 @@ mod tests {
     fn test_print_with_color() {
         let buf: Vec<u8> = Vec::new();
         let mut writer = DecoratingWriter::new(buf);
-        let color = Color32::RED;
+        let color = Color::RED;
 
         writer.print("Hello", color).unwrap();
         let result = writer.into_inner();
@@ -75,7 +75,7 @@ mod tests {
     fn test_println_with_color() {
         let buf: Vec<u8> = Vec::new();
         let mut writer = DecoratingWriter::new(buf);
-        let color = Color32::BLUE;
+        let color = Color::BLUE;
 
         writer.println("World", color).unwrap();
         let result = writer.into_inner();
@@ -87,9 +87,9 @@ mod tests {
         let buf: Vec<u8> = Vec::new();
         let mut writer = DecoratingWriter::new(buf);
 
-        writer.print("Hello", Color32::RED).unwrap();
-        writer.print(" ", Color32::GREEN).unwrap();
-        writer.println("World", Color32::BLUE).unwrap();
+        writer.print("Hello", Color::RED).unwrap();
+        writer.print(" ", Color::GREEN).unwrap();
+        writer.println("World", Color::BLUE).unwrap();
 
         let result = writer.into_inner();
         assert_eq!(

@@ -113,11 +113,10 @@ impl<T> Ord for MemoryMatch<T> {
 mod tests {
     use super::*;
     use crate::program::model::address::{AddressSpace, AddressSpaceType};
-    use std::sync::Arc;
 
     fn addr(offset: i64) -> Address {
         let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0);
-        Address::new(Arc::new(space), offset)
+        Address::new(space, offset)
     }
 
     #[test]

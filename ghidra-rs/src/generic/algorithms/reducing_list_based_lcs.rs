@@ -84,7 +84,7 @@ mod tests {
         let monitor = DummyMonitor;
         let lcs = ReducingListBasedLcs::new(vec![1, 2, 3], vec![]);
         let result = lcs.get_lcs(&monitor).unwrap();
-        assert_eq!(result, vec![]);
+        assert_eq!(result, Vec::<i32>::new());
     }
 
     #[test]
@@ -92,7 +92,7 @@ mod tests {
         let monitor = DummyMonitor;
         let lcs = ReducingListBasedLcs::new(vec![1, 2, 3], vec![4, 5, 6]);
         let result = lcs.get_lcs(&monitor).unwrap();
-        assert_eq!(result, vec![]);
+        assert_eq!(result, Vec::<i32>::new());
     }
 
     #[test]

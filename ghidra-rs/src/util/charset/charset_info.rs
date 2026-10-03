@@ -1,8 +1,10 @@
 use std::collections::{BTreeSet, HashSet};
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use crate::generic::json::Json;
+
+use super::java_charset::JavaCharset;
 
 /// Fields excluded from the JSON representation produced by [`CharsetInfo`]'s
 /// `Display` impl.
@@ -15,7 +17,7 @@ const FIELDS_TO_EXCLUDE_FROM_JSON: &[&str] = &["standardCharset"];
 /// `UnicodeScript.UNKNOWN`. Rust has no built-in Unicode script registry, so this
 /// enum stands in for the subset of the JDK's `UnicodeScript` enum that Ghidra's
 /// charset metadata actually uses.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum UnicodeScript {
     Adlam,
@@ -360,13 +362,12 @@ impl UnicodeScript {
 ///
 /// See `charset_info.json` to specify info about a custom charset.
 ///
-/// Unlike the Java original, this type does not wrap a live charset codec object:
-/// this crate has no charset/codec registry equivalent to `java.nio.charset.Charset`,
-/// so `CharsetInfo` here only carries the charset's name and metadata.
+/// Like the Java original, this type carries only the charset's name and metadata; the codec
+/// itself is looked up by name ([`CharsetInfo::charset`]).
 ///
 /// [character encoding]: https://en.wikipedia.org/wiki/Character_encoding
-#[derive(Debug, Clone, Serialize)]
-#[serde(rename_all = "camelCase")]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", default)]
 pub struct CharsetInfo {
     name: String,
     comment: Option<String>,
@@ -378,6 +379,7 @@ pub struct CharsetInfo {
     contains: HashSet<String>,
     can_produce_error: bool,
     /// Not serialized, see [`FIELDS_TO_EXCLUDE_FROM_JSON`].
+    #[serde(skip_deserializing)]
     standard_charset: bool,
 }
 
@@ -508,9 +510,22 @@ impl CharsetInfo {
         &self.contains
     }
 
+    /// Port of `CharsetInfo.getCharset()`: the charset this info describes, or `None` if it is
+    /// not supported (Java: `Charset.forName(name, null)`).
+    pub fn charset(&self) -> Option<JavaCharset> {
+        JavaCharset::for_name(&self.name)
+    }
+
     /// Returns a string comment describing this charset, or `None`.
     pub fn comment(&self) -> Option<&str> {
         self.comment.as_deref()
+    }
+}
+
+/// The value Gson gives the fields a `charset_info.json` record leaves out (zero, `false`, empty).
+impl Default for CharsetInfo {
+    fn default() -> Self {
+        CharsetInfo::new(String::new(), None, 0, 0, 0, 0, false, false, BTreeSet::new(), HashSet::new())
     }
 }
 

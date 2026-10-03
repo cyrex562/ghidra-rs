@@ -184,7 +184,7 @@ mod tests {
 
     #[test]
     fn value_with_complex_display() {
-        let val = (1, 2, 3);
+        let val = format!("{:?}", (1, 2, 3));
         let e = DataTypeEncodeException::new("", val, "tuple");
         assert_eq!(e.get_value(), "(1, 2, 3)");
     }

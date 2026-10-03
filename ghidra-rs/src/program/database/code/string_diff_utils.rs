@@ -299,8 +299,11 @@ mod tests {
 
     #[test]
     fn no_common_lines_is_full_replacement() {
-        let s1 = "x\n".repeat(60);
-        let s2 = "y\n".repeat(60);
+        // Strings must not end in '\n', otherwise they would share a trailing empty
+        // line, which the LCS would treat as common (yielding a delete+insert pair
+        // rather than a single full replacement).
+        let s1 = format!("{}x", "x\n".repeat(59));
+        let s2 = format!("{}y", "y\n".repeat(59));
         let diffs = get_line_diffs_with_minimum(&s1, &s2, 10);
         assert_eq!(diffs.len(), 1);
         assert_eq!(diffs[0].start, -1);

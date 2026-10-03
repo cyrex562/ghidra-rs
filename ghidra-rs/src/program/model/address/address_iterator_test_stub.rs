@@ -1,9 +1,9 @@
 use crate::program::model::address::Address;
-use super::AddressIterator;
+use super::BoxedAddressIterator;
 
-/// A simple test stub for AddressIterator used in testing.
+/// A simple test stub for BoxedAddressIterator used in testing.
 ///
-/// This provides an implementation of AddressIterator for testing purposes,
+/// This provides an implementation of BoxedAddressIterator for testing purposes,
 /// wrapping a collection of addresses and yielding them one by one.
 pub struct AddressIteratorTestStub {
     addresses: Vec<Address>,
@@ -17,19 +17,13 @@ impl AddressIteratorTestStub {
     }
 }
 
-impl AddressIterator for AddressIteratorTestStub {
-    fn has_next(&self) -> bool {
-        self.index < self.addresses.len()
-    }
+impl Iterator for AddressIteratorTestStub {
+    type Item = Address;
 
-    fn next_address(&mut self) -> Option<Address> {
-        if self.has_next() {
-            let addr = self.addresses[self.index].clone();
-            self.index += 1;
-            Some(addr)
-        } else {
-            None
-        }
+    fn next(&mut self) -> Option<Address> {
+        let addr = self.addresses.get(self.index)?.clone();
+        self.index += 1;
+        Some(addr)
     }
 }
 
@@ -47,44 +41,36 @@ mod tests {
     fn empty_stub_has_no_addresses() {
         let mut stub = AddressIteratorTestStub::new(vec![]);
 
-        assert!(!stub.has_next());
-        assert!(stub.next_address().is_none());
+        assert_eq!(stub.next(), None);
+        assert!(stub.next().is_none());
     }
 
     #[test]
     fn stub_iterates_addresses_in_order() {
         let addresses = vec![addr(0x1000), addr(0x2000), addr(0x3000)];
         let mut stub = AddressIteratorTestStub::new(addresses.clone());
-
-        assert!(stub.has_next());
-        assert_eq!(stub.next_address(), Some(addresses[0].clone()));
-        assert!(stub.has_next());
-        assert_eq!(stub.next_address(), Some(addresses[1].clone()));
-        assert!(stub.has_next());
-        assert_eq!(stub.next_address(), Some(addresses[2].clone()));
-        assert!(!stub.has_next());
-        assert!(stub.next_address().is_none());
+        assert_eq!(stub.next(), Some(addresses[0].clone()));
+        assert_eq!(stub.next(), Some(addresses[1].clone()));
+        assert_eq!(stub.next(), Some(addresses[2].clone()));
+        assert_eq!(stub.next(), None);
+        assert!(stub.next().is_none());
     }
 
     #[test]
     fn stub_returns_none_after_exhaustion() {
         let addresses = vec![addr(0x1000)];
         let mut stub = AddressIteratorTestStub::new(addresses);
-
-        assert!(stub.has_next());
-        stub.next_address();
-        assert!(!stub.has_next());
-        assert!(stub.next_address().is_none());
-        assert!(stub.next_address().is_none());
+        stub.next();
+        assert_eq!(stub.next(), None);
+        assert!(stub.next().is_none());
+        assert!(stub.next().is_none());
     }
 
     #[test]
     fn stub_with_single_address() {
         let addresses = vec![addr(0x5000)];
         let mut stub = AddressIteratorTestStub::new(addresses.clone());
-
-        assert!(stub.has_next());
-        assert_eq!(stub.next_address(), Some(addresses[0].clone()));
-        assert!(!stub.has_next());
+        assert_eq!(stub.next(), Some(addresses[0].clone()));
+        assert_eq!(stub.next(), None);
     }
 }

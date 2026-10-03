@@ -1,9 +1,16 @@
 pub mod analyzers;
 pub mod cmd;
+pub mod context;
 pub mod decompiler;
 pub mod emulator;
+pub mod events;
+pub mod extension;
+pub mod fsbrowser;
+pub mod importer;
 pub mod merge;
+pub mod nav;
 pub mod plugin;
+pub mod seam_stubs;
 pub mod services;
 pub mod tablechooser;
 pub mod util;

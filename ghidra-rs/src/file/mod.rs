@@ -3,3 +3,4 @@ pub mod crypto;
 pub mod formats;
 pub mod image;
 pub mod jad;
+pub mod seam_stubs;

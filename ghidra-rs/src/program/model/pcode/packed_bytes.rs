@@ -40,8 +40,11 @@ impl PackedBytes {
             .map(|p| p + start)
     }
 
-    /// Writes the accumulated byte stream to `writer`.
-    pub fn write_to<W: Write>(&self, writer: &mut W) -> io::Result<()> {
+    /// Writes the accumulated byte stream to `writer`. `W: ?Sized` so this can be called with a
+    /// trait object (e.g. `&mut dyn Write`, as needed by composing wrapper types like
+    /// `PatchPackedEncode`'s `CachedEncoder::write_to` implementation), not just a concrete sized
+    /// writer.
+    pub fn write_to<W: Write + ?Sized>(&self, writer: &mut W) -> io::Result<()> {
         writer.write_all(&self.data[..self.len])
     }
 

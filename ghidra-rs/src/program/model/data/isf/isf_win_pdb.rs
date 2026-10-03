@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use serde::Serialize;
+
 use super::IsfObject;
 
 /// Represents an ISF Windows PDB descriptor.
@@ -8,6 +10,7 @@ use super::IsfObject;
 /// populated from a metadata map using the same keys as the Java constructor.
 /// `machine_type` is always `0`; the Java source hardcoded this value with a
 /// comment indicating "PDB Version" was the intended source but was never wired.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct IsfWinPDB {
     pub guid: Option<String>,
     pub age: Option<i32>,

@@ -149,7 +149,7 @@ mod tests {
     use crate::program::model::listing::{AutoParameterType, Function, Parameter, Program};
     use crate::program::model::pcode::Varnode;
     use crate::program::model::symbol::{SourceType, Symbol};
-    use crate::program::seam_stubs::VariableStorage;
+    use crate::program::model::listing::variable_storage::VariableStorage;
     use crate::util::exception::InvalidInputException;
     use std::cmp::Ordering;
     use std::sync::Arc;
@@ -219,12 +219,13 @@ mod tests {
 
         fn get_program(&self) -> Arc<dyn Program> {
             struct MockProgram;
+            impl crate::framework::model::DomainObject for MockProgram {}
             impl Program for MockProgram {
-                fn get_name(&self) -> &str {
-                    "mock"
+                fn get_name(&self) -> String {
+                    "mock".to_string()
                 }
-                fn get_language_id(&self) -> &str {
-                    "mock:LE:32:default"
+                fn get_language_id(&self) -> String {
+                    "mock:LE:32:default".to_string()
                 }
             }
             Arc::new(MockProgram)
@@ -384,12 +385,13 @@ mod tests {
 
         fn get_program(&self) -> Arc<dyn Program> {
             struct MockProgram;
+            impl crate::framework::model::DomainObject for MockProgram {}
             impl Program for MockProgram {
-                fn get_name(&self) -> &str {
-                    "mock"
+                fn get_name(&self) -> String {
+                    "mock".to_string()
                 }
-                fn get_language_id(&self) -> &str {
-                    "mock:LE:32:default"
+                fn get_language_id(&self) -> String {
+                    "mock:LE:32:default".to_string()
                 }
             }
             Arc::new(MockProgram)

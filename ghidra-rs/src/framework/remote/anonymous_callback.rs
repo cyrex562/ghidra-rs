@@ -7,6 +7,17 @@ pub struct AnonymousCallback {
     anonymous_access_requested: bool,
 }
 
+impl crate::framework::seam_stubs::AuthCallback for AnonymousCallback {
+    /// Mirrors implementing `javax.security.auth.callback.Callback`: `AnonymousCallback` is
+    /// itself one of the callback instances that flow through an `AuthenticationModule`'s
+    /// `Callback[]`, so it needs the same exact-type-lookup hook every other callback (e.g.
+    /// `NameCallback`/`PasswordCallback` in
+    /// [`authentication_module`](crate::server::security::authentication_module)) implements.
+    fn as_any(&self) -> &dyn std::any::Any {
+        self
+    }
+}
+
 impl AnonymousCallback {
     /// Create a new `AnonymousCallback` with anonymous access not requested.
     pub fn new() -> Self {

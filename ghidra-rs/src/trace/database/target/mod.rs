@@ -1,5 +1,27 @@
+pub mod cache_per_db_trace_object;
+pub mod db_trace_object_interface;
+pub mod db_trace_object_val_path;
+pub mod db_trace_object_value;
+pub mod db_trace_object_value_data;
+pub mod db_trace_object_value_r_star_tree;
+pub mod immutable_value_box;
 pub mod rec_address;
+pub mod trace_object_value_storage;
+pub mod value_box;
+pub mod value_shape;
 pub mod value_triple;
+pub mod visitors;
 
+pub use cache_per_db_trace_object::{Cached, CachePerDBTraceObject};
+pub use db_trace_object_interface::DBTraceObjectInterface;
+pub use db_trace_object_val_path::DBTraceObjectValPath;
+pub use db_trace_object_value::{DBTraceObjectValue, ValueEvent};
+pub use db_trace_object_value_data::DBTraceObjectValueData;
+pub use db_trace_object_value_r_star_tree::{DBTraceObjectValueMap, DBTraceObjectValueRStarTree};
+pub use immutable_value_box::ImmutableValueBox;
 pub use rec_address::RecAddress;
+pub use trace_object_value_storage::TraceObjectValueStorage;
+pub use value_box::ValueBox;
+pub use value_shape::ValueShape;
 pub use value_triple::ValueTriple;
+pub use visitors::{TreeTraversal, VisitResult, Visitor};

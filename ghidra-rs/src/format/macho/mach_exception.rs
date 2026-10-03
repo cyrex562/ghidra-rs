@@ -47,6 +47,21 @@ impl std::error::Error for MachException {
     }
 }
 
+impl From<std::io::Error> for MachException {
+    /// Wraps an I/O failure, for the many Mach-O parsers whose Java signatures declare both
+    /// `IOException` and `MachException`.
+    fn from(e: std::io::Error) -> Self {
+        MachException::from_cause(e)
+    }
+}
+
+impl From<crate::format::macho::obsolete_exception::ObsoleteException> for MachException {
+    /// Java: `ObsoleteException extends MachException`.
+    fn from(e: crate::format::macho::obsolete_exception::ObsoleteException) -> Self {
+        MachException::from_cause(e)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -1,2 +1,14 @@
+pub mod debug_state_x86_32;
+pub mod debug_state_x86_64;
+pub mod exception_state_x86_32;
+pub mod exception_state_x86_64;
 pub mod float_state_x86_32;
+pub mod thread_command;
+pub mod thread_state;
+pub mod thread_state_arm;
+pub mod thread_state_arm_64;
+pub mod thread_state_header;
+pub mod thread_state_ppc;
 pub mod thread_state_x86;
+pub mod thread_state_x86_32;
+pub mod thread_state_x86_64;

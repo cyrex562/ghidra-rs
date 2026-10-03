@@ -3,6 +3,8 @@ use std::cmp::Ordering;
 use crate::program::model::data::composite::Composite;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_component::DataTypeComponent;
+use crate::program::model::data::alignment_type::AlignmentType;
+use crate::program::model::data::packing_type::PackingType;
 
 /// Port of `CompositeInternal.ALIGN_NAME`.
 pub const ALIGN_NAME: &str = "aligned";
@@ -52,6 +54,41 @@ pub trait CompositeInternal: Composite {
     fn get_stored_minimum_alignment(&self) -> i32 {
         DEFAULT_ALIGNMENT
     }
+}
+
+/// The raw `CompositeInternal.getStoredPackingValue()` of any composite, recovered from its
+/// public packing API: [`NO_PACKING`], [`DEFAULT_PACKING`] or the explicit pack value. Lets code
+/// holding only a `&dyn Composite` (Java's `instanceof StructureInternal` downcast target) read
+/// the stored value.
+pub fn stored_packing_value_of(composite: &dyn Composite) -> i32 {
+    match composite.get_packing_type() {
+        PackingType::Disabled => NO_PACKING,
+        PackingType::Default => DEFAULT_PACKING,
+        PackingType::Explicit => composite.get_explicit_packing_value(),
+    }
+}
+
+/// The raw `CompositeInternal.getStoredMinimumAlignment()` of any composite, recovered from its
+/// public alignment API: [`DEFAULT_ALIGNMENT`], [`MACHINE_ALIGNMENT`] or the explicit minimum
+/// alignment. See [`stored_packing_value_of`].
+pub fn stored_minimum_alignment_of(composite: &dyn Composite) -> i32 {
+    match composite.get_alignment_type() {
+        AlignmentType::Default => DEFAULT_ALIGNMENT,
+        AlignmentType::Machine => MACHINE_ALIGNMENT,
+        AlignmentType::Explicit => composite.get_explicit_minimum_alignment(),
+    }
+}
+
+/// Stands in for Java reference identity (`a == b`) between two data types when walking a
+/// composition tree: data types carrying a universal ID (composites and other user-defined
+/// types; a value clone keeps its ID) are the same only if the IDs match, and types without one
+/// (built-ins report ID 0) fall back to data type path equality.
+pub fn is_same_data_type_identity(a: &dyn DataType, b: &dyn DataType) -> bool {
+    let (id_a, id_b) = (a.get_universal_id(), b.get_universal_id());
+    if id_a.value() != 0 && id_b.value() != 0 {
+        return id_a == id_b;
+    }
+    a.get_data_type_path() == b.get_data_type_path()
 }
 
 /// Port of `CompositeInternal.ComponentComparator`.
@@ -191,9 +228,10 @@ pub fn get_packing_string(composite: &dyn Composite) -> String {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::Arc;
     use super::*;
     use crate::program::model::data::alignment_type::AlignmentType;
-    use crate::program::model::data::data_organization::DataOrganization;
+    use crate::program::model::data::data_organization_impl::DataOrganizationImpl;
     use crate::program::model::data::packing_type::PackingType;
 
     struct MockDataTypeComponent {
@@ -293,17 +331,34 @@ mod tests {
         assert_eq!(get_min_alignment_string(&s), "");
     }
 
-    struct MockDataOrganization;
-    impl DataOrganization for MockDataOrganization {
-        fn get_machine_alignment(&self) -> i32 {
-            8
-        }
+            /// A real [`DataOrganizationImpl`] configured as this test expects.
+    fn mock_data_organization() -> DataOrganizationImpl {
+        let mut org = DataOrganizationImpl::get_default_organization(None);
+        org.set_big_endian(false);
+        org.set_pointer_size(8);
+        org.set_pointer_shift(0);
+        org.set_char_is_signed(true);
+        org.set_char_size(1);
+        org.set_wide_char_size(2);
+        org.set_short_size(2);
+        org.set_integer_size(4);
+        org.set_long_size(8);
+        org.set_long_long_size(8);
+        org.set_float_size(4);
+        org.set_double_size(8);
+        org.set_long_double_size(8);
+        org.set_absolute_max_alignment(0);
+        org.set_machine_alignment(8);
+        org.set_default_alignment(1);
+        org.set_default_pointer_alignment(8);
+        org.clear_size_alignment_map();
+        org
     }
 
     struct MachineAlignedStructure;
     impl DataType for MachineAlignedStructure {
-        fn get_data_organization(&self) -> Box<dyn DataOrganization> {
-            Box::new(MockDataOrganization)
+        fn get_data_organization(&self) -> Arc<DataOrganizationImpl> {
+            Arc::new(mock_data_organization())
         }
     }
     impl Composite for MachineAlignedStructure {

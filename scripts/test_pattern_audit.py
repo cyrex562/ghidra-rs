@@ -1,0 +1,320 @@
+#!/usr/bin/env python3
+"""Unit tests for pattern_audit.py -- the Java-idiom scanner behind OWNERSHIP_DEBT.tsv.
+
+Covers the signal scanner, and the two frontier-file behaviours that are easy to break
+silently and expensive when broken: --diff-new regression reporting, and --preserve-status
+(without which a periodic refresh resets every DONE/PARK row to TODO and the migration
+loses track of what it already handled).
+
+    python3 scripts/test_pattern_audit.py
+"""
+import os
+import subprocess
+import sys
+import tempfile
+import unittest
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import pattern_audit as pa
+
+AUDIT = os.path.join(HERE, "pattern_audit.py")
+COLS = ["status", "priority", "score", "fanin", "class", "module", "path", "signals"]
+
+SMELLY = """\
+use std::rc::Rc;
+pub struct Widget { inner: Rc<RefCell<dyn Foo>>, other: Arc<Mutex<dyn Bar>> }
+impl Widget {
+    pub fn get_name(&self) -> String { self.name.clone() }
+    pub fn set_name(&mut self, n: String) { self.name = n; }
+    pub fn boom(&self) -> u32 { self.v.unwrap() }
+}
+"""
+
+CLEAN = """\
+//! Replaces the old `Box<dyn Group>` / `Rc<RefCell<dyn Group>>` shape with an arena.
+pub struct Tree { nodes: SlotMap<NodeId, Node> }
+impl NodeId {
+    pub fn name(self, t: &Tree) -> &str { &t.nodes[self].name }
+}
+"""
+
+
+def write_file(path, body):
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(body)
+
+
+def write_tsv(path, rows):
+    with open(path, "w", encoding="utf-8") as f:
+        f.write("\t".join(COLS) + "\n")
+        for r in rows:
+            f.write("\t".join(str(r.get(c, "")) for c in COLS) + "\n")
+
+
+def read_tsv(path):
+    with open(path, encoding="utf-8") as f:
+        lines = [l.rstrip("\n") for l in f if l.strip()]
+    return [dict(zip(COLS, l.split("\t"))) for l in lines[1:]]
+
+
+def run_audit(*args):
+    p = subprocess.run(
+        [sys.executable, AUDIT, *args], capture_output=True, text=True, check=False
+    )
+    return p.stdout, p.stderr, p.returncode
+
+
+class TestScanFile(unittest.TestCase):
+    def test_smelly_file_scores_and_names_signals(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "widget.rs")
+            write_file(p, SMELLY)
+            score, signals = pa.scan_file(p)
+            self.assertGreater(score, 3.0)
+            joined = ",".join(signals)
+            for expected in ("rc_refcell=", "arc_mutex=", "dyn=", "getset_pairs=1"):
+                self.assertIn(expected, joined)
+
+    def test_comments_naming_a_pattern_are_not_usages(self):
+        """The pilot's own doc comment names Box<dyn>/Rc<RefCell<> in prose; that must not
+        score as real usage -- this exact false positive is called out in the plan doc."""
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "group_tree.rs")
+            write_file(p, CLEAN)
+            score, signals = pa.scan_file(p)
+            self.assertEqual(signals, [])
+            self.assertEqual(score, 0.0)
+
+    def test_unwrap_in_test_module_is_not_production_signal(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "x.rs")
+            write_file(
+                p,
+                "pub fn f() -> u32 { 1 }\n#[cfg(test)]\nmod tests {\n"
+                + "".join("    let _ = q.unwrap();\n" for _ in range(20))
+                + "}\n",
+            )
+            _score, signals = pa.scan_file(p)
+            self.assertFalse([s for s in signals if s.startswith("unwrap")])
+
+
+class TestLockPayload(unittest.TestCase):
+    def test_bare_lock_handle_is_not_shared_mutability(self):
+        """`Arc<RwLock<()>>` holds no data -- it is a lock, which the plan calls legitimate."""
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "x.rs")
+            write_file(p, "pub struct A { lock: Arc<RwLock<()>>, m: Arc<Mutex<()>> }\n")
+            _score, signals = pa.scan_file(p)
+            self.assertFalse([s for s in signals if s.startswith("arc_mutex")])
+
+    def test_lock_around_real_data_still_counts(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "x.rs")
+            write_file(p, "pub struct A { s: Arc<Mutex<Program>>, t: Arc<RwLock<Vec<u8>>> }\n")
+            _score, signals = pa.scan_file(p)
+            self.assertIn("arc_mutex=2", signals)
+
+
+class TestDiffNew(unittest.TestCase):
+    def _root(self, d, body):
+        root = os.path.join(d, "src")
+        os.makedirs(root, exist_ok=True)
+        write_file(os.path.join(root, "widget.rs"), body)
+        return root
+
+    def test_worsened_file_is_reported(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, SMELLY)
+            base = os.path.join(d, "base.tsv")
+            run_audit("--root", root, "--seam", "/nonexistent", "--out", base)
+            self._root(d, SMELLY + "pub struct B { a: Arc<Mutex<dyn Z>>, b: Box<dyn Y> }\n")
+            out, _err, _rc = run_audit(
+                "--root", root, "--seam", "/nonexistent", "--baseline", base, "--diff-new"
+            )
+            self.assertIn("widget.rs", out)
+            self.assertIn("->", out)
+
+    def test_unchanged_tree_reports_nothing_on_stdout(self):
+        """audit_night.sh captures stdout and treats non-empty as 'regressions found', so a
+        quiet run must put its status message on stderr, not stdout."""
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d, SMELLY)
+            base = os.path.join(d, "base.tsv")
+            run_audit("--root", root, "--seam", "/nonexistent", "--out", base)
+            out, err, _rc = run_audit(
+                "--root", root, "--seam", "/nonexistent", "--baseline", base, "--diff-new"
+            )
+            self.assertEqual(out.strip(), "")
+            self.assertIn("no new/worsened", err)
+
+
+class TestPreserveStatus(unittest.TestCase):
+    def setUp(self):
+        self.d = tempfile.mkdtemp()
+        self.root = os.path.join(self.d, "src")
+        os.makedirs(self.root)
+        write_file(os.path.join(self.root, "widget.rs"), SMELLY)
+        self.out = os.path.join(self.d, "debt.tsv")
+        run_audit("--root", self.root, "--seam", "/nonexistent", "--out", self.out)
+        self.path = read_tsv(self.out)[0]["path"]
+
+    def _mark(self, status, score=None):
+        rows = read_tsv(self.out)
+        rows[0]["status"] = status
+        if score is not None:
+            rows[0]["score"] = score
+        write_tsv(self.out, rows)
+
+    def test_plain_refresh_resets_status(self):
+        """Documents the trap --preserve-status exists to avoid: without it, a refresh
+        silently reopens every already-remediated row."""
+        self._mark("DONE")
+        run_audit("--root", self.root, "--seam", "/nonexistent", "--out", self.out)
+        self.assertEqual(read_tsv(self.out)[0]["status"], "TODO")
+
+    def test_preserve_keeps_done_and_park(self):
+        for status in ("DONE", "PARK"):
+            self._mark(status)
+            run_audit(
+                "--root", self.root, "--seam", "/nonexistent",
+                "--preserve-status", "--out", self.out,
+            )
+            self.assertEqual(read_tsv(self.out)[0]["status"], status)
+
+    def test_regressed_done_row_is_reopened(self):
+        self._mark("DONE", score="1.0")  # pretend it was remediated down to ~nothing
+        _out, err, _rc = run_audit(
+            "--root", self.root, "--seam", "/nonexistent",
+            "--preserve-status", "--out", self.out,
+        )
+        self.assertEqual(read_tsv(self.out)[0]["status"], "TODO")
+        self.assertIn("reopened", err)
+
+
+class TestFaninSource(unittest.TestCase):
+    """Priority folds fan-in in, so where fan-in comes from decides the ordering."""
+
+    def test_prefers_the_complete_fanin_table(self):
+        with tempfile.TemporaryDirectory() as d:
+            fan = os.path.join(d, "FANIN.tsv")
+            with open(fan, "w", encoding="utf-8") as f:
+                f.write("class\tfanin\tpath\n")
+                f.write("Widget\t500\ta/Widget.java\n")
+            got = pa.load_fanin("/nonexistent", fan)
+            self.assertEqual(got["Widget"], 500)
+
+    def test_falls_back_to_seam_when_the_table_is_absent(self):
+        with tempfile.TemporaryDirectory() as d:
+            seam = os.path.join(d, "SEAM.tsv")
+            with open(seam, "w", encoding="utf-8") as f:
+                f.write("status\tkind\tfanin\trem\tmodule\tpath\n")
+                f.write("TODO\tinterface\t42\t0\tx\ta/Widget.java\n")
+            got = pa.load_fanin(seam, os.path.join(d, "missing.tsv"))
+            self.assertEqual(got["Widget"], 42)
+
+    def test_seam_coverage_gap_is_what_this_fixes(self):
+        """SEAM.tsv is a 369-row worklist; types outside it silently scored fanin 0."""
+        with tempfile.TemporaryDirectory() as d:
+            seam = os.path.join(d, "SEAM.tsv")
+            with open(seam, "w", encoding="utf-8") as f:
+                f.write("status\tkind\tfanin\trem\tmodule\tpath\n")
+                f.write("TODO\tinterface\t42\t0\tx\ta/InTheWorklist.java\n")
+            got = pa.load_fanin(seam, os.path.join(d, "missing.tsv"))
+            self.assertEqual(got.get("NotInTheWorklist", 0), 0)
+
+
+class TestAcceptedVerdicts(unittest.TestCase):
+    """A CONVENTION_QUEUE.tsv verdict must change what counts as debt -- that is the whole
+    mechanism by which one decision retires many files. And a PROPOSAL must not."""
+
+    QCOLS = ["verdict", "leverage", "occurrences", "fanin", "type", "category", "source", "note"]
+
+    def _queue(self, d, verdict, typename):
+        p = os.path.join(d, "queue.tsv")
+        with open(p, "w", encoding="utf-8") as f:
+            f.write("\t".join(self.QCOLS) + "\n")
+            f.write(f"{verdict}\t1\t1\t0\t{typename}\tx\tmanual\tnote\n")
+        return p
+
+    def _root(self, d):
+        root = os.path.join(d, "src")
+        os.makedirs(root, exist_ok=True)
+        write_file(os.path.join(root, "w.rs"),
+                   "pub struct W { a: Box<dyn TaskMonitor>, b: Box<dyn TaskMonitor>,\n"
+                   "               c: Box<dyn TaskMonitor>, d: Box<dyn TaskMonitor> }\n")
+        return root
+
+    def test_accept_verdict_removes_the_type_from_scoring(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            plain = os.path.join(d, "plain.tsv")
+            run_audit("--root", root, "--seam", "/nonexistent", "--accepted", "/nonexistent",
+                      "--no-justified-dyn", "--out", plain)
+            self.assertTrue(read_tsv(plain), "expected the file to score as debt without a verdict")
+
+            q = self._queue(d, "ACCEPT", "TaskMonitor")
+            after = os.path.join(d, "after.tsv")
+            run_audit("--root", root, "--seam", "/nonexistent", "--accepted", q,
+                      "--no-justified-dyn", "--out", after)
+            self.assertEqual(read_tsv(after), [], "ACCEPT should retire the file from the frontier")
+
+    def test_suggestion_is_inert_until_promoted(self):
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            q = self._queue(d, "SUGGEST-ACCEPT", "TaskMonitor")
+            out = os.path.join(d, "out.tsv")
+            run_audit("--root", root, "--seam", "/nonexistent", "--accepted", q,
+                      "--no-justified-dyn", "--out", out)
+            self.assertTrue(read_tsv(out), "SUGGEST-ACCEPT must not take effect before review")
+
+    def test_decided_but_unbuilt_conventions_are_not_drift(self):
+        """A port cannot hold a Copy ID into an arena that does not exist yet.
+
+        `DataType` is decided ENUM with 1,513 `dyn` uses. Scoring those tripled the number
+        (34,296 -> 49,380) with work no nightly run could have done differently -- the same
+        mistake as charging for a seam whose implementation is unported. Migration backlog
+        belongs in DYN_DEBT.tsv, not in the drift signal.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            debt = os.path.join(d, "DYN_DEBT.tsv")
+            with open(debt, "w", encoding="utf-8") as f:
+                f.write("verdict\tconvention\tpattern\tdyn_uses\tclass\n")
+                f.write("blocked\tENUM\tP5\t99\tDecidedEnum\n")
+                f.write("blocked\tARENA\tP5\t99\tDecidedArena\n")
+                f.write("fix\tARENA\tP5\t99\tBuiltArena\n")
+                f.write("fix\tSTRUCT\tP2\t99\tBuildableStruct\n")
+                f.write("fix\t\tP1\t99\tPlainClass\n")
+                f.write("ok\tACCEPT\tP5\t99\tOpenSet\n")
+                f.write("blocked\t\tP2s\t99\tUnportedSeam\n")
+            got = pa.load_justified_dyn_types(debt)
+            self.assertIn("DecidedEnum", got, "unbuilt ENUM must not be drift")
+            self.assertIn("DecidedArena", got, "unbuilt ARENA must not be drift")
+            self.assertIn("OpenSet", got, "dyn is correct here")
+            self.assertIn("UnportedSeam", got, "nothing else can be written yet")
+            self.assertNotIn("BuildableStruct", got, "the concrete type exists -- avoidable")
+            self.assertNotIn("BuiltArena", got,
+                             "an arena that EXISTS makes its dyn avoidable, so it is drift")
+            self.assertNotIn("PlainClass", got, "Java class with a concrete Rust type")
+
+    def test_justified_dyn_is_exempt_by_default(self):
+        """A type with many concrete Java implementers is not ownership debt.
+
+        `TaskMonitor` has 21 concrete implementers in orig_src. Before this exemption it
+        scored identically to a single-implementation interface, which is what made the
+        nightly drift number impossible to act on.
+        """
+        with tempfile.TemporaryDirectory() as d:
+            root = self._root(d)
+            strict, lenient = os.path.join(d, "s.tsv"), os.path.join(d, "l.tsv")
+            run_audit("--root", root, "--seam", "/nonexistent", "--accepted", "/nonexistent",
+                      "--no-justified-dyn", "--out", strict)
+            run_audit("--root", root, "--seam", "/nonexistent", "--accepted", "/nonexistent",
+                      "--out", lenient)
+            self.assertTrue(read_tsv(strict), "should score as debt when the exemption is off")
+            self.assertEqual(read_tsv(lenient), [],
+                             "dyn TaskMonitor (21 implementers) must not count as debt")
+
+
+if __name__ == "__main__":
+    unittest.main(verbosity=2)

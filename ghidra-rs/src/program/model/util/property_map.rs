@@ -1,6 +1,6 @@
 use std::any::{Any, TypeId};
 
-use crate::program::model::address::{Address, AddressIterator, AddressSetView};
+use crate::program::model::address::{Address, BoxedAddressIterator, AddressSetView};
 
 /// A map containing properties over a set of addresses.
 ///
@@ -76,7 +76,7 @@ pub trait PropertyMap {
     /// Returns a forward iterator over the addresses in `[start, end]` that have a property value.
     ///
     /// Stands in for `PropertyMap.getPropertyIterator(Address, Address)`.
-    fn get_property_iterator_range(&self, start: &Address, end: &Address) -> Box<dyn AddressIterator>;
+    fn get_property_iterator_range(&self, start: &Address, end: &Address) -> BoxedAddressIterator;
 
     /// Returns an iterator over the addresses in `[start, end]` that have a property value, in
     /// increasing (`forward = true`) or decreasing (`forward = false`) address order.
@@ -87,17 +87,17 @@ pub trait PropertyMap {
         start: &Address,
         end: &Address,
         forward: bool,
-    ) -> Box<dyn AddressIterator>;
+    ) -> BoxedAddressIterator;
 
     /// Returns a forward iterator over all addresses that have a property value.
     ///
     /// Stands in for `PropertyMap.getPropertyIterator()`.
-    fn get_property_iterator(&self) -> Box<dyn AddressIterator>;
+    fn get_property_iterator(&self) -> BoxedAddressIterator;
 
     /// Returns a forward iterator over the addresses in `asv` that have a property value.
     ///
     /// Stands in for `PropertyMap.getPropertyIterator(AddressSetView)`.
-    fn get_property_iterator_set(&self, asv: &dyn AddressSetView) -> Box<dyn AddressIterator>;
+    fn get_property_iterator_set(&self, asv: &dyn AddressSetView) -> BoxedAddressIterator;
 
     /// Returns an iterator over the addresses in `asv` that have a property value, in increasing
     /// (`forward = true`) or decreasing (`forward = false`) address order.
@@ -107,13 +107,13 @@ pub trait PropertyMap {
         &self,
         asv: &dyn AddressSetView,
         forward: bool,
-    ) -> Box<dyn AddressIterator>;
+    ) -> BoxedAddressIterator;
 
     /// Returns an iterator over the addresses that have a property value, starting at `start` and
     /// moving in increasing (`forward = true`) or decreasing (`forward = false`) address order.
     ///
     /// Stands in for `PropertyMap.getPropertyIterator(Address, boolean)`.
-    fn get_property_iterator_from(&self, start: &Address, forward: bool) -> Box<dyn AddressIterator>;
+    fn get_property_iterator_from(&self, start: &Address, forward: bool) -> BoxedAddressIterator;
 
     /// Moves the properties defined in the range from `start` thru `end` to now be located
     /// beginning at `new_start`. The moved properties are located at the same relative position to
@@ -219,7 +219,7 @@ mod tests {
             &self,
             start: &Address,
             end: &Address,
-        ) -> Box<dyn AddressIterator> {
+        ) -> BoxedAddressIterator {
             self.get_property_iterator_range_ordered(start, end, true)
         }
 
@@ -228,7 +228,7 @@ mod tests {
             start: &Address,
             end: &Address,
             forward: bool,
-        ) -> Box<dyn AddressIterator> {
+        ) -> BoxedAddressIterator {
             let mut addrs: Vec<Address> = self
                 .values
                 .keys()
@@ -241,13 +241,13 @@ mod tests {
             Box::new(AddressIteratorAdapter::from_vec(addrs))
         }
 
-        fn get_property_iterator(&self) -> Box<dyn AddressIterator> {
+        fn get_property_iterator(&self) -> BoxedAddressIterator {
             Box::new(AddressIteratorAdapter::from_vec(
                 self.values.keys().cloned().collect(),
             ))
         }
 
-        fn get_property_iterator_set(&self, asv: &dyn AddressSetView) -> Box<dyn AddressIterator> {
+        fn get_property_iterator_set(&self, asv: &dyn AddressSetView) -> BoxedAddressIterator {
             self.get_property_iterator_set_ordered(asv, true)
         }
 
@@ -255,7 +255,7 @@ mod tests {
             &self,
             asv: &dyn AddressSetView,
             forward: bool,
-        ) -> Box<dyn AddressIterator> {
+        ) -> BoxedAddressIterator {
             let mut addrs: Vec<Address> = self
                 .values
                 .keys()
@@ -272,7 +272,7 @@ mod tests {
             &self,
             start: &Address,
             forward: bool,
-        ) -> Box<dyn AddressIterator> {
+        ) -> BoxedAddressIterator {
             let mut addrs: Vec<Address> = self
                 .values
                 .keys()

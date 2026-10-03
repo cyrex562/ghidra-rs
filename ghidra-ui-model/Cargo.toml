@@ -1,0 +1,9 @@
+[package]
+name = "ghidra-ui-model"
+version = "0.1.0"
+edition = "2021"
+description = "Toolkit-neutral UI model for ghidra-rs (no Qt/egui types allowed)"
+license = "MIT"
+
+[dependencies]
+ghidra-rs = { path = "../ghidra-rs" }

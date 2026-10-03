@@ -1,0 +1,373 @@
+//! Simple in-memory view models: the U1b demo tool's panes and test fixtures.
+
+use std::collections::BTreeMap;
+
+use crate::view_models::{CellValue, FormField, FormModel, NodeId, StyledRun, TableModel, TextModel, TreeModel};
+
+/// A table backed by a `Vec` of rows, with sort and substring filter.
+pub struct VecTable {
+    columns: Vec<String>,
+    rows: Vec<Vec<CellValue>>,
+    view: Vec<usize>,
+    filter: String,
+    /// The last sort (column, ascending), re-applied after edits.
+    sorted: Option<(usize, bool)>,
+}
+
+impl VecTable {
+    /// A table with these columns and rows.
+    pub fn new(columns: Vec<String>, rows: Vec<Vec<CellValue>>) -> Self {
+        let view = (0..rows.len()).collect();
+        Self { columns, rows, view, filter: String::new(), sorted: None }
+    }
+
+    fn refilter(&mut self) {
+        let needle = self.filter.to_lowercase();
+        let keep: Vec<usize> = self
+            .view_order()
+            .into_iter()
+            .filter(|&i| needle.is_empty() || self.rows[i].iter().any(|c| c.to_string().to_lowercase().contains(&needle)))
+            .collect();
+        self.view = keep;
+    }
+
+    fn view_order(&self) -> Vec<usize> {
+        let mut all: Vec<usize> = self.view.clone();
+        let mut seen = vec![false; self.rows.len()];
+        for &i in &all {
+            seen[i] = true;
+        }
+        all.extend((0..self.rows.len()).filter(|i| !seen[*i]));
+        all
+    }
+}
+
+fn cmp_cells(a: &CellValue, b: &CellValue) -> std::cmp::Ordering {
+    use CellValue::*;
+    match (a, b) {
+        (Int(x), Int(y)) => x.cmp(y),
+        (Address(x), Address(y)) => x.cmp(y),
+        (Bool(x), Bool(y)) => x.cmp(y),
+        _ => a.to_string().cmp(&b.to_string()),
+    }
+}
+
+impl TableModel for VecTable {
+    fn column_count(&self) -> usize {
+        self.columns.len()
+    }
+    fn column_name(&self, column: usize) -> String {
+        self.columns.get(column).cloned().unwrap_or_default()
+    }
+    fn row_count(&self) -> usize {
+        self.view.len()
+    }
+    fn cell(&self, row: usize, column: usize) -> CellValue {
+        self.view.get(row).and_then(|&i| self.rows[i].get(column)).cloned().unwrap_or(CellValue::Empty)
+    }
+    fn sort(&mut self, column: usize, ascending: bool) {
+        self.sorted = Some((column, ascending));
+        let mut order = self.view_order();
+        order.sort_by(|&a, &b| {
+            let o = cmp_cells(
+                self.rows[a].get(column).unwrap_or(&CellValue::Empty),
+                self.rows[b].get(column).unwrap_or(&CellValue::Empty),
+            );
+            if ascending { o } else { o.reverse() }
+        });
+        self.view = order;
+        self.refilter();
+    }
+    fn set_filter(&mut self, text: &str) {
+        self.filter = text.to_owned();
+        self.refilter();
+    }
+}
+
+impl VecTable {
+    /// Edits stored row `index` (construction order, whatever the view's
+    /// sort or filter), then re-applies the last sort and the filter.
+    pub fn update_row(&mut self, index: usize, f: impl FnOnce(&mut Vec<CellValue>)) {
+        if let Some(row) = self.rows.get_mut(index) {
+            f(row);
+        }
+        match self.sorted {
+            Some((column, ascending)) => self.sort(column, ascending),
+            None => self.refilter(),
+        }
+    }
+
+    /// Edits rows in place (all of them, filtered or not), then re-applies
+    /// the last sort and the filter.
+    pub fn update_rows(&mut self, mut f: impl FnMut(&mut Vec<CellValue>)) {
+        self.rows.iter_mut().for_each(&mut f);
+        match self.sorted {
+            Some((column, ascending)) => self.sort(column, ascending),
+            None => self.refilter(),
+        }
+    }
+}
+
+/// A [`VecTable`] shared between its pane and the code that edits it.
+#[derive(Clone)]
+pub struct SharedTable(std::sync::Arc<std::sync::Mutex<VecTable>>);
+
+impl SharedTable {
+    /// Shares `table`.
+    pub fn new(table: VecTable) -> Self {
+        Self(std::sync::Arc::new(std::sync::Mutex::new(table)))
+    }
+
+    fn lock(&self) -> std::sync::MutexGuard<'_, VecTable> {
+        self.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+    }
+
+    /// [`VecTable::update_row`] for every holder.
+    pub fn update_row(&self, index: usize, f: impl FnOnce(&mut Vec<CellValue>)) {
+        self.lock().update_row(index, f);
+    }
+
+    /// [`VecTable::update_rows`] for every holder.
+    pub fn update_rows(&self, f: impl FnMut(&mut Vec<CellValue>)) {
+        self.lock().update_rows(f);
+    }
+}
+
+impl TableModel for SharedTable {
+    fn column_count(&self) -> usize {
+        self.lock().column_count()
+    }
+    fn column_name(&self, column: usize) -> String {
+        self.lock().column_name(column)
+    }
+    fn row_count(&self) -> usize {
+        self.lock().row_count()
+    }
+    fn cell(&self, row: usize, column: usize) -> CellValue {
+        self.lock().cell(row, column)
+    }
+    fn sort(&mut self, column: usize, ascending: bool) {
+        self.lock().sort(column, ascending);
+    }
+    fn location(&self, row: usize, column: usize) -> Option<u64> {
+        self.lock().location(row, column)
+    }
+    fn set_filter(&mut self, text: &str) {
+        self.lock().set_filter(text);
+    }
+}
+
+/// A tree built from `/`-separated paths.
+pub struct StaticTree {
+    labels: Vec<String>,
+    parents: Vec<Option<usize>>,
+    children: Vec<Vec<usize>>,
+    addresses: Vec<Option<u64>>,
+}
+
+impl StaticTree {
+    /// Builds a tree; the first path segment is the root.
+    pub fn from_paths(paths: &[&str]) -> Self {
+        let mut t = StaticTree { labels: Vec::new(), parents: Vec::new(), children: Vec::new(), addresses: Vec::new() };
+        let mut index: BTreeMap<(Option<usize>, String), usize> = BTreeMap::new();
+        for path in paths {
+            let mut parent: Option<usize> = None;
+            for seg in path.split('/').filter(|s| !s.is_empty()) {
+                let key = (parent, seg.to_owned());
+                let id = match index.get(&key) {
+                    Some(&id) => id,
+                    None => {
+                        let id = t.labels.len();
+                        t.labels.push(seg.to_owned());
+                        t.parents.push(parent);
+                        t.children.push(Vec::new());
+                        t.addresses.push(None);
+                        if let Some(p) = parent {
+                            t.children[p].push(id);
+                        }
+                        index.insert(key, id);
+                        id
+                    }
+                };
+                parent = Some(id);
+            }
+        }
+        t
+    }
+
+    /// [`Self::from_paths`] with the address each path's last node starts at
+    /// (a program tree's fragments).
+    pub fn with_locations(paths: &[(&str, Option<u64>)]) -> Self {
+        let names: Vec<&str> = paths.iter().map(|(p, _)| *p).collect();
+        let mut t = Self::from_paths(&names);
+        for (path, address) in paths {
+            if let Some(node) = t.find_path(path) {
+                t.addresses[node] = *address;
+            }
+        }
+        t
+    }
+
+    fn find_path(&self, path: &str) -> Option<usize> {
+        let mut node: Option<usize> = None;
+        for seg in path.split('/').filter(|s| !s.is_empty()) {
+            let candidates: Vec<usize> = match node {
+                None => (0..self.labels.len()).filter(|&i| self.parents[i].is_none()).collect(),
+                Some(n) => self.children[n].clone(),
+            };
+            node = Some(candidates.into_iter().find(|&c| self.labels[c] == seg)?);
+        }
+        node
+    }
+}
+
+impl TreeModel for StaticTree {
+    fn root(&self) -> NodeId {
+        NodeId(0)
+    }
+    fn child_count(&self, node: NodeId) -> usize {
+        self.children.get(node.0 as usize).map_or(0, Vec::len)
+    }
+    fn child(&self, node: NodeId, index: usize) -> NodeId {
+        NodeId(self.children[node.0 as usize][index] as u64)
+    }
+    fn parent(&self, node: NodeId) -> Option<NodeId> {
+        self.parents.get(node.0 as usize).copied().flatten().map(|p| NodeId(p as u64))
+    }
+    fn label(&self, node: NodeId) -> String {
+        self.labels.get(node.0 as usize).cloned().unwrap_or_default()
+    }
+    /// A fragment's own start, else a module's: the minimum of its descendants.
+    fn location(&self, node: NodeId) -> Option<u64> {
+        let n = node.0 as usize;
+        if n >= self.labels.len() {
+            return None;
+        }
+        self.addresses[n].or_else(|| self.children[n].iter().filter_map(|&c| self.location(NodeId(c as u64))).min())
+    }
+}
+
+/// Plain lines of text.
+pub struct LinesText {
+    lines: Vec<String>,
+}
+
+impl LinesText {
+    /// Wraps lines.
+    pub fn new(lines: Vec<String>) -> Self {
+        Self { lines }
+    }
+}
+
+impl TextModel for LinesText {
+    fn line_count(&self) -> usize {
+        self.lines.len()
+    }
+    fn line(&self, index: usize) -> Vec<StyledRun> {
+        self.lines.get(index).map(|l| vec![StyledRun::plain(l.clone())]).unwrap_or_default()
+    }
+}
+
+/// A form over an ordered field list.
+pub struct MapForm {
+    fields: Vec<FormField>,
+}
+
+impl MapForm {
+    /// Wraps fields.
+    pub fn new(fields: Vec<FormField>) -> Self {
+        Self { fields }
+    }
+}
+
+impl FormModel for MapForm {
+    fn fields(&self) -> Vec<FormField> {
+        self.fields.clone()
+    }
+    fn set(&mut self, key: &str, value: &str) -> Result<(), String> {
+        let field = self.fields.iter_mut().find(|f| f.key == key).ok_or_else(|| format!("unknown field {key}"))?;
+        field.validate(value)?;
+        field.value = value.trim().to_owned();
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn one_stored_row_updates_whatever_the_view_order() {
+        let t = SharedTable::new(VecTable::new(
+            vec!["Name".into()],
+            vec![vec![CellValue::Text("b".into())], vec![CellValue::Text("b".into())], vec![CellValue::Text("a".into())]],
+        ));
+        let mut view = t.clone();
+        view.sort(0, true); // a, b, b
+        t.update_row(1, |row| row[0] = CellValue::Text("c".into()));
+        assert_eq!((0..3).map(|r| view.cell(r, 0).to_string()).collect::<Vec<_>>(), vec!["a", "b", "c"]);
+    }
+
+    #[test]
+    fn updated_rows_keep_the_last_sort() {
+        let t = SharedTable::new(VecTable::new(
+            vec!["Name".into()],
+            vec![vec![CellValue::Text("a_foo".into())], vec![CellValue::Text("m".into())]],
+        ));
+        let mut view = t.clone();
+        view.sort(0, true);
+        t.update_rows(|row| {
+            if row[0] == CellValue::Text("a_foo".into()) {
+                row[0] = CellValue::Text("z_foo".into());
+            }
+        });
+        assert_eq!((view.cell(0, 0), view.cell(1, 0)), (CellValue::Text("m".into()), CellValue::Text("z_foo".into())));
+    }
+
+    #[test]
+    fn a_shared_table_updates_every_view_and_refilters() {
+        let t = SharedTable::new(VecTable::new(
+            vec!["Name".into()],
+            vec![vec![CellValue::Text("alpha".into())], vec![CellValue::Text("beta".into())]],
+        ));
+        let mut view = t.clone();
+        view.set_filter("al");
+        assert_eq!(view.row_count(), 1);
+        t.update_rows(|row| {
+            if row[0] == CellValue::Text("beta".into()) {
+                row[0] = CellValue::Text("alpha2".into());
+            }
+        });
+        assert_eq!(view.row_count(), 2, "the renamed row now matches the filter");
+        assert_eq!(view.cell(1, 0), CellValue::Text("alpha2".into()));
+    }
+    use crate::view_models::TableModel;
+
+    #[test]
+    fn a_tree_node_goes_to_its_address_or_its_descendants_minimum() {
+        use crate::view_models::{NodeId, TreeModel};
+        let t = StaticTree::with_locations(&[("ls/.text", Some(0x30)), ("ls/.data", Some(0x20)), ("ls/.bss", None), ("ls/seg/.x", Some(0x50))]);
+        let label = |n: NodeId| t.label(n);
+        let find = |name: &str| (0..t.labels.len() as u64).map(NodeId).find(|&n| label(n) == name).unwrap();
+        assert_eq!(t.location(find(".text")), Some(0x30));
+        assert_eq!(t.location(find(".bss")), None);
+        assert_eq!(t.location(find("seg")), Some(0x50));
+        assert_eq!(t.location(t.root()), Some(0x20)); // module: its address set's minimum
+        assert_eq!(t.location(NodeId(99)), None);
+    }
+
+    #[test]
+    fn a_rows_location_is_the_clicked_address_else_its_first_address() {
+        let t = VecTable::new(
+            vec!["Name".into(), "From".into(), "To".into()],
+            vec![
+                vec![CellValue::Text("a".into()), CellValue::Address(0x10), CellValue::Address(0x20)],
+                vec![CellValue::Text("b".into()), CellValue::Int(3), CellValue::Text("x".into())],
+            ],
+        );
+        assert_eq!(t.location(0, 2), Some(0x20));
+        assert_eq!(t.location(0, 0), Some(0x10));
+        assert_eq!(t.location(1, 1), None);
+        assert_eq!(t.location(5, 0), None);
+    }
+}

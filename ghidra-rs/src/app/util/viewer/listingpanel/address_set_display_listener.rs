@@ -32,7 +32,7 @@ mod tests {
 
     impl AddressSetDisplayListener for RecordingListener {
         fn visible_addresses_changed(&mut self, visible_addresses: &dyn AddressSetView) {
-            self.calls.push(visible_addresses.get_num_addresses());
+            self.calls.push(visible_addresses.num_addresses() as usize);
         }
     }
 

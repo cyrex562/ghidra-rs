@@ -24,14 +24,14 @@ impl BTreeUserDataRecord {
 #[cfg(test)]
 mod tests {
     use super::BTreeUserDataRecord;
-    use crate::filesystem::ghidra::g_binary_reader::{ByteProvider, GBinaryReader};
+    use crate::filesystem::ghidra::g_binary_reader::{GByteStore, GBinaryReader};
     use std::cell::RefCell;
     use std::io;
     use std::rc::Rc;
 
     struct VecProvider(Vec<u8>);
 
-    impl ByteProvider for VecProvider {
+    impl GByteStore for VecProvider {
         fn length(&mut self) -> io::Result<u64> {
             Ok(self.0.len() as u64)
         }

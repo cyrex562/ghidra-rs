@@ -99,7 +99,7 @@ impl ExportTrie {
 
     /// Creates and parses a new `ExportTrie` from `reader`, positioned at the start of the
     /// export trie.
-    pub fn from_reader(reader: &mut dyn BinaryReader) -> io::Result<Self> {
+    pub fn from_reader(reader: &mut BinaryReader) -> io::Result<Self> {
         let mut trie = Self::new();
         let base = reader.get_pointer_index();
         trie.parse_trie(reader, base)?;
@@ -127,7 +127,7 @@ impl ExportTrie {
     }
 
     /// Parses the export trie.
-    fn parse_trie(&mut self, reader: &mut dyn BinaryReader, base: u64) -> io::Result<()> {
+    fn parse_trie(&mut self, reader: &mut BinaryReader, base: u64) -> io::Result<()> {
         let mut visited: HashSet<u64> = HashSet::new();
         visited.insert(0);
         let mut remaining_nodes = self.parse_node(reader, base, String::new(), 0)?;
@@ -149,7 +149,7 @@ impl ExportTrie {
     /// Parses a node of the export trie, returning its child nodes.
     fn parse_node(
         &mut self,
-        reader: &mut dyn BinaryReader,
+        reader: &mut BinaryReader,
         base: u64,
         name: String,
         offset: u64,
@@ -197,105 +197,7 @@ impl ExportTrie {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::cell::RefCell;
-    use std::rc::Rc;
 
-    use crate::filesystem::ghidra::g_binary_reader::ByteProvider;
-
-    struct VecProvider(Vec<u8>);
-
-    impl ByteProvider for VecProvider {
-        fn length(&mut self) -> io::Result<u64> {
-            Ok(self.0.len() as u64)
-        }
-        fn is_valid_index(&mut self, index: u64) -> bool {
-            index < self.0.len() as u64
-        }
-        fn read_byte(&mut self, index: u64) -> io::Result<u8> {
-            self.0
-                .get(index as usize)
-                .copied()
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn read_bytes(&mut self, index: u64, length: usize) -> io::Result<Vec<u8>> {
-            let start = index as usize;
-            let end = start + length;
-            self.0
-                .get(start..end)
-                .map(|s| s.to_vec())
-                .ok_or_else(|| io::Error::from(io::ErrorKind::UnexpectedEof))
-        }
-        fn write_byte(&mut self, _index: u64, _value: u8) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-        fn write_bytes(&mut self, _index: u64, _values: &[u8]) -> io::Result<()> {
-            Err(io::Error::new(io::ErrorKind::Unsupported, "read-only"))
-        }
-    }
-
-    struct TestReader {
-        provider: Rc<RefCell<dyn ByteProvider>>,
-        index: u64,
-        little_endian: bool,
-    }
-
-    impl TestReader {
-        fn new(bytes: Vec<u8>) -> Self {
-            Self {
-                provider: Rc::new(RefCell::new(VecProvider(bytes))),
-                index: 0,
-                little_endian: true,
-            }
-        }
-    }
-
-    impl BinaryReader for TestReader {
-        fn length(&self) -> io::Result<u64> {
-            self.provider.borrow_mut().length()
-        }
-
-        fn is_valid_index(&self, index: u64) -> bool {
-            self.provider.borrow_mut().is_valid_index(index)
-        }
-
-        fn get_pointer_index(&self) -> u64 {
-            self.index
-        }
-
-        fn set_pointer_index(&mut self, index: u64) -> u64 {
-            let prev = self.index;
-            self.index = index;
-            prev
-        }
-
-        fn is_little_endian(&self) -> bool {
-            self.little_endian
-        }
-
-        fn set_little_endian(&mut self, is_little_endian: bool) {
-            self.little_endian = is_little_endian;
-        }
-
-        fn read_byte(&self, index: u64) -> io::Result<u8> {
-            self.provider.borrow_mut().read_byte(index)
-        }
-
-        fn read_byte_array(&self, index: u64, n_elements: usize) -> io::Result<Vec<u8>> {
-            self.provider.borrow_mut().read_bytes(index, n_elements)
-        }
-
-        fn get_byte_provider(&self) -> Rc<RefCell<dyn ByteProvider>> {
-            Rc::clone(&self.provider)
-        }
-
-        fn clone_at(&self, new_index: u64) -> Box<dyn BinaryReader> {
-            Box::new(TestReader {
-                provider: Rc::clone(&self.provider),
-                index: new_index,
-                little_endian: self.little_endian,
-            })
-        }
-    }
 
     fn uleb(value: u64) -> Vec<u8> {
         let mut buf = Vec::new();
@@ -338,7 +240,7 @@ mod tests {
         data.extend(terminal);
         data.push(0); // num children
 
-        let mut reader = TestReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let trie = ExportTrie::from_reader(&mut reader).unwrap();
 
         assert_eq!(trie.exports().len(), 1);
@@ -376,7 +278,7 @@ mod tests {
         assert_eq!(child_start as u64, child_offset);
         data.extend(child);
 
-        let mut reader = TestReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let trie = ExportTrie::from_reader(&mut reader).unwrap();
 
         assert_eq!(trie.exports().len(), 1);
@@ -397,7 +299,7 @@ mod tests {
         data.extend(terminal);
         data.push(0); // num children
 
-        let mut reader = TestReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let trie = ExportTrie::from_reader(&mut reader).unwrap();
 
         let export = &trie.exports()[0];
@@ -418,7 +320,7 @@ mod tests {
         data.extend(terminal);
         data.push(0); // num children
 
-        let mut reader = TestReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let trie = ExportTrie::from_reader(&mut reader).unwrap();
 
         let export = &trie.exports()[0];
@@ -436,7 +338,7 @@ mod tests {
         data.push(0); // null terminator
         data.extend(uleb(0)); // child offset points back to root
 
-        let mut reader = TestReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let trie = ExportTrie::from_reader(&mut reader).unwrap();
         assert!(trie.exports().is_empty());
     }
@@ -481,7 +383,7 @@ mod tests {
         data.extend(terminal);
         data.push(0);
 
-        let mut reader = TestReader::new(data);
+        let mut reader = BinaryReader::from_bytes(data, true);
         let trie = ExportTrie::from_reader(&mut reader).unwrap();
 
         let matches = trie.exports_matching(|e| e.address() == 0x42);

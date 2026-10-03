@@ -4,7 +4,7 @@ use crate::program::model::data::array_stringable::get_array_stringable;
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_display_options::DataTypeDisplayOptions;
 use crate::docking::settings::settings::Settings;
-use crate::program::seam_stubs::MemBuffer;
+use crate::program::model::mem::MemBuffer;
 
 /// Label prefix used for array data, standing in for `Array.ARRAY_LABEL_PREFIX`.
 pub const ARRAY_LABEL_PREFIX: &str = "ARRAY";
@@ -83,7 +83,16 @@ pub trait Array: DataType {
         let stringable = get_array_stringable(self.get_data_type());
         let value = stringable.and_then(|s| {
             if s.has_string_value(settings) {
-                s.string_data_instance(buf, settings, length).get_string_value()
+                Some(
+                    crate::program::model::data::string_data_instance::StringDataInstance::new_element(
+                        s.as_ref(),
+                        settings,
+                        buf,
+                        length,
+                        true,
+                    )
+                    .get_string_representation(),
+                )
             } else {
                 None
             }
@@ -166,6 +175,18 @@ mod tests {
         initialized: bool,
     }
     impl MemBuffer for MockMemBuffer {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_address(&self) -> crate::program::model::address::Address {
+            crate::program::model::address::SpecialAddress::no_address()
+        }
         fn is_initialized_memory(&self) -> bool {
             self.initialized
         }

@@ -1,5 +1,5 @@
 use crate::program::model::data::data_type::DataType;
-use crate::program::seam_stubs::PointerTypedefBuilder;
+use crate::program::model::data::pointer_typedef_builder::PointerTypedefBuilder;
 
 /// Pointer representation used when unable to generate a suitable address.
 pub const NAP: &str = "NaP";
@@ -15,7 +15,7 @@ pub trait Pointer: DataType {
     fn new_pointer(&self, data_type: Box<dyn DataType>) -> Box<dyn Pointer>;
 
     /// Construct a pointer-typedef builder based on this pointer.
-    fn typedef_builder(&self) -> Box<dyn PointerTypedefBuilder>;
+    fn typedef_builder(&self) -> PointerTypedefBuilder;
 }
 
 #[cfg(test)]
@@ -24,9 +24,6 @@ mod tests {
 
     struct MockDataType;
     impl DataType for MockDataType {}
-
-    struct MockPointerTypedefBuilder;
-    impl PointerTypedefBuilder for MockPointerTypedefBuilder {}
 
     struct MockPointer {
         pointee: Option<Box<dyn DataType>>,
@@ -48,8 +45,8 @@ mod tests {
             })
         }
 
-        fn typedef_builder(&self) -> Box<dyn PointerTypedefBuilder> {
-            Box::new(MockPointerTypedefBuilder)
+        fn typedef_builder(&self) -> PointerTypedefBuilder {
+            PointerTypedefBuilder::for_pointer(self)
         }
     }
 

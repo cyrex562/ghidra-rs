@@ -1,0 +1,1205 @@
+warning: unused import: `Pattern`
+ --> ghidra-rs/src/decompiler/slghpatexpress/pattern_value.rs:3:37
+  |
+3 | use crate::decompiler::seam_stubs::{Pattern, PatternExpression};
+  |                                     ^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused import: `crate::sleigh::grammar::Location`
+ --> ghidra-rs/src/decompiler/slghpatexpress/pattern_value.rs:6:5
+  |
+6 | use crate::sleigh::grammar::Location;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::any::Any`
+ --> ghidra-rs/src/docking/widgets/filter/matches_exactly_text_filter.rs:1:5
+  |
+1 | use std::any::Any;
+  |     ^^^^^^^^^^^^^
+
+warning: unused import: `ExtendedByteSequence`
+ --> ghidra-rs/src/feature/base/memsearch/bytesequence/byte_array_byte_sequence.rs:1:45
+  |
+1 | use crate::util::bytesearch::{ByteSequence, ExtendedByteSequence};
+  |                                             ^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::io`
+ --> ghidra-rs/src/framework/db/buffers/remote_buffer_file_handle.rs:1:5
+  |
+1 | use std::io;
+  |     ^^^^^^^
+
+warning: unused import: `std::io`
+ --> ghidra-rs/src/framework/db/buffers/remote_managed_buffer_file_handle.rs:1:5
+  |
+1 | use std::io;
+  |     ^^^^^^^
+
+warning: unused import: `Path`
+  --> ghidra-rs/src/framework/plugintool/auto_config_state.rs:21:17
+   |
+21 | use std::path::{Path, PathBuf};
+   |                 ^^^^
+
+warning: unused import: `std::cell::RefCell`
+ --> ghidra-rs/src/generic/jar/jar_entry_root_node.rs:1:5
+  |
+1 | use std::cell::RefCell;
+  |     ^^^^^^^^^^^^^^^^^^
+
+warning: unnecessary parentheses around type
+  --> ghidra-rs/src/generic/test/rule/ignore_unfinished_statement.rs:52:52
+   |
+52 |         self.cause.as_ref().map(|e| e.as_ref() as &(dyn Error))
+   |                                                    ^         ^
+   |
+   = note: `#[warn(unused_parens)]` (part of `#[warn(unused)]`) on by default
+help: remove these parentheses
+   |
+52 -         self.cause.as_ref().map(|e| e.as_ref() as &(dyn Error))
+52 +         self.cause.as_ref().map(|e| e.as_ref() as &dyn Error )
+   |
+
+warning: unused import: `AttributedVertex`
+ --> ghidra-rs/src/graph/visualization/jgt_tidier_tree_layout_algorithm.rs:3:45
+  |
+3 | use crate::service::graph::{AttributedEdge, AttributedVertex};
+  |                                             ^^^^^^^^^^^^^^^^
+
+warning: unused import: `super::jna::console_api_native as cna`
+  --> ghidra-rs/src/pty/windows/pseudo_console_handle.rs:10:5
+   |
+10 | use super::jna::console_api_native as cna;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `COMMENT_COL` and `NAME_COL`
+  --> ghidra-rs/src/program/database/function/function_tag_manager_db.rs:42:64
+   |
+42 | use crate::program::database::function::function_tag_adapter::{COMMENT_COL, NAME_COL};
+   |                                                                ^^^^^^^^^^^  ^^^^^^^^
+
+warning: unnecessary parentheses around type
+  --> ghidra-rs/src/program/disassemble/disassembler_message_listener.rs:33:21
+   |
+33 | pub static IGNORE: &(dyn DisassemblerMessageListener) = &Ignore;
+   |                     ^                               ^
+   |
+help: remove these parentheses
+   |
+33 - pub static IGNORE: &(dyn DisassemblerMessageListener) = &Ignore;
+33 + pub static IGNORE: &dyn DisassemblerMessageListener  = &Ignore;
+   |
+
+warning: unnecessary parentheses around type
+  --> ghidra-rs/src/program/disassemble/disassembler_message_listener.rs:36:22
+   |
+36 | pub static CONSOLE: &(dyn DisassemblerMessageListener) = &Console;
+   |                      ^                               ^
+   |
+help: remove these parentheses
+   |
+36 - pub static CONSOLE: &(dyn DisassemblerMessageListener) = &Console;
+36 + pub static CONSOLE: &dyn DisassemblerMessageListener  = &Console;
+   |
+
+warning: unused import: `crate::program::model::data::data_type_with_charset::DataTypeEncodeError`
+  --> ghidra-rs/src/program/model/data/integer_data_type_test.rs:2:5
+   |
+ 2 | use crate::program::model::data::data_type_with_charset::DataTypeEncodeError;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+help: if this is a test module, consider adding a `#[cfg(test)]` to the containing module
+  --> ghidra-rs/src/program/model/data/mod.rs:69:1
+   |
+69 | pub mod integer_data_type_test;
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::program::model::data::composite::Composite`
+ --> ghidra-rs/src/program/model/data/structure_internal.rs:1:5
+  |
+1 | use crate::program::model::data::composite::Composite;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::program::model::data::composite::Composite`
+ --> ghidra-rs/src/program/model/data/union_internal.rs:1:5
+  |
+1 | use crate::program::model::data::composite::Composite;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::program::model::data::data_type::DataType`
+ --> ghidra-rs/src/program/model/data/union_internal.rs:2:5
+  |
+2 | use crate::program::model::data::data_type::DataType;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::program::model::data::data_type_component::DataTypeComponent`
+ --> ghidra-rs/src/program/model/data/union_internal.rs:3:5
+  |
+3 | use crate::program::model::data::data_type_component::DataTypeComponent;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::program::model::data::data_type_manager::DataTypeManager`
+ --> ghidra-rs/src/program/model/data/union_internal.rs:4:5
+  |
+4 | use crate::program::model::data::data_type_manager::DataTypeManager;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Deserialize`
+ --> ghidra-rs/src/program/model/data/isf/isf_enum.rs:3:24
+  |
+3 | use serde::{Serialize, Deserialize};
+  |                        ^^^^^^^^^^^
+
+warning: unused import: `crate::program::model::listing::AutoParameterType`
+  --> ghidra-rs/src/program/model/lang/dynamic_variable_storage.rs:30:5
+   |
+30 | use crate::program::model::listing::AutoParameterType;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::program::model::pcode::Varnode`
+  --> ghidra-rs/src/program/model/pcode/high_constant.rs:33:5
+   |
+33 | use crate::program::model::pcode::Varnode;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused imports: `Any` and `TypeId`
+ --> ghidra-rs/src/program/util/void_property_map.rs:1:16
+  |
+1 | use std::any::{Any, TypeId};
+  |                ^^^  ^^^^^^
+
+warning: unused import: `std::sync::Arc`
+  --> ghidra-rs/src/server/remote/ghidra_ssl_server_socket.rs:27:5
+   |
+27 | use std::sync::Arc;
+   |     ^^^^^^^^^^^^^^
+
+warning: unused import: `authentication_module::AuthenticationModule`
+ --> ghidra-rs/src/server/security/mod.rs:4:16
+  |
+4 | pub(crate) use authentication_module::AuthenticationModule;
+  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `token_generator::TokenGenerator`
+ --> ghidra-rs/src/server/security/mod.rs:5:16
+  |
+5 | pub(crate) use token_generator::TokenGenerator;
+  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::util::task::TaskMonitor`
+ --> ghidra-rs/src/sarif/export/abstract_ext_writer.rs:3:5
+  |
+3 | use crate::util::task::TaskMonitor;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::util::exception::CancelledException`
+ --> ghidra-rs/src/sarif/export/abstract_ext_writer.rs:4:5
+  |
+4 | use crate::util::exception::CancelledException;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `MemoryAccessException`
+ --> ghidra-rs/src/util/search/trie/byte_trie_ifc.rs:2:42
+  |
+2 | use crate::program::model::mem::{Memory, MemoryAccessException};
+  |                                          ^^^^^^^^^^^^^^^^^^^^^
+
+warning: use of deprecated trait `app::emulator::emulator_configuration::EmulatorConfiguration`: for removal
+ --> ghidra-rs/src/app/emulator/mod.rs:5:33
+  |
+5 | pub use emulator_configuration::EmulatorConfiguration;
+  |                                 ^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(deprecated)]` on by default
+
+warning: use of deprecated trait `app::emulator::memory::emulator_load_data::EmulatorLoadData`: for removal
+ --> ghidra-rs/src/app/emulator/emulator_configuration.rs:1:35
+  |
+1 | use crate::app::emulator::memory::EmulatorLoadData;
+  |                                   ^^^^^^^^^^^^^^^^
+
+warning: use of deprecated trait `pcode::memstate::memory_fault_handler::MemoryFaultHandler`: scheduled for removal in a future release
+ --> ghidra-rs/src/app/emulator/emulator_configuration.rs:2:29
+  |
+2 | use crate::pcode::memstate::MemoryFaultHandler;
+  |                             ^^^^^^^^^^^^^^^^^^
+
+warning: use of deprecated trait `app::emulator::memory::emulator_load_data::EmulatorLoadData`: for removal
+  --> ghidra-rs/src/app/emulator/emulator_configuration.rs:21:40
+   |
+21 |     fn get_load_data(&self) -> Box<dyn EmulatorLoadData>;
+   |                                        ^^^^^^^^^^^^^^^^
+
+warning: use of deprecated trait `pcode::memstate::memory_fault_handler::MemoryFaultHandler`: scheduled for removal in a future release
+  --> ghidra-rs/src/app/emulator/emulator_configuration.rs:24:51
+   |
+24 |     fn get_memory_fault_handler(&self) -> Box<dyn MemoryFaultHandler>;
+   |                                                   ^^^^^^^^^^^^^^^^^^
+
+warning: use of deprecated struct `app::emulator::memory::composite_load_image::CompositeLoadImage`: for removal
+ --> ghidra-rs/src/app/emulator/memory/mod.rs:5:31
+  |
+5 | pub use composite_load_image::CompositeLoadImage;
+  |                               ^^^^^^^^^^^^^^^^^^
+
+warning: use of deprecated trait `app::emulator::memory::emulator_load_data::EmulatorLoadData`: for removal
+ --> ghidra-rs/src/app/emulator/memory/mod.rs:6:29
+  |
+6 | pub use emulator_load_data::EmulatorLoadData;
+  |                             ^^^^^^^^^^^^^^^^
+
+warning: use of deprecated trait `app::emulator::memory::memory_load_image::MemoryLoadImage`: for removal
+ --> ghidra-rs/src/app/emulator/memory/mod.rs:7:28
+  |
+7 | pub use memory_load_image::MemoryLoadImage;
+  |                            ^^^^^^^^^^^^^^^
+
+warning: use of deprecated trait `app::emulator::memory::memory_load_image::MemoryLoadImage`: for removal
+ --> ghidra-rs/src/app/emulator/memory/composite_load_image.rs:1:35
+  |
+1 | use crate::app::emulator::memory::MemoryLoadImage;
+  |                                   ^^^^^^^^^^^^^^^
+
+warning: use of deprecated trait `pcode::load_image::LoadImage`: for removal
+ --> ghidra-rs/src/app/emulator/memory/composite_load_image.rs:2:31
+  |
+2 | use crate::pcode::load_image::LoadImage;
+  |                               ^^^^^^^^^
+
+warning: use of deprecated struct `pcode::memstate::memory_page::MemoryPage`: scheduled for removal in a future release
+ --> ghidra-rs/src/app/emulator/memory/composite_load_image.rs:3:42
+  |
+3 | use crate::pcode::memstate::memory_page::MemoryPage;
+  |                                          ^^^^^^^^^^
+
+warning: use of deprecated trait `app::emulator::memory::memory_load_image::MemoryLoadImage`: for removal
+  --> ghidra-rs/src/app/emulator/memory/composite_load_image.rs:20:28
+   |
+20 |     providers: Vec<Box<dyn MemoryLoadImage>>,
+   |                            ^^^^^^^^^^^^^^^
+
+warning: use of deprecated trait `app::emulator::memory::memory_load_image::MemoryLoadImage`: for removal
+ --> ghidra-rs/src/app/emulator/memory/emulator_load_data.rs:1:35
+  |
+1 | use crate::app::emulator::memory::MemoryLoadImage;
+  |                                   ^^^^^^^^^^^^^^^
+
+warning: use of deprecated trait `app::emulator::memory::memory_load_image::MemoryLoadImage`: for removal
+  --> ghidra-rs/src/app/emulator/memory/emulator_load_data.rs:14:48
+   |
+14 |     fn get_memory_load_image(&self) -> Box<dyn MemoryLoadImage>;
+   |                                                ^^^^^^^^^^^^^^^
+
+warning: use of deprecated trait `pcode::load_image::LoadImage`: for removal
+ --> ghidra-rs/src/app/emulator/memory/memory_load_image.rs:1:31
+  |
+1 | use crate::pcode::load_image::LoadImage;
+  |                               ^^^^^^^^^
+
+warning: use of deprecated trait `pcode::load_image::LoadImage`: for removal
+ --> ghidra-rs/src/app/emulator/memory/memory_load_image.rs:8:28
+  |
+8 | pub trait MemoryLoadImage: LoadImage {
+  |                            ^^^^^^^^^
+
+warning: use of deprecated trait `app::services::memory_search_service::MemorySearchService`: not a generally useful service, may go away at some point
+  --> ghidra-rs/src/app/services/mod.rs:82:32
+   |
+82 | pub use memory_search_service::MemorySearchService;
+   |                                ^^^^^^^^^^^^^^^^^^^
+
+warning: use of deprecated trait `pcode::load_image::LoadImage`: for removal
+  --> ghidra-rs/src/pcode/mod.rs:13:22
+   |
+13 | pub use load_image::{LoadImage, LoadImageFunc};
+   |                      ^^^^^^^^^
+
+warning: use of deprecated struct `pcode::load_image::LoadImageFunc`: for removal
+  --> ghidra-rs/src/pcode/mod.rs:13:33
+   |
+13 | pub use load_image::{LoadImage, LoadImageFunc};
+   |                                 ^^^^^^^^^^^^^
+
+warning: use of deprecated struct `pcode::emulate::instruction_decode_exception::InstructionDecodeException`: scheduled for removal in a future release
+ --> ghidra-rs/src/pcode/emulate/mod.rs:5:39
+  |
+5 | pub use instruction_decode_exception::InstructionDecodeException;
+  |                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: use of deprecated struct `pcode::emulate::unimplemented_instruction_exception::UnimplementedInstructionException`: scheduled for removal in a future release
+ --> ghidra-rs/src/pcode/emulate/mod.rs:6:46
+  |
+6 | pub use unimplemented_instruction_exception::UnimplementedInstructionException;
+  |                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: use of deprecated struct `pcode::emulate::instruction_decode_exception::InstructionDecodeException`: scheduled for removal in a future release
+  --> ghidra-rs/src/pcode/emulate/instruction_decode_exception.rs:18:6
+   |
+18 | impl InstructionDecodeException {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: use of deprecated struct `pcode::emulate::instruction_decode_exception::InstructionDecodeException`: scheduled for removal in a future release
+  --> ghidra-rs/src/pcode/emulate/instruction_decode_exception.rs:37:23
+   |
+37 | impl fmt::Display for InstructionDecodeException {
+   |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: use of deprecated struct `pcode::emulate::instruction_decode_exception::InstructionDecodeException`: scheduled for removal in a future release
+  --> ghidra-rs/src/pcode/emulate/instruction_decode_exception.rs:43:28
+   |
+43 | impl std::error::Error for InstructionDecodeException {}
+   |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: use of deprecated struct `pcode::emulate::unimplemented_instruction_exception::UnimplementedInstructionException`: scheduled for removal in a future release
+  --> ghidra-rs/src/pcode/emulate/unimplemented_instruction_exception.rs:18:6
+   |
+18 | impl UnimplementedInstructionException {
+   |      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: use of deprecated struct `pcode::emulate::unimplemented_instruction_exception::UnimplementedInstructionException`: scheduled for removal in a future release
+  --> ghidra-rs/src/pcode/emulate/unimplemented_instruction_exception.rs:36:23
+   |
+36 | impl fmt::Display for UnimplementedInstructionException {
+   |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: use of deprecated struct `pcode::emulate::unimplemented_instruction_exception::UnimplementedInstructionException`: scheduled for removal in a future release
+  --> ghidra-rs/src/pcode/emulate/unimplemented_instruction_exception.rs:42:28
+   |
+42 | impl std::error::Error for UnimplementedInstructionException {}
+   |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: use of deprecated trait `pcode::memstate::memory_bank::MemoryBankImpl`: scheduled for removal in a future release
+ --> ghidra-rs/src/pcode/memstate/mod.rs:5:59
+  |
+5 | pub use memory_bank::{construct_value, deconstruct_value, MemoryBankImpl, MemoryBankState};
+  |                                                           ^^^^^^^^^^^^^^
+
+warning: use of deprecated struct `pcode::memstate::memory_bank::MemoryBankState`: scheduled for removal in a future release
+ --> ghidra-rs/src/pcode/memstate/mod.rs:5:75
+  |
+5 | pub use memory_bank::{construct_value, deconstruct_value, MemoryBankImpl, MemoryBankState};
+  |                                                                           ^^^^^^^^^^^^^^^
+
+warning: use of deprecated trait `pcode::memstate::memory_fault_handler::MemoryFaultHandler`: scheduled for removal in a future release
+ --> ghidra-rs/src/pcode/memstate/mod.rs:6:31
+  |
+6 | pub use memory_fault_handler::MemoryFaultHandler;
+  |                               ^^^^^^^^^^^^^^^^^^
+
+warning: use of deprecated struct `pcode::memstate::memory_page::MemoryPage`: scheduled for removal in a future release
+ --> ghidra-rs/src/pcode/memstate/memory_bank.rs:5:25
+  |
+5 | use super::memory_page::MemoryPage;
+  |                         ^^^^^^^^^^
+
+warning: use of deprecated trait `pcode::memstate::memory_fault_handler::MemoryFaultHandler`: scheduled for removal in a future release
+ --> ghidra-rs/src/pcode/memstate/memory_bank.rs:6:12
+  |
+6 | use super::MemoryFaultHandler;
+  |            ^^^^^^^^^^^^^^^^^^
+
+warning: use of deprecated trait `util::graph::keyed_object::KeyedObject`: Deprecated since Ghidra 10.2
+ --> ghidra-rs/src/util/graph/attributes/attribute_manager.rs:1:39
+  |
+1 | use crate::util::graph::keyed_object::KeyedObject;
+  |                                       ^^^^^^^^^^^
+
+warning: use of deprecated trait `util::graph::keyed_object::KeyedObject`: Deprecated since Ghidra 10.2
+  --> ghidra-rs/src/util/graph/attributes/attribute_manager.rs:22:31
+   |
+22 | pub trait AttributeManager<T: KeyedObject> {
+   |                               ^^^^^^^^^^^
+
+warning: use of deprecated trait `util::graph::directed_graph::DirectedGraph`: Deprecated since Ghidra 10.2; use GraphFactory
+ --> ghidra-rs/src/util/graph/depth_first_search.rs:3:41
+  |
+3 | use crate::util::graph::directed_graph::DirectedGraph;
+  |                                         ^^^^^^^^^^^^^
+
+warning: use of deprecated trait `util::graph::edge::Edge`: Deprecated since Ghidra 10.2
+ --> ghidra-rs/src/util/graph/depth_first_search.rs:4:31
+  |
+4 | use crate::util::graph::edge::Edge;
+  |                               ^^^^
+
+warning: use of deprecated trait `util::graph::vertex::Vertex`: Deprecated since Ghidra 10.2
+ --> ghidra-rs/src/util/graph/depth_first_search.rs:5:33
+  |
+5 | use crate::util::graph::vertex::Vertex;
+  |                                 ^^^^^^
+
+warning: use of deprecated trait `util::graph::attributes::attribute_manager::AttributeManager`: Deprecated since Ghidra 10.2
+ --> ghidra-rs/src/util/graph/directed_graph.rs:5:37
+  |
+5 | use crate::util::graph::attributes::AttributeManager;
+  |                                     ^^^^^^^^^^^^^^^^
+
+warning: use of deprecated trait `util::graph::edge::Edge`: Deprecated since Ghidra 10.2
+ --> ghidra-rs/src/util/graph/directed_graph.rs:6:31
+  |
+6 | use crate::util::graph::edge::Edge;
+  |                               ^^^^
+
+warning: use of deprecated trait `util::graph::edge_set::EdgeSet`: Deprecated since Ghidra 10.2
+ --> ghidra-rs/src/util/graph/directed_graph.rs:7:35
+  |
+7 | use crate::util::graph::edge_set::EdgeSet;
+  |                                   ^^^^^^^
+
+warning: use of deprecated trait `util::graph::graph_iterator::GraphIterator`: Deprecated since Ghidra 10.2
+ --> ghidra-rs/src/util/graph/directed_graph.rs:8:41
+  |
+8 | use crate::util::graph::graph_iterator::GraphIterator;
+  |                                         ^^^^^^^^^^^^^
+
+warning: use of deprecated trait `util::graph::vertex::Vertex`: Deprecated since Ghidra 10.2
+ --> ghidra-rs/src/util/graph/directed_graph.rs:9:33
+  |
+9 | use crate::util::graph::vertex::Vertex;
+  |                                 ^^^^^^
+
+warning: use of deprecated trait `util::graph::keyed_object::KeyedObject`: Deprecated since Ghidra 10.2
+ --> ghidra-rs/src/util/graph/edge.rs:4:39
+  |
+4 | use crate::util::graph::keyed_object::KeyedObject;
+  |                                       ^^^^^^^^^^^
+
+warning: use of deprecated trait `util::graph::vertex::Vertex`: Deprecated since Ghidra 10.2
+ --> ghidra-rs/src/util/graph/edge.rs:5:33
+  |
+5 | use crate::util::graph::vertex::Vertex;
+  |                                 ^^^^^^
+
+warning: use of deprecated trait `util::graph::keyed_object::KeyedObject`: Deprecated since Ghidra 10.2
+  --> ghidra-rs/src/util/graph/edge.rs:17:17
+   |
+17 | pub trait Edge: KeyedObject {
+   |                 ^^^^^^^^^^^
+
+warning: use of deprecated trait `util::graph::vertex::Vertex`: Deprecated since Ghidra 10.2
+  --> ghidra-rs/src/util/graph/edge.rs:19:28
+   |
+19 |     fn from(&self) -> &dyn Vertex;
+   |                            ^^^^^^
+
+warning: use of deprecated trait `util::graph::vertex::Vertex`: Deprecated since Ghidra 10.2
+  --> ghidra-rs/src/util/graph/edge.rs:22:26
+   |
+22 |     fn to(&self) -> &dyn Vertex;
+   |                          ^^^^^^
+
+warning: use of deprecated trait `util::graph::edge::Edge`: Deprecated since Ghidra 10.2
+ --> ghidra-rs/src/util/graph/edge_set.rs:1:31
+  |
+1 | use crate::util::graph::edge::Edge;
+  |                               ^^^^
+
+warning: use of deprecated trait `util::graph::key_indexable_set::KeyIndexableSet`: Deprecated since Ghidra 10.2
+ --> ghidra-rs/src/util/graph/edge_set.rs:2:44
+  |
+2 | use crate::util::graph::key_indexable_set::KeyIndexableSet;
+  |                                            ^^^^^^^^^^^^^^^
+
+warning: use of deprecated trait `util::graph::edge::Edge`: Deprecated since Ghidra 10.2
+  --> ghidra-rs/src/util/graph/edge_set.rs:18:22
+   |
+18 | pub trait EdgeSet<E: Edge>: KeyIndexableSet<E> {
+   |                      ^^^^
+
+warning: use of deprecated trait `util::graph::key_indexable_set::KeyIndexableSet`: Deprecated since Ghidra 10.2
+  --> ghidra-rs/src/util/graph/edge_set.rs:18:29
+   |
+18 | pub trait EdgeSet<E: Edge>: KeyIndexableSet<E> {
+   |                             ^^^^^^^^^^^^^^^
+
+warning: use of deprecated trait `util::graph::keyed_object::KeyedObject`: Deprecated since Ghidra 10.2
+ --> ghidra-rs/src/util/graph/graph_iterator.rs:3:39
+  |
+3 | use crate::util::graph::keyed_object::KeyedObject;
+  |                                       ^^^^^^^^^^^
+
+warning: use of deprecated trait `util::graph::keyed_object::KeyedObject`: Deprecated since Ghidra 10.2
+  --> ghidra-rs/src/util/graph/graph_iterator.rs:18:28
+   |
+18 | pub trait GraphIterator<T: KeyedObject> {
+   |                            ^^^^^^^^^^^
+
+warning: use of deprecated trait `util::graph::keyed_object::KeyedObject`: Deprecated since Ghidra 10.2
+ --> ghidra-rs/src/util/graph/key_indexable_set.rs:1:39
+  |
+1 | use crate::util::graph::keyed_object::KeyedObject;
+  |                                       ^^^^^^^^^^^
+
+warning: use of deprecated trait `util::graph::keyed_object::KeyedObject`: Deprecated since Ghidra 10.2
+  --> ghidra-rs/src/util/graph/key_indexable_set.rs:11:30
+   |
+11 | pub trait KeyIndexableSet<T: KeyedObject> {
+   |                              ^^^^^^^^^^^
+
+warning: use of deprecated trait `util::graph::keyed_object::KeyedObject`: Deprecated since Ghidra 10.2
+ --> ghidra-rs/src/util/graph/vertex.rs:5:39
+  |
+5 | use crate::util::graph::keyed_object::KeyedObject;
+  |                                       ^^^^^^^^^^^
+
+warning: use of deprecated trait `util::graph::keyed_object::KeyedObject`: Deprecated since Ghidra 10.2
+  --> ghidra-rs/src/util/graph/vertex.rs:21:19
+   |
+21 | pub trait Vertex: KeyedObject {
+   |                   ^^^^^^^^^^^
+
+warning: use of deprecated trait `util::graph::key_indexable_set::KeyIndexableSet`: Deprecated since Ghidra 10.2
+ --> ghidra-rs/src/util/seam_stubs.rs:7:38
+  |
+7 | use super::graph::key_indexable_set::KeyIndexableSet;
+  |                                      ^^^^^^^^^^^^^^^
+
+warning: use of deprecated trait `util::graph::keyed_object::KeyedObject`: Deprecated since Ghidra 10.2
+ --> ghidra-rs/src/util/seam_stubs.rs:8:33
+  |
+8 | use super::graph::keyed_object::KeyedObject;
+  |                                 ^^^^^^^^^^^
+
+warning: use of deprecated trait `util::graph::vertex::Vertex`: Deprecated since Ghidra 10.2
+ --> ghidra-rs/src/util/seam_stubs.rs:9:27
+  |
+9 | use super::graph::vertex::Vertex;
+  |                           ^^^^^^
+
+warning: use of deprecated trait `util::graph::keyed_object::KeyedObject`: Deprecated since Ghidra 10.2
+  --> ghidra-rs/src/util/seam_stubs.rs:68:28
+   |
+68 | pub trait AttributeLike<T: KeyedObject> {
+   |                            ^^^^^^^^^^^
+
+warning: use of deprecated method `zip::DateTime::to_time`: use `OffsetDateTime::try_from()` instead
+   --> ghidra-rs/src/generic/jar/jar_entry_root_node.rs:155:35
+    |
+155 |                 .and_then(|dt| dt.to_time().ok())
+    |                                   ^^^^^^^
+
+warning: use of deprecated field `pcode::emulate::instruction_decode_exception::InstructionDecodeException::message`: scheduled for removal in a future release
+  --> ghidra-rs/src/pcode/emulate/instruction_decode_exception.rs:23:16
+   |
+23 |         Self { message, pc }
+   |                ^^^^^^^
+
+warning: use of deprecated field `pcode::emulate::instruction_decode_exception::InstructionDecodeException::pc`: scheduled for removal in a future release
+  --> ghidra-rs/src/pcode/emulate/instruction_decode_exception.rs:23:25
+   |
+23 |         Self { message, pc }
+   |                         ^^
+
+warning: use of deprecated field `pcode::emulate::instruction_decode_exception::InstructionDecodeException::message`: scheduled for removal in a future release
+  --> ghidra-rs/src/pcode/emulate/instruction_decode_exception.rs:28:10
+   |
+28 |         &self.message
+   |          ^^^^^^^^^^^^
+
+warning: use of deprecated field `pcode::emulate::instruction_decode_exception::InstructionDecodeException::pc`: scheduled for removal in a future release
+  --> ghidra-rs/src/pcode/emulate/instruction_decode_exception.rs:33:10
+   |
+33 |         &self.pc
+   |          ^^^^^^^
+
+warning: use of deprecated field `pcode::emulate::instruction_decode_exception::InstructionDecodeException::message`: scheduled for removal in a future release
+  --> ghidra-rs/src/pcode/emulate/instruction_decode_exception.rs:39:25
+   |
+39 |         write!(f, "{}", self.message)
+   |                         ^^^^^^^^^^^^
+
+warning: use of deprecated field `pcode::emulate::unimplemented_instruction_exception::UnimplementedInstructionException::message`: scheduled for removal in a future release
+  --> ghidra-rs/src/pcode/emulate/unimplemented_instruction_exception.rs:22:16
+   |
+22 |         Self { message, addr }
+   |                ^^^^^^^
+
+warning: use of deprecated field `pcode::emulate::unimplemented_instruction_exception::UnimplementedInstructionException::addr`: scheduled for removal in a future release
+  --> ghidra-rs/src/pcode/emulate/unimplemented_instruction_exception.rs:22:25
+   |
+22 |         Self { message, addr }
+   |                         ^^^^
+
+warning: use of deprecated field `pcode::emulate::unimplemented_instruction_exception::UnimplementedInstructionException::message`: scheduled for removal in a future release
+  --> ghidra-rs/src/pcode/emulate/unimplemented_instruction_exception.rs:27:10
+   |
+27 |         &self.message
+   |          ^^^^^^^^^^^^
+
+warning: use of deprecated field `pcode::emulate::unimplemented_instruction_exception::UnimplementedInstructionException::addr`: scheduled for removal in a future release
+  --> ghidra-rs/src/pcode/emulate/unimplemented_instruction_exception.rs:32:10
+   |
+32 |         &self.addr
+   |          ^^^^^^^^^
+
+warning: use of deprecated field `pcode::emulate::unimplemented_instruction_exception::UnimplementedInstructionException::message`: scheduled for removal in a future release
+  --> ghidra-rs/src/pcode/emulate/unimplemented_instruction_exception.rs:38:25
+   |
+38 |         write!(f, "{}", self.message)
+   |                         ^^^^^^^^^^^^
+
+error[E0034]: multiple applicable items in scope
+   --> ghidra-rs/src/program/model/data/data_utilities.rs:414:26
+    |
+414 |             Some(d) if d.get_address() > *max_addr => None,
+    |                          ^^^^^^^^^^^ multiple `get_address` found
+    |
+note: candidate #1 is defined in the trait `CodeUnit`
+   --> ghidra-rs/src/program/model/listing/code_unit.rs:260:5
+    |
+260 |     fn get_address(&self, op_index: i32) -> Option<Address>;
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+note: candidate #2 is defined in the trait `program::seam_stubs::MemBuffer`
+   --> ghidra-rs/src/program/seam_stubs.rs:682:5
+    |
+682 |     fn get_address(&self) -> Address;
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+help: disambiguate the method for candidate #1
+    |
+414 -             Some(d) if d.get_address() > *max_addr => None,
+414 +             Some(d) if CodeUnit::get_address(&d) > *max_addr => None,
+    |
+help: disambiguate the method for candidate #2
+    |
+414 -             Some(d) if d.get_address() > *max_addr => None,
+414 +             Some(d) if program::seam_stubs::MemBuffer::get_address(&d) > *max_addr => None,
+    |
+
+error[E0599]: the method `find` exists for struct `Box<(dyn program::seam_stubs::DataIterator + 'static)>`, but its trait bounds were not satisfied
+    --> ghidra-rs/src/program/model/data/data_utilities.rs:439:14
+     |
+ 436 |           let data = program
+     |  ____________________-
+ 437 | |             .get_listing()?
+ 438 | |             .get_defined_data_in(&addr_set, true)
+ 439 | |             .find(|d| !ignore_undefined_data || !is_undefined_ref(d.get_data_type().as_ref()));
+     | |             -^^^^ method cannot be called due to unsatisfied trait bounds
+     | |_____________|
+     |
+     |
+    ::: ghidra-rs/src/program/seam_stubs.rs:1180:1
+     |
+1180 |   pub trait DataIterator {}
+     |   ---------------------- doesn't satisfy `_: Iterator`
+     |
+    ::: /home/cyrex/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/boxed.rs:234:1
+     |
+ 234 | / pub struct Box<
+ 235 | |     T: ?Sized,
+ 236 | |     #[unstable(feature = "allocator_api", issue = "32838")] A: Allocator = Global,
+ 237 | | >(Unique<T>, A);
+     | |_- doesn't satisfy `_: Iterator`
+     |
+     = note: the following trait bounds were not satisfied:
+             `(dyn program::seam_stubs::DataIterator + 'static): Iterator`
+             which is required by `Box<(dyn program::seam_stubs::DataIterator + 'static)>: Iterator`
+     = help: items from traits can only be used if the trait is implemented and in scope
+     = note: the following traits define an item `find`, perhaps you need to implement one of them:
+             candidate #1: `ByteTrieIfc`
+             candidate #2: `ParallelIterator`
+             candidate #3: `fallible_iterator::FallibleIterator`
+             candidate #4: `gimli::read::reader::Reader`
+             candidate #5: `gimli::read::reader::Reader`
+             candidate #6: `zip::read::magic_finder::FinderDirection`
+     = note: the trait `Iterator` defines an item `find`, but is explicitly unimplemented
+
+error[E0599]: the method `next` exists for struct `Box<(dyn program::seam_stubs::InstructionIterator + 'static)>`, but its trait bounds were not satisfied
+    --> ghidra-rs/src/program/model/data/data_utilities.rs:444:14
+     |
+ 441 |           let instruction = program
+     |  ___________________________-
+ 442 | |             .get_listing()?
+ 443 | |             .get_instructions_in(&addr_set, true)
+ 444 | |             .next();
+     | |_____________-^^^^
+     |
+    ::: ghidra-rs/src/program/seam_stubs.rs:1169:1
+     |
+1169 |   pub trait InstructionIterator {
+     |   ----------------------------- doesn't satisfy `_: Iterator`
+     |
+    ::: /home/cyrex/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/alloc/src/boxed.rs:234:1
+     |
+ 234 | / pub struct Box<
+ 235 | |     T: ?Sized,
+ 236 | |     #[unstable(feature = "allocator_api", issue = "32838")] A: Allocator = Global,
+ 237 | | >(Unique<T>, A);
+     | |_- doesn't satisfy `_: Iterator`
+     |
+     = note: the following trait bounds were not satisfied:
+             `(dyn program::seam_stubs::InstructionIterator + 'static): Iterator`
+             which is required by `Box<(dyn program::seam_stubs::InstructionIterator + 'static)>: Iterator`
+     = help: items from traits can only be used if the trait is implemented and in scope
+     = note: the following traits define an item `next`, perhaps you need to implement one of them:
+             candidate #1: `AddressKeyIteratorLike`
+             candidate #2: `CodeBlockIterator`
+             candidate #3: `CodeBlockReferenceIterator`
+             candidate #4: `DBFieldIterator`
+             candidate #5: `DBLongIterator`
+             candidate #6: `GraphIterator`
+             candidate #7: `GraphIteratorLike`
+             candidate #8: `IndexRangeIterator`
+             candidate #9: `ListIterator`
+             candidate #10: `LongIterator`
+             candidate #11: `ParsingIterator`
+             candidate #12: `RecordIterator`
+             candidate #13: `RemovableIterator`
+             candidate #14: `SearchAddressIterator`
+             candidate #15: `XmlPullParser`
+             candidate #16: `cranelift_codegen::isa::aarch64::lower::isle::generated_code::ContextIter`
+             candidate #17: `cranelift_codegen::isa::riscv64::lower::isle::generated_code::ContextIter`
+             candidate #18: `cranelift_codegen::isa::x64::lower::isle::generated_code::ContextIter`
+             candidate #19: `cranelift_codegen::opts::generated_code::ContextIter`
+             candidate #20: `fallible_iterator::FallibleIterator`
+             candidate #21: `object::read::elf::relocation::Relr`
+             candidate #22: `serde_json::de::Read`
+     = note: the trait `Iterator` defines an item `next`, but is explicitly unimplemented
+
+warning: use of deprecated method `util::graph::keyed_object::KeyedObject::key`: Deprecated since Ghidra 10.2
+  --> ghidra-rs/src/util/graph/vertex.rs:31:49
+   |
+31 |             None => format!("Vertex_{:x}", self.key() as u64),
+   |                                                 ^^^
+
+warning: unused import: `EquateTable`
+ --> ghidra-rs/src/app/cmd/equate/clear_equate_cmd.rs:4:45
+  |
+4 | use crate::program::model::symbol::{Equate, EquateTable};
+  |                                             ^^^^^^^^^^^
+
+warning: unused import: `AddressSetView`
+  --> ghidra-rs/src/program/model/data/data_utilities.rs:82:59
+   |
+82 | use crate::program::model::address::{Address, AddressSet, AddressSetView};
+   |                                                           ^^^^^^^^^^^^^^
+
+warning: unused import: `Library`
+  --> ghidra-rs/src/program/database/external/external_location_db.rs:50:48
+   |
+50 | use crate::program::model::listing::{Function, Library};
+   |                                                ^^^^^^^
+
+warning: unused import: `crate::program::model::symbol::SymbolTable`
+ --> ghidra-rs/src/app/cmd/label/external_entry_cmd.rs:4:5
+  |
+4 | use crate::program::model::symbol::SymbolTable;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::program::model::symbol::SymbolTable`
+ --> ghidra-rs/src/app/cmd/label/pin_symbol_cmd.rs:4:5
+  |
+4 | use crate::program::model::symbol::SymbolTable;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::program::model::pcode::high_function::HighFunction`
+  --> ghidra-rs/src/program/model/pcode/high_constant.rs:36:5
+   |
+36 | use crate::program::model::pcode::high_function::HighFunction;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::program::model::data::data_type::DataType`
+  --> ghidra-rs/src/program/model/pcode/high_constant.rs:29:5
+   |
+29 | use crate::program::model::data::data_type::DataType;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::program::model::data::data_type_manager::DataTypeManager`
+ --> ghidra-rs/src/program/model/data/data_type_archive_id_dumper.rs:4:5
+  |
+4 | use crate::program::model::data::data_type_manager::DataTypeManager;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::program::model::listing::group::Group`
+ --> ghidra-rs/src/sarif/export/trees/ext_module.rs:2:5
+  |
+2 | use crate::program::model::listing::group::Group;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `super::nodes::BTreeNode`
+ --> ghidra-rs/src/framework/db/var_key_interior_node.rs:5:5
+  |
+5 | use super::nodes::BTreeNode;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::program::model::listing::code_unit::CodeUnit`
+ --> ghidra-rs/src/program/model/listing/program_fragment.rs:2:5
+  |
+2 | use crate::program::model::listing::code_unit::CodeUnit;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::program::model::block::code_block_reference::CodeBlockReference`
+ --> ghidra-rs/src/program/model/block/subroutine_dest_reference_iterator.rs:2:5
+  |
+2 | use crate::program::model::block::code_block_reference::CodeBlockReference;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::program::seam_stubs::OldFunctionMapDB`
+  --> ghidra-rs/src/program/database/oldfunction/old_function_manager.rs:81:5
+   |
+81 | use crate::program::seam_stubs::OldFunctionMapDB;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::framework::model::DomainObject`
+  --> ghidra-rs/src/program/database/program_compiler_spec.rs:22:5
+   |
+22 | use crate::framework::model::DomainObject;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::program::model::block::code_block_iterator::CodeBlockIterator`
+ --> ghidra-rs/src/program/model/block/subroutine_dest_reference_iterator.rs:1:5
+  |
+1 | use crate::program::model::block::code_block_iterator::CodeBlockIterator;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::docking::settings::settings_definition::SettingsDefinition`
+ --> ghidra-rs/src/program/model/data/isf/abstract_isf_object.rs:1:5
+  |
+1 | use crate::docking::settings::settings_definition::SettingsDefinition;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::program::model::data::composite::Composite`
+ --> ghidra-rs/src/program/model/data/structure_factory.rs:2:5
+  |
+2 | use crate::program::model::data::composite::Composite;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `std::any::Any`
+  --> ghidra-rs/src/app/util/pseudo_disassembler.rs:37:5
+   |
+37 | use std::any::Any;
+   |     ^^^^^^^^^^^^^
+
+warning: unused import: `crate::program::model::data::data_type::DataType`
+ --> ghidra-rs/src/program/model/data/composite_internal.rs:4:5
+  |
+4 | use crate::program::model::data::data_type::DataType;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `ProcessorContextView`
+  --> ghidra-rs/src/app/util/pseudo_disassembler.rs:47:54
+   |
+47 |     DisassemblerContext, InsufficientBytesException, ProcessorContextView, Register, RegisterRef,
+   |                                                      ^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::program::model::pcode::global_symbol_map::GlobalSymbolMap`
+  --> ghidra-rs/src/program/seam_stubs.rs:26:5
+   |
+26 | use crate::program::model::pcode::global_symbol_map::GlobalSymbolMap;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::program::model::pcode::function_prototype::FunctionPrototype`
+  --> ghidra-rs/src/program/seam_stubs.rs:25:5
+   |
+25 | use crate::program::model::pcode::function_prototype::FunctionPrototype;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Namespace`
+  --> ghidra-rs/src/app/util/symbol_path.rs:25:37
+   |
+25 | use crate::program::model::symbol::{Namespace, Symbol, DELIMITER};
+   |                                     ^^^^^^^^^
+
+warning: unused import: `Program`
+  --> ghidra-rs/src/program/seam_stubs.rs:19:61
+   |
+19 | use crate::program::model::listing::{Function, FunctionTag, Program};
+   |                                                             ^^^^^^^
+
+warning: unused import: `ExternalLocation`
+ --> ghidra-rs/src/program/model/listing/code_unit.rs:9:5
+  |
+9 |     ExternalLocation, ExternalReference, RefType, Reference, ReferenceIterator, SourceType, Symbol,
+  |     ^^^^^^^^^^^^^^^^
+
+warning: unused import: `crate::program::model::data::data_type_component::DataTypeComponent`
+  --> ghidra-rs/src/program/model/pcode/pcode_data_type_manager.rs:61:5
+   |
+61 | use crate::program::model::data::data_type_component::DataTypeComponent;
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused import: `Instruction`
+  --> ghidra-rs/src/program/model/data/data_utilities.rs:88:54
+   |
+88 | use crate::program::model::listing::{CodeUnit, Data, Instruction, Listing, Program};
+   |                                                      ^^^^^^^^^^^
+
+warning: variable does not need to be mutable
+  --> ghidra-rs/src/app/plugin/core/debug/client/tracermi/protobuf_socket.rs:81:19
+   |
+81 |         if let Ok(mut stream) = self.stream.lock() {
+   |                   ----^^^^^^
+   |                   |
+   |                   help: remove this `mut`
+   |
+   = note: `#[warn(unused_mut)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `bundle`
+   --> ghidra-rs/src/app/plugin/core/osgi/ghidra_bundle_exception.rs:101:24
+    |
+101 |     pub fn with_bundle(bundle: Bundle, msg: &str, cause: &BundleException) -> Self {
+    |                        ^^^^^^ help: if this is intentional, prefix it with an underscore: `_bundle`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `bundle_location`
+   --> ghidra-rs/src/app/plugin/core/osgi/ghidra_bundle_exception.rs:112:36
+    |
+112 |     pub fn with_location_and_cause(bundle_location: &str, msg: &str, cause: &BundleException) -> Self {
+    |                                    ^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_bundle_location`
+
+warning: unused variable: `bundle_location`
+   --> ghidra-rs/src/app/plugin/core/osgi/ghidra_bundle_exception.rs:122:26
+    |
+122 |     pub fn with_location(bundle_location: &str, msg: &str) -> Self {
+    |                          ^^^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_bundle_location`
+
+warning: unused variable: `cols`
+  --> ghidra-rs/src/app/plugin/core/terminal/terminal_listener.rs:11:27
+   |
+11 |     fn resized(&mut self, cols: i16, rows: i16) {}
+   |                           ^^^^ help: if this is intentional, prefix it with an underscore: `_cols`
+
+warning: unused variable: `rows`
+  --> ghidra-rs/src/app/plugin/core/terminal/terminal_listener.rs:11:38
+   |
+11 |     fn resized(&mut self, cols: i16, rows: i16) {}
+   |                                      ^^^^ help: if this is intentional, prefix it with an underscore: `_rows`
+
+warning: unused variable: `title`
+  --> ghidra-rs/src/app/plugin/core/terminal/terminal_listener.rs:18:28
+   |
+18 |     fn retitled(&mut self, title: &str) {}
+   |                            ^^^^^ help: if this is intentional, prefix it with an underscore: `_title`
+
+warning: unused variable: `exitcode`
+  --> ghidra-rs/src/app/plugin/core/terminal/terminal_listener.rs:25:30
+   |
+25 |     fn terminated(&mut self, exitcode: i32) {}
+   |                              ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_exitcode`
+
+warning: unused variable: `tokpat`
+  --> ghidra-rs/src/decompiler/slghpatexpress/end_instruction_value.rs:79:22
+   |
+79 |     fn do_and(&self, tokpat: &dyn TokenPattern) -> Box<dyn TokenPattern> {
+   |                      ^^^^^^ help: if this is intentional, prefix it with an underscore: `_tokpat`
+
+warning: unused variable: `tokpat`
+  --> ghidra-rs/src/decompiler/slghpatexpress/end_instruction_value.rs:83:21
+   |
+83 |     fn do_or(&self, tokpat: &dyn TokenPattern) -> Box<dyn TokenPattern> {
+   |                     ^^^^^^ help: if this is intentional, prefix it with an underscore: `_tokpat`
+
+warning: unused variable: `tokpat`
+  --> ghidra-rs/src/decompiler/slghpatexpress/next2_instruction_value.rs:79:22
+   |
+79 |     fn do_and(&self, tokpat: &dyn TokenPattern) -> Box<dyn TokenPattern> {
+   |                      ^^^^^^ help: if this is intentional, prefix it with an underscore: `_tokpat`
+
+warning: unused variable: `tokpat`
+  --> ghidra-rs/src/decompiler/slghpatexpress/next2_instruction_value.rs:83:21
+   |
+83 |     fn do_or(&self, tokpat: &dyn TokenPattern) -> Box<dyn TokenPattern> {
+   |                     ^^^^^^ help: if this is intentional, prefix it with an underscore: `_tokpat`
+
+warning: unused variable: `tokpat`
+  --> ghidra-rs/src/decompiler/slghpatexpress/start_instruction_value.rs:79:22
+   |
+79 |     fn do_and(&self, tokpat: &dyn TokenPattern) -> Box<dyn TokenPattern> {
+   |                      ^^^^^^ help: if this is intentional, prefix it with an underscore: `_tokpat`
+
+warning: unused variable: `tokpat`
+  --> ghidra-rs/src/decompiler/slghpatexpress/start_instruction_value.rs:83:21
+   |
+83 |     fn do_or(&self, tokpat: &dyn TokenPattern) -> Box<dyn TokenPattern> {
+   |                     ^^^^^^ help: if this is intentional, prefix it with an underscore: `_tokpat`
+
+warning: unused variable: `encoder`
+  --> ghidra-rs/src/decompiler/slghpatexpress/unary_expression.rs:59:26
+   |
+59 |     pub fn encode(&self, encoder: &mut dyn Encoder) -> io::Result<()> {
+   |                          ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_encoder`
+
+warning: unused variable: `operand`
+  --> ghidra-rs/src/decompiler/slghpatexpress/unary_expression.rs:60:21
+   |
+60 |         if let Some(operand) = &self.unary {
+   |                     ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_operand`
+
+warning: value assigned to `index` is never read
+  --> ghidra-rs/src/format/pe/debug/o_m_f_src_module_file.rs:79:9
+   |
+79 |         index += cb_name as u64;
+   |         ^^^^^^^^^^^^^^^^^^^^^^^ this value is reassigned later and never used
+...
+85 |             index += line.byte_count() as u64;
+   |             --------------------------------- `index` is overwritten here before the previous value is read
+   |
+   = note: `#[warn(unused_assignments)]` (part of `#[warn(unused)]`) on by default
+
+warning: value assigned to `index` is never read
+  --> ghidra-rs/src/format/pe/debug/o_m_f_src_module_file.rs:85:13
+   |
+85 |             index += line.byte_count() as u64;
+   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = help: maybe it is overwritten before being read?
+
+warning: variable does not need to be mutable
+  --> ghidra-rs/src/docking/widgets/filter/matches_exactly_text_filter.rs:47:13
+   |
+47 |         let mut options = if self.case_sensitive {
+   |             ----^^^^^^^
+   |             |
+   |             help: remove this `mut`
+
+warning: unused variable: `folder`
+ --> ghidra-rs/src/framework/model/domain_folder_change_listener.rs:8:39
+  |
+8 |     fn domain_folder_added(&mut self, folder: &dyn DomainFolder) {}
+  |                                       ^^^^^^ help: if this is intentional, prefix it with an underscore: `_folder`
+
+warning: unused variable: `file`
+  --> ghidra-rs/src/framework/model/domain_folder_change_listener.rs:12:37
+   |
+12 |     fn domain_file_added(&mut self, file: &dyn DomainFile) {}
+   |                                     ^^^^ help: if this is intentional, prefix it with an underscore: `_file`
+
+warning: unused variable: `parent`
+  --> ghidra-rs/src/framework/model/domain_folder_change_listener.rs:19:41
+   |
+19 |     fn domain_folder_removed(&mut self, parent: &dyn DomainFolder, name: &str) {}
+   |                                         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_parent`
+
+warning: unused variable: `name`
+  --> ghidra-rs/src/framework/model/domain_folder_change_listener.rs:19:68
+   |
+19 |     fn domain_folder_removed(&mut self, parent: &dyn DomainFolder, name: &str) {}
+   |                                                                    ^^^^ help: if this is intentional, prefix it with an underscore: `_name`
+
+warning: unused variable: `parent`
+  --> ghidra-rs/src/framework/model/domain_folder_change_listener.rs:27:39
+   |
+27 |     fn domain_file_removed(&mut self, parent: &dyn DomainFolder, name: &str, file_id: Option<&str>) {}
+   |                                       ^^^^^^ help: if this is intentional, prefix it with an underscore: `_parent`
+
+warning: unused variable: `name`
+  --> ghidra-rs/src/framework/model/domain_folder_change_listener.rs:27:66
+   |
+27 |     fn domain_file_removed(&mut self, parent: &dyn DomainFolder, name: &str, file_id: Option<&str>) {}
+   |                                                                  ^^^^ help: if this is intentional, prefix it with an underscore: `_name`
+
+warning: unused variable: `file_id`
+  --> ghidra-rs/src/framework/model/domain_folder_change_listener.rs:27:78
+   |
+27 |     fn domain_file_removed(&mut self, parent: &dyn DomainFolder, name: &str, file_id: Option<&str>) {}
+   |                                                                              ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_file_id`
+
+warning: unused variable: `folder`
+  --> ghidra-rs/src/framework/model/domain_folder_change_listener.rs:38:41
+   |
+38 |     fn domain_folder_renamed(&mut self, folder: &dyn DomainFolder, old_name: &str) {}
+   |                                         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_folder`
+
+warning: unused variable: `old_name`
+  --> ghidra-rs/src/framework/model/domain_folder_change_listener.rs:38:68
+   |
+38 |     fn domain_folder_renamed(&mut self, folder: &dyn DomainFolder, old_name: &str) {}
+   |                                                                    ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_old_name`
+
+warning: unused variable: `file`
+  --> ghidra-rs/src/framework/model/domain_folder_change_listener.rs:45:39
+   |
+45 |     fn domain_file_renamed(&mut self, file: &dyn DomainFile, old_name: &str) {}
+   |                                       ^^^^ help: if this is intentional, prefix it with an underscore: `_file`
+
+warning: unused variable: `old_name`
+  --> ghidra-rs/src/framework/model/domain_folder_change_listener.rs:45:62
+   |
+45 |     fn domain_file_renamed(&mut self, file: &dyn DomainFile, old_name: &str) {}
+   |                                                              ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_old_name`
+
+warning: unused variable: `folder`
+  --> ghidra-rs/src/framework/model/domain_folder_change_listener.rs:56:39
+   |
+56 |     fn domain_folder_moved(&mut self, folder: &dyn DomainFolder, old_parent: &dyn DomainFolder) {}
+   |                                       ^^^^^^ help: if this is intentional, prefix it with an underscore: `_folder`
+
+warning: unused variable: `old_parent`
+  --> ghidra-rs/src/framework/model/domain_folder_change_listener.rs:56:66
+   |
+56 |     fn domain_folder_moved(&mut self, folder: &dyn DomainFolder, old_parent: &dyn DomainFolder) {}
+   |                                                                  ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_old_parent`
+
+warning: unused variable: `file`
+  --> ghidra-rs/src/framework/model/domain_folder_change_listener.rs:66:9
+   |
+66 |         file: &dyn DomainFile,
+   |         ^^^^ help: if this is intentional, prefix it with an underscore: `_file`
+
+warning: unused variable: `old_parent`
+  --> ghidra-rs/src/framework/model/domain_folder_change_listener.rs:67:9
+   |
+67 |         old_parent: &dyn DomainFolder,
+   |         ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_old_parent`
+
+warning: unused variable: `old_name`
+  --> ghidra-rs/src/framework/model/domain_folder_change_listener.rs:68:9
+   |
+68 |         old_name: &str,
+   |         ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_old_name`
+
+warning: unused variable: `folder`
+  --> ghidra-rs/src/framework/model/domain_folder_change_listener.rs:76:44
+   |
+76 |     fn domain_folder_set_active(&mut self, folder: &dyn DomainFolder) {}
+   |                                            ^^^^^^ help: if this is intentional, prefix it with an underscore: `_folder`
+
+warning: unused variable: `file`
+  --> ghidra-rs/src/framework/model/domain_folder_change_listener.rs:84:46
+   |
+84 |     fn domain_file_status_changed(&mut self, file: &dyn DomainFile, file_id_set: bool) {}
+   |                                              ^^^^ help: if this is intentional, prefix it with an underscore: `_file`
+
+warning: unused variable: `file_id_set`
+  --> ghidra-rs/src/framework/model/domain_folder_change_listener.rs:84:69
+   |
+84 |     fn domain_file_status_changed(&mut self, file: &dyn DomainFile, file_id_set: bool) {}
+   |                                                                     ^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_file_id_set`
+
+warning: unused variable: `file`
+  --> ghidra-rs/src/framework/model/domain_folder_change_listener.rs:93:9
+   |
+93 |         file: &dyn DomainFile,
+   |         ^^^^ help: if this is intentional, prefix it with an underscore: `_file`
+
+warning: unused variable: `object`
+  --> ghidra-rs/src/framework/model/domain_folder_change_listener.rs:94:9
+   |
+94 |         object: &dyn crate::framework::model::DomainObject,
+   |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_object`
+
+warning: unused variable: `file`
+   --> ghidra-rs/src/framework/model/domain_folder_change_listener.rs:105:9
+    |
+105 |         file: &dyn DomainFile,
+    |         ^^^^ help: if this is intentional, prefix it with an underscore: `_file`
+
+warning: unused variable: `object`
+   --> ghidra-rs/src/framework/model/domain_folder_change_listener.rs:106:9
+    |
+106 |         object: &dyn crate::framework::model::DomainObject,
+    |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_object`
+
+warning: value assigned to `save_offset` is never read
+  --> ghidra-rs/src/program/model/data/png_resource.rs:50:31
+   |
+50 |         let mut save_offset = self.buf_offset;
+   |                               ^^^^^^^^^^^^^^^ this value is reassigned later and never used
+...
+71 |             save_offset = self.buf_offset;
+   |             ----------------------------- `save_offset` is overwritten here before the previous value is read
+
+Some errors have detailed explanations: E0034, E0599.
+For more information about an error, try `rustc --explain E0034`.
+error: could not compile `ghidra-rs` (lib) due to 3 previous errors; 173 warnings emitted

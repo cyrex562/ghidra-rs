@@ -65,11 +65,13 @@ impl AddressRange {
         self.max.unsigned_offset() as i128 - self.min.unsigned_offset() as i128 + 1
     }
 
+    /// True if `addr` lies in this range. Offsets compare as [`Address`] orders them (unsigned
+    /// for an unsigned space), as Java's `AddressRangeImpl.contains` does via `compareTo`.
     pub fn contains(&self, addr: &Address) -> bool {
         if self.min.space() != addr.space() {
             return false;
         }
-        addr.offset() >= self.min.offset() && addr.offset() <= self.max.offset()
+        addr >= &self.min && addr <= &self.max
     }
 
     pub fn intersect(&self, other: &AddressRange) -> Option<Self> {

@@ -5,6 +5,8 @@
 
 pub mod gui;
 pub mod model;
+#[cfg(feature = "z3")]
+pub mod z3_solver_context;
 
 #[cfg(test)]
 mod tests {

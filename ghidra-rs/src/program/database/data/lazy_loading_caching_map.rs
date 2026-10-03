@@ -1,3 +1,4 @@
+use crate::util::lock::ReentrantLock;
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::sync::Mutex;
@@ -27,7 +28,7 @@ where
     fn load_map(&self) -> HashMap<K, V>;
 
     /// Returns the lock used to coordinate loading the underlying map data.
-    fn database_lock(&self) -> &Lock<()>;
+    fn database_lock(&self) -> &ReentrantLock;
 
     /// Returns the storage slot holding the cached map, or `None` if not currently
     /// loaded.
@@ -101,7 +102,7 @@ mod tests {
     use std::sync::Arc;
 
     struct CountingMap {
-        lock: Lock<()>,
+        lock: ReentrantLock,
         cached: Mutex<Option<HashMap<i32, &'static str>>>,
         load_count: Arc<AtomicUsize>,
     }
@@ -109,7 +110,7 @@ mod tests {
     impl CountingMap {
         fn new(load_count: Arc<AtomicUsize>) -> Self {
             Self {
-                lock: Lock::new_unit("test_lock"),
+                lock: ReentrantLock::new("test_lock"),
                 cached: Mutex::new(None),
                 load_count,
             }
@@ -125,7 +126,7 @@ mod tests {
             map
         }
 
-        fn database_lock(&self) -> &Lock<()> {
+        fn database_lock(&self) -> &ReentrantLock {
             &self.lock
         }
 

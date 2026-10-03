@@ -1,3 +1,7 @@
 pub mod scalar_row_object;
+pub mod scalar_row_object_to_address_table_row_mapper;
+pub mod scalar_row_object_to_program_location_table_row_mapper;
 
 pub use scalar_row_object::ScalarRowObject;
+pub use scalar_row_object_to_address_table_row_mapper::ScalarRowObjectToAddressTableRowMapper;
+pub use scalar_row_object_to_program_location_table_row_mapper::ScalarRowObjectToProgramLocationTableRowMapper;

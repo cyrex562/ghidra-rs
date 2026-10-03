@@ -3,7 +3,7 @@ use std::sync::Arc;
 use thiserror::Error;
 
 use crate::program::database::function::OverlappingFunctionException;
-use crate::program::model::address::{Address, AddressIterator, AddressSetView};
+use crate::program::model::address::{Address, BoxedAddressIterator, AddressSetView};
 use crate::program::model::data::data_type::DataType;
 use crate::program::model::data::data_type_manager::DataTypeManager;
 use crate::program::model::listing::code_unit::CodeUnit;
@@ -16,10 +16,9 @@ use crate::program::model::listing::program_fragment::ProgramFragment;
 use crate::program::model::listing::program_module::ProgramModule;
 use crate::program::model::symbol::Namespace;
 use crate::program::model::util::PropertyMap;
-use crate::program::seam_stubs::{
-    CodeUnitComments, CodeUnitIterator, CommentHistory, CommentType, DataIterator,
-    FunctionIterator, InstructionIterator, InstructionSet, MemBuffer,
-};
+use crate::program::seam_stubs::{CodeUnitComments, CodeUnitIterator, CommentHistory, DataIterator, FunctionIterator, InstructionIterator, InstructionSet};
+use crate::program::model::mem::MemBuffer;
+use crate::program::model::listing::CommentType;
 use crate::program::util::CodeUnitInsertionException;
 use crate::util::exception::{CancelledException, DuplicateNameException, InvalidInputException};
 use crate::util::task::TaskMonitor;
@@ -124,7 +123,7 @@ pub trait Listing {
         comment_type: i32,
         addr_set: &dyn AddressSetView,
         forward: bool,
-    ) -> Box<dyn AddressIterator> {
+    ) -> BoxedAddressIterator {
         self.get_comment_address_iterator(
             CommentType::from_ordinal(comment_type).expect("valid comment type ordinal"),
             addr_set,
@@ -143,7 +142,7 @@ pub trait Listing {
         comment_type: CommentType,
         addr_set: &dyn AddressSetView,
         forward: bool,
-    ) -> Box<dyn AddressIterator>;
+    ) -> BoxedAddressIterator;
 
     /// Get a forward iterator over addresses that have any type of comment.
     ///
@@ -154,7 +153,7 @@ pub trait Listing {
         &self,
         addr_set: &dyn AddressSetView,
         forward: bool,
-    ) -> Box<dyn AddressIterator>;
+    ) -> BoxedAddressIterator;
 
     /// Get the comment for the given type at the specified address.
     ///
@@ -520,6 +519,21 @@ pub trait Listing {
     /// has existed the longest.
     fn get_default_root_module(&self) -> Arc<dyn ProgramModule>;
 
+    /// Mutable counterpart of [`get_default_root_module`](Self::get_default_root_module).
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for
+    /// [`DyldCacheProgramBuilder`](crate::app::util::opinion::dyld_cache_program_builder::DyldCacheProgramBuilder),
+    /// which calls `createModule`/`createFragment` on the root to give each cached DYLIB its own
+    /// program-tree entry. Java needs no such split: a `ProgramModule` reference is mutable
+    /// through, whereas the `Arc<dyn ProgramModule>` above is not -- the same split
+    /// [`Program::get_memory_mut`](crate::program::model::listing::Program::get_memory_mut) makes.
+    ///
+    /// Defaults to `None`, i.e. "this listing has no program tree that can be built up", which
+    /// callers are expected to treat as nothing to do.
+    fn get_default_root_module_mut(&mut self) -> Option<&mut dyn ProgramModule> {
+        None
+    }
+
     /// Get the names of all the trees defined in this listing.
     fn get_tree_names(&self) -> Vec<String>;
 
@@ -699,14 +713,14 @@ mod tests {
             _comment_type: CommentType,
             _addr_set: &dyn AddressSetView,
             _forward: bool,
-        ) -> Box<dyn AddressIterator> {
+        ) -> BoxedAddressIterator {
             unimplemented!("not needed for this smoke test")
         }
         fn get_any_comment_address_iterator(
             &self,
             _addr_set: &dyn AddressSetView,
             _forward: bool,
-        ) -> Box<dyn AddressIterator> {
+        ) -> BoxedAddressIterator {
             unimplemented!("not needed for this smoke test")
         }
         fn get_comment(&self, _comment_type: CommentType, _address: &Address) -> Option<String> {

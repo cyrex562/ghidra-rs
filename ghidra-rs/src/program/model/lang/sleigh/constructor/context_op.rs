@@ -1,4 +1,5 @@
 use crate::program::model::lang::sleigh::expression::PatternExpression;
+use crate::program::model::lang::sleigh::walker::{ParserWalker, SleighError};
 use crate::program::model::lang::sleigh::SleighLanguage;
 use crate::program::model::pcode::{
     Decoder, DecoderError, ATTRIB_I, ATTRIB_MASK, ATTRIB_SHIFT, ELEM_CONTEXT_OP,
@@ -20,6 +21,20 @@ impl ContextOp {
             mask: 0,
             shift: 0,
         }
+    }
+
+    /// Port of `ContextOp.apply(ParserWalker, SleighDebugLogger)`: sets the masked bits of
+    /// context word `num` to the expression's value shifted into place.
+    ///
+    /// # Errors
+    /// A [`SleighError`] if the expression cannot be evaluated.
+    pub fn apply(&self, walker: &ParserWalker<'_>) -> Result<(), SleighError> {
+        let mut val = self.patexp.get_value(walker)? as i32;
+        val = val.wrapping_shl(self.shift as u32);
+        walker
+            .get_parser_context()
+            .set_context_word(self.num, val, self.mask as i32);
+        Ok(())
     }
 
     pub fn decode(

@@ -1,3 +1,11 @@
+pub mod addressable_byte_source;
+pub mod empty_byte_source;
+pub mod program_byte_source;
+pub mod program_search_region;
 pub mod search_region;
 
+pub use addressable_byte_source::{AddressableByteSource, generate_program_location};
+pub use empty_byte_source::EmptyByteSource;
+pub use program_byte_source::ProgramByteSource;
+pub use program_search_region::ProgramSearchRegion;
 pub use search_region::SearchRegion;

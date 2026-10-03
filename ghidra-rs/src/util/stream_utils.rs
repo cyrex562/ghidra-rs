@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 use std::sync::{Arc, Mutex};
 
-use crate::util::database::synchronized_spliterator::{characteristics, Spliterator, SynchronizedSpliterator};
+use crate::util::database::synchronized_spliterator::{characteristics, Spliterator};
 use crate::util::database::DBSynchronizedSpliterator;
 use crate::util::lock_hold::Lock;
 use crate::util::merge_sorting_spliterator::MergeSortingIterator;
@@ -74,19 +74,12 @@ impl StreamUtils {
         stream
     }
 
-    /// Wraps the given stream into a stream synchronized on the given lock.
-    ///
-    /// **NOTE:** This makes no guarantees regarding the consistency or visit order if the
-    /// underlying resource is modified between elements being visited. It merely prevents
-    /// the stream client from accessing the underlying resource concurrently. For such
-    /// guarantees, the client may need to acquire the lock for its whole use of the stream.
-    pub fn sync<T, I>(lock: Arc<Mutex<()>>, stream: I) -> impl Iterator<Item = T>
-    where
-        T: 'static,
-        I: Iterator<Item = T> + 'static,
-    {
-        SynchronizedSpliterator::new(IterSpliterator { inner: stream }, lock)
-    }
+    /// `StreamUtils::sync` (Java: `StreamUtils.sync(Object, Stream)`) is deliberately absent:
+    /// it wrapped a stream in a `SynchronizedSpliterator`, whose `Arc<Mutex<()>>` guarded no
+    /// data. A caller needing serialization should hold the lock across its whole use of the
+    /// stream -- which the Java doc already said was required for any real guarantee -- or put
+    /// the resource behind the lock. See "Ported Java locks" in `OWNERSHIP_MIGRATION.md`.
+    /// [`StreamUtils::lock`] remains, since it takes the crate's `Lock` abstraction.
 
     /// Wraps the given stream into a stream synchronized on the given lock.
     ///
@@ -141,31 +134,7 @@ mod tests {
         assert_eq!(result, vec![1, 2, 3]);
     }
 
-    #[test]
-    fn sync_yields_same_elements() {
-        let lock = Arc::new(Mutex::new(()));
-        let result: Vec<i32> = StreamUtils::sync(lock, vec![1, 2, 3].into_iter()).collect();
-        assert_eq!(result, vec![1, 2, 3]);
-    }
 
-    #[test]
-    fn sync_serializes_concurrent_access() {
-        use std::thread;
-
-        let lock = Arc::new(Mutex::new(()));
-        let mut a = StreamUtils::sync(Arc::clone(&lock), vec![1, 2, 3].into_iter());
-        let mut b = StreamUtils::sync(lock, vec![4, 5, 6].into_iter());
-
-        let ha = thread::spawn(move || a.by_ref().collect::<Vec<_>>());
-        let hb = thread::spawn(move || b.by_ref().collect::<Vec<_>>());
-
-        let mut ra = ha.join().unwrap();
-        let mut rb = hb.join().unwrap();
-        ra.sort_unstable();
-        rb.sort_unstable();
-        assert_eq!(ra, vec![1, 2, 3]);
-        assert_eq!(rb, vec![4, 5, 6]);
-    }
 
     struct CountingLock {
         locks: AtomicUsize,

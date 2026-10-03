@@ -35,6 +35,11 @@ impl ConPtyParent {
     pub fn pseudo_console_handle(&self) -> &PseudoConsoleHandle {
         self.0.pseudo_console_handle()
     }
+
+    /// Closes this endpoint's underlying handles; see [`ConPtyEndpoint::close_streams`].
+    pub fn close_streams(&self) -> std::io::Result<()> {
+        self.0.close_streams()
+    }
 }
 
 impl PtyEndpoint for ConPtyParent {

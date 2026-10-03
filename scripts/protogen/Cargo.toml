@@ -1,0 +1,16 @@
+# One-shot generator for the protobuf code checked into ghidra-rs (Trace RMI, ISF).
+#
+# Not part of the workspace and not a build dependency of ghidra-rs: the generated `.rs` files
+# are committed, so building ghidra-rs never needs `protoc`. `protox` is a pure-Rust `.proto`
+# compiler, so running this does not need `protoc` either. See `scripts/protogen/regen.sh`.
+[package]
+name = "protogen"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[workspace]
+
+[dependencies]
+prost-build = "0.14"
+protox = "0.9"

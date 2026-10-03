@@ -1,4 +1,6 @@
+use crate::program::model::listing::CodeUnit;
 use crate::program::seam_stubs::CodeUnitIterator;
+use std::sync::Arc;
 
 /// Wraps an iterator to implement the [`CodeUnitIterator`] interface.
 ///
@@ -26,7 +28,7 @@ impl<I: Iterator> Iterator for WrappingCodeUnitIterator<I> {
     }
 }
 
-impl<I: Iterator> CodeUnitIterator for WrappingCodeUnitIterator<I> {}
+impl<I: Iterator<Item = Arc<dyn CodeUnit>>> CodeUnitIterator for WrappingCodeUnitIterator<I> {}
 
 #[cfg(test)]
 mod tests {

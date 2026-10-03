@@ -219,6 +219,6 @@ mod tests {
 
         let space = AddressSpace::new("ram", 32, 1, AddressSpaceType::Ram, 0);
         d.set_address_space(space.clone());
-        assert_eq!(d.get_address_space().unwrap().get_name(), "ram");
+        assert_eq!(d.get_address_space().unwrap().name(), "ram");
     }
 }

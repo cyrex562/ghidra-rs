@@ -28,6 +28,27 @@ impl SwiftDemanglerOptions {
         Self::default()
     }
 
+    /// Creates a `SwiftDemanglerOptions` from a base `DemanglerOptions`, preserving its fields
+    /// and defaulting the Swift-specific ones.
+    ///
+    /// Stands in for the `instanceof SwiftDemanglerOptions` cast in
+    /// `SwiftDemangler.getSwiftDemanglerOptions(DemanglerOptions)`: a plain `DemanglerOptions`
+    /// value received through that base-typed parameter can never actually carry the
+    /// Swift-specific fields (composition, not inheritance -- see this struct's docs), so those
+    /// fields always fall back to their defaults. The same treatment
+    /// `MicrosoftDemanglerOptions::from_base` gives its own base options.
+    pub fn from_base(base: &DemanglerOptions) -> Self {
+        Self { options: base.clone(), ..Self::default() }
+    }
+
+    /// Returns the wrapped base options.
+    ///
+    /// Stands in for an upcast to `DemanglerOptions`, which Rust's lack of struct inheritance
+    /// doesn't otherwise offer.
+    pub fn base(&self) -> &DemanglerOptions {
+        &self.options
+    }
+
     /// Gets the Swift directory.
     ///
     /// If the Swift directory is on the PATH environment variable, this may return `None`.

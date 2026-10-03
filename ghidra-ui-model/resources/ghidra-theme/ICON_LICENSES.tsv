@@ -1,0 +1,521 @@
+path	license	note
+Debug/Debugger/src/main/resources/images/add.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Debug/Debugger/src/main/resources/images/attach.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/autoread.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/blank.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/breakpoint-clear.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/breakpoint-disable-ineff.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/breakpoint-disable.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/breakpoint-enable-ineff.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/breakpoint-enable.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/breakpoint-mixed-ineff.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/breakpoint-mixed.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/breakpoint-overlay-inconsistent.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/breakpoints-clear-all.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/breakpoints-disable-all.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/breakpoints-enable-all.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/breakpoints-make-effective.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/conf.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/connect-accept.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/connect-outbound.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/connect.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/console.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/debugger.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/debugger32.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/delete.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Debug/Debugger/src/main/resources/images/detach.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/disconnect.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/interrupt.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/kill.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/launch.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/modules.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/object-populated.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/object-running.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/object-terminated.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/object-unpopulated.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/overlay-tx.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/process.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/record.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/register-marker.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/registers.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/resume.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/resumeback.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/seek-present.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/select-registers.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/skipover.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/stepback.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/stepbackinto.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/stepinto.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/steplast.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/stepout.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/stepover.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/system-switch-user.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Debug/Debugger/src/main/resources/images/table-a.png	FAMFAMFAM Icons - CC 2.5	
+Debug/Debugger/src/main/resources/images/table-e.png	FAMFAMFAM Icons - CC 2.5	
+Debug/Debugger/src/main/resources/images/table-s.png	FAMFAMFAM Icons - CC 2.5	
+Debug/Debugger/src/main/resources/images/thread.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/time.png	FAMFAMFAM Icons - CC 2.5	
+Debug/Debugger/src/main/resources/images/write-emulator.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/write-target.png	GHIDRA	
+Debug/Debugger/src/main/resources/images/write-trace.png	Tango Icons - Public Domain	
+Features/BSim/src/main/resources/images/checkmark_yellow.gif	GHIDRA	
+Features/BSim/src/main/resources/images/connected.png	GHIDRA	
+Features/BSim/src/main/resources/images/disconnected.png	GHIDRA	
+Features/BSim/src/main/resources/images/flag_green.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/BSim/src/main/resources/images/preferences-desktop-user-password.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Features/BSim/src/main/resources/images/preferences-web-browser-shortcuts.png	LGPL 3.0	oxygen
+Features/BSim/src/main/resources/images/view_top_bottom.png	Crystal Clear Icons - LGPL 2.1	
+Features/Base/src/main/resources/images/2leftarrow.png	Nuvola Icons - LGPL 2.1	Nuvola icon set
+Features/Base/src/main/resources/images/2rightarrow.png	Nuvola Icons - LGPL 2.1	Nuvola icon set
+Features/Base/src/main/resources/images/Array.png	GHIDRA	
+Features/Base/src/main/resources/images/B.gif	GHIDRA	
+Features/Base/src/main/resources/images/BookShelf.png	GHIDRA	
+Features/Base/src/main/resources/images/BookShelfOpen.png	GHIDRA	
+Features/Base/src/main/resources/images/Browser.gif	GHIDRA	
+Features/Base/src/main/resources/images/D.gif	GHIDRA	
+Features/Base/src/main/resources/images/DOSA_A.png	GHIDRA	
+Features/Base/src/main/resources/images/DOSA_D.png	GHIDRA	
+Features/Base/src/main/resources/images/DOSA_O.png	GHIDRA	
+Features/Base/src/main/resources/images/DOSA_S.png	GHIDRA	
+Features/Base/src/main/resources/images/DuplicateData.png	GHIDRA	reviewed
+Features/Base/src/main/resources/images/ExternalData.gif	GHIDRA	
+Features/Base/src/main/resources/images/ExternalFunction.gif	GHIDRA	
+Features/Base/src/main/resources/images/F.gif	GHIDRA	
+Features/Base/src/main/resources/images/FilterArrays.png	GHIDRA	
+Features/Base/src/main/resources/images/FilterPointers.png	GHIDRA	Modified version of fingerPointer.png
+Features/Base/src/main/resources/images/FunctionScope.gif	GHIDRA	
+Features/Base/src/main/resources/images/I.gif	GHIDRA	
+Features/Base/src/main/resources/images/L.gif	GHIDRA	
+Features/Base/src/main/resources/images/LocalVariable.gif	GHIDRA	
+Features/Base/src/main/resources/images/MarkSelection.png	GHIDRA	
+Features/Base/src/main/resources/images/Merge.png	GHIDRA	
+Features/Base/src/main/resources/images/MultiDuplicateData.png	GHIDRA	
+Features/Base/src/main/resources/images/Namespace.dark.gif	GHIDRA	
+Features/Base/src/main/resources/images/Namespace.gif	GHIDRA	
+Features/Base/src/main/resources/images/NextHighlightBlock16.gif	GHIDRA	
+Features/Base/src/main/resources/images/NextSelectionBlock16.gif	GHIDRA	
+Features/Base/src/main/resources/images/Parameter.gif	GHIDRA	
+Features/Base/src/main/resources/images/PreviousHighlightBlock16.gif	GHIDRA	
+Features/Base/src/main/resources/images/PreviousSelectionBlock16.gif	GHIDRA	
+Features/Base/src/main/resources/images/ThunkFunction.dark.gif	GHIDRA	
+Features/Base/src/main/resources/images/ThunkFunction.gif	GHIDRA	
+Features/Base/src/main/resources/images/U.gif	GHIDRA	
+Features/Base/src/main/resources/images/Unpackage.gif	GHIDRA	
+Features/Base/src/main/resources/images/V.png	GHIDRA	
+Features/Base/src/main/resources/images/application_double.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/applications-development.png	Oxygen Icons - LGPL 3.0	
+Features/Base/src/main/resources/images/applications-system.png	Tango Icons - Public Domain	tango icon set
+Features/Base/src/main/resources/images/arrow_down.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/arrow_rotate_clockwise.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/arrow_up.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/binaryData.gif	GHIDRA	
+Features/Base/src/main/resources/images/bullet_green.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/bullet_star.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/cUnion.png	GHIDRA	
+Features/Base/src/main/resources/images/camera-photo.png	Tango Icons - Public Domain	tango
+Features/Base/src/main/resources/images/carry.png	GHIDRA	
+Features/Base/src/main/resources/images/changed16.gif	GHIDRA	
+Features/Base/src/main/resources/images/class.png	GHIDRA	
+Features/Base/src/main/resources/images/closedBookBrown.png	GHIDRA	
+Features/Base/src/main/resources/images/closedBookGreen.png	GHIDRA	
+Features/Base/src/main/resources/images/closedBookRed.png	GHIDRA	
+Features/Base/src/main/resources/images/closedDescendantsInView.png	Modified Nuvola Icons - LGPL 2.1	
+Features/Base/src/main/resources/images/closedFolderArchive.png	Modified Nuvola Icons - LGPL 2.1	
+Features/Base/src/main/resources/images/closedFolderCheckedOut.png	Modified Nuvola Icons - LGPL 2.1	
+Features/Base/src/main/resources/images/closedFolderClasses.png	Modified Nuvola Icons - LGPL 2.1	
+Features/Base/src/main/resources/images/closedFolderExternals.png	Modified Nuvola Icons - LGPL 2.1	
+Features/Base/src/main/resources/images/closedFolderFunctions.png	Modified Nuvola Icons - LGPL 2.1	
+Features/Base/src/main/resources/images/closedFolderGroup.png	Modified Nuvola Icons - LGPL 2.1	
+Features/Base/src/main/resources/images/closedFolderInView.png	Modified Nuvola Icons - LGPL 2.1	
+Features/Base/src/main/resources/images/closedFolderInvalid.png	Modified Nuvola Icons - LGPL 2.1	
+Features/Base/src/main/resources/images/closedFolderLabels.png	Modified Nuvola Icons - LGPL 2.1	
+Features/Base/src/main/resources/images/closedFolderNamespaces.dark.png	GHIDRA	
+Features/Base/src/main/resources/images/closedFolderNamespaces.png	Modified Nuvola Icons - LGPL 2.1	
+Features/Base/src/main/resources/images/codeInView.gif	GHIDRA	
+Features/Base/src/main/resources/images/codeNotInView.gif	GHIDRA	
+Features/Base/src/main/resources/images/conflictKeep.png	GHIDRA	
+Features/Base/src/main/resources/images/conflictRename.png	GHIDRA	
+Features/Base/src/main/resources/images/conflictReplace.png	GHIDRA	
+Features/Base/src/main/resources/images/conflictReplaceOrRename.png	GHIDRA	
+Features/Base/src/main/resources/images/cstruct.png	GHIDRA	
+Features/Base/src/main/resources/images/cursor_arrow.gif	GHIDRA	
+Features/Base/src/main/resources/images/cursor_arrow_flipped.gif	GHIDRA	
+Features/Base/src/main/resources/images/dataTypes.png	Modified Nuvola Icons - LGPL 2.1	
+Features/Base/src/main/resources/images/dataW.gif	GHIDRA	
+Features/Base/src/main/resources/images/defaultDt.gif	GHIDRA	
+Features/Base/src/main/resources/images/dialog-warning_red.png	Tango Icons - Public Domain	
+Features/Base/src/main/resources/images/disabledClosedFolder.png	Modified Nuvola Icons - LGPL 2.1	
+Features/Base/src/main/resources/images/disabledCode.gif	GHIDRA	
+Features/Base/src/main/resources/images/disabledOpenFolder.png	Modified Nuvola Icons - LGPL 2.1	
+Features/Base/src/main/resources/images/doubleArrow.png	GHIDRA	
+Features/Base/src/main/resources/images/downArrow.png	GHIDRA	
+Features/Base/src/main/resources/images/dragCopyCursor.gif	GHIDRA	
+Features/Base/src/main/resources/images/dragMoveCursor.gif	GHIDRA	
+Features/Base/src/main/resources/images/eclipse.png	GHIDRA	
+Features/Base/src/main/resources/images/edit-bomb.png	Oxygen Icons - LGPL 3.0	
+Features/Base/src/main/resources/images/editbytes.gif	GHIDRA	
+Features/Base/src/main/resources/images/emblem-favorite.png	Tango Icons - Public Domain	tango
+Features/Base/src/main/resources/images/emptyFragment.gif	GHIDRA	
+Features/Base/src/main/resources/images/emptyFragmentInView.gif	GHIDRA	
+Features/Base/src/main/resources/images/enum.png	GHIDRA	
+Features/Base/src/main/resources/images/famfamfam_silk_icons_v013/application_cascade.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/famfamfam_silk_icons_v013/application_get.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/famfamfam_silk_icons_v013/arrow_in.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/famfamfam_silk_icons_v013/arrow_inout.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/famfamfam_silk_icons_v013/bullet_blue.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/famfamfam_silk_icons_v013/bullet_orange.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/famfamfam_silk_icons_v013/bullet_pink.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/famfamfam_silk_icons_v013/bullet_purple.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/famfamfam_silk_icons_v013/compress.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/famfamfam_silk_icons_v013/controller.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/famfamfam_silk_icons_v013/css.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/famfamfam_silk_icons_v013/cup.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/famfamfam_silk_icons_v013/database.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/famfamfam_silk_icons_v013/door.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/famfamfam_silk_icons_v013/door_open.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/famfamfam_silk_icons_v013/folder_brick.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/famfamfam_silk_icons_v013/folder_table.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/famfamfam_silk_icons_v013/html.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/famfamfam_silk_icons_v013/images.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/famfamfam_silk_icons_v013/page_white_cup.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/famfamfam_silk_icons_v013/phone.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/famfamfam_silk_icons_v013/photo.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/famfamfam_silk_icons_v013/rss.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/famfamfam_silk_icons_v013/server.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/famfamfam_silk_icons_v013/xhtml.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/field.header.down.png	GHIDRA	
+Features/Base/src/main/resources/images/field.header.up.png	GHIDRA	
+Features/Base/src/main/resources/images/fingerPointer.png	GHIDRA	
+Features/Base/src/main/resources/images/flag-green.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Features/Base/src/main/resources/images/format-text-bold.png	Tango Icons - Public Domain	tango icon set
+Features/Base/src/main/resources/images/functionDef.png	GHIDRA	
+Features/Base/src/main/resources/images/function_graph.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/function_graph_curvey.png	GHIDRA	
+Features/Base/src/main/resources/images/functions.gif	GHIDRA	
+Features/Base/src/main/resources/images/go-down.tango.16.png	Tango Icons - Public Domain	tango icon set
+Features/Base/src/main/resources/images/go-up.tango.16.png	Tango Icons - Public Domain	tango icon set
+Features/Base/src/main/resources/images/help-hint.png	Oxygen Icons - LGPL 3.0	renamed from help-hing.png
+Features/Base/src/main/resources/images/hexData.png	GHIDRA	
+Features/Base/src/main/resources/images/house.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/hoverOff.gif	GHIDRA	
+Features/Base/src/main/resources/images/hoverOn.gif	GHIDRA	
+Features/Base/src/main/resources/images/icon_link.gif	FAMFAMFAM Mini Icons - Public Domain	famfamfam mini icon set
+Features/Base/src/main/resources/images/imported_bookmark.gif	GHIDRA	
+Features/Base/src/main/resources/images/key.png	FAMFAMFAM Icons - CC 2.5	silk
+Features/Base/src/main/resources/images/kmessedwords.png	Nuvola Icons - LGPL 2.1	
+Features/Base/src/main/resources/images/label.png	GHIDRA	
+Features/Base/src/main/resources/images/layout_add.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/ledgreen.png	Nuvola Icons - LGPL 2.1	Nuvola icon set
+Features/Base/src/main/resources/images/ledred.png	Nuvola Icons - LGPL 2.1	Nuvola icon set
+Features/Base/src/main/resources/images/lock.gif	GHIDRA	
+Features/Base/src/main/resources/images/media-flash.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Features/Base/src/main/resources/images/media-playback-stop.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Features/Base/src/main/resources/images/memory16.gif	GHIDRA	
+Features/Base/src/main/resources/images/move.png	GHIDRA	
+Features/Base/src/main/resources/images/no_small.png	GHIDRA	
+Features/Base/src/main/resources/images/notes.gif	GHIDRA	
+Features/Base/src/main/resources/images/nuvola/16x16/cdimage.png	Nuvola Icons - LGPL 2.1	Nuvola icon set
+Features/Base/src/main/resources/images/nuvola/16x16/usb.png	Nuvola Icons - LGPL 2.1	Nuvola icon set
+Features/Base/src/main/resources/images/onesComplement.png	GHIDRA	
+Features/Base/src/main/resources/images/openBookBlue.png	GHIDRA	
+Features/Base/src/main/resources/images/openBookBrown.png	GHIDRA	
+Features/Base/src/main/resources/images/openBookGreen.png	GHIDRA	
+Features/Base/src/main/resources/images/openBookRed.png	GHIDRA	
+Features/Base/src/main/resources/images/openFolderArchive.png	Modified Nuvola Icons - LGPL 2.1	
+Features/Base/src/main/resources/images/openFolderCheckedOut.png	Modified Nuvola Icons - LGPL 2.1	
+Features/Base/src/main/resources/images/openFolderClasses.png	Modified Nuvola Icons - LGPL 2.1	
+Features/Base/src/main/resources/images/openFolderExternals.png	Modified Nuvola Icons - LGPL 2.1	
+Features/Base/src/main/resources/images/openFolderFunctions.png	Modified Nuvola Icons - LGPL 2.1	
+Features/Base/src/main/resources/images/openFolderGroup.png	Modified Nuvola Icons - LGPL 2.1	
+Features/Base/src/main/resources/images/openFolderInView.png	Modified Nuvola Icons - LGPL 2.1	
+Features/Base/src/main/resources/images/openFolderLabels.png	Modified Nuvola Icons - LGPL 2.1	
+Features/Base/src/main/resources/images/openFolderNamespaces.dark.png	GHIDRA	
+Features/Base/src/main/resources/images/openFolderNamespaces.png	Modified Nuvola Icons - LGPL 2.1	
+Features/Base/src/main/resources/images/oxygen/16x16/application-javascript.png	Oxygen Icons - LGPL 3.0	
+Features/Base/src/main/resources/images/oxygen/16x16/application-pdf.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Features/Base/src/main/resources/images/oxygen/16x16/application-x-ar.png	Oxygen Icons - LGPL 3.0	
+Features/Base/src/main/resources/images/oxygen/16x16/application-x-bzip.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Features/Base/src/main/resources/images/oxygen/16x16/application-x-desktop.png	Oxygen Icons - LGPL 3.0	
+Features/Base/src/main/resources/images/oxygen/16x16/application-x-java-archive.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Features/Base/src/main/resources/images/oxygen/16x16/application-x-shellscript.png	Oxygen Icons - LGPL 3.0	
+Features/Base/src/main/resources/images/oxygen/16x16/application-x-subrip.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Features/Base/src/main/resources/images/oxygen/16x16/bookmarks.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Features/Base/src/main/resources/images/oxygen/16x16/games-config-background.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Features/Base/src/main/resources/images/oxygen/16x16/image-x-generic.png	Oxygen Icons - LGPL 3.0	
+Features/Base/src/main/resources/images/oxygen/16x16/insert-table.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Features/Base/src/main/resources/images/oxygen/16x16/insert-text.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Features/Base/src/main/resources/images/oxygen/16x16/multimedia-player-apple-ipod.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Features/Base/src/main/resources/images/oxygen/16x16/text-x-bibtex.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Features/Base/src/main/resources/images/oxygen/16x16/text-x-c++src.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Features/Base/src/main/resources/images/oxygen/16x16/text-x-chdr.png	Oxygen Icons - LGPL 3.0	
+Features/Base/src/main/resources/images/oxygen/16x16/text-x-csharp.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Features/Base/src/main/resources/images/oxygen/16x16/text-x-pascal.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Features/Base/src/main/resources/images/oxygen/16x16/text-x-python.png	Oxygen Icons - LGPL 3.0	
+Features/Base/src/main/resources/images/package.png	Nuvola Icons - LGPL 2.1	Nuvola icon set
+Features/Base/src/main/resources/images/package_development.png	Nuvola Icons - LGPL 2.1	nuvola
+Features/Base/src/main/resources/images/package_green.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/page_white.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/page_white_c.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/pencil16.png	GHIDRA	
+Features/Base/src/main/resources/images/pin.png	GHIDRA	
+Features/Base/src/main/resources/images/play_again.png	GHIDRA	
+Features/Base/src/main/resources/images/preferences-system.png	Tango Icons - Public Domain	tango
+Features/Base/src/main/resources/images/python.png	GHIDRA	
+Features/Base/src/main/resources/images/question_zero.png	GHIDRA	
+Features/Base/src/main/resources/images/red-cross.png	GHIDRA	
+Features/Base/src/main/resources/images/redQuestionMark.png	GHIDRA	
+Features/Base/src/main/resources/images/references_to.gif	GHIDRA	
+Features/Base/src/main/resources/images/registerGroup.png	GHIDRA	
+Features/Base/src/main/resources/images/registerIcon.png	GHIDRA	
+Features/Base/src/main/resources/images/script_add.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/searchm_obj.gif	GHIDRA	
+Features/Base/src/main/resources/images/searchm_pink.gif	GHIDRA	
+Features/Base/src/main/resources/images/settings16.gif	GHIDRA	
+Features/Base/src/main/resources/images/sitemap_color.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/slash.png	GHIDRA	
+Features/Base/src/main/resources/images/smallLeftArrow.png	GHIDRA	
+Features/Base/src/main/resources/images/smallRightArrow.png	GHIDRA	
+Features/Base/src/main/resources/images/small_minus.png	GHIDRA	
+Features/Base/src/main/resources/images/small_plus.png	GHIDRA	
+Features/Base/src/main/resources/images/stopNode.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/sync_enabled.png	GHIDRA	
+Features/Base/src/main/resources/images/table_go.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/tag_blue.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/tag_yellow.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/text-x-csrc.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Features/Base/src/main/resources/images/text-xml.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Features/Base/src/main/resources/images/text_list_bullets.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/Base/src/main/resources/images/twosComplement.png	GHIDRA	
+Features/Base/src/main/resources/images/typedef.png	GHIDRA	
+Features/Base/src/main/resources/images/unknown.gif	GHIDRA	
+Features/Base/src/main/resources/images/unlock.gif	GHIDRA	
+Features/Base/src/main/resources/images/verticalSplit.png	GHIDRA	
+Features/Base/src/main/resources/images/view-sort-ascending.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Features/Base/src/main/resources/images/view-sort-descending.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Features/Base/src/main/resources/images/view_bottom.png	Nuvola Icons - LGPL 2.1	Nuvola icon set
+Features/Base/src/main/resources/images/view_left_right.png	Nuvola Icons - LGPL 2.1	Nuvola icon set
+Features/Base/src/main/resources/images/vscode.png	MIT	
+Features/Base/src/main/resources/images/wizard.png	Nuvola Icons - LGPL 2.1	nuvola
+Features/Base/src/main/resources/images/x-office-document-template.png	Tango Icons - Public Domain	tango icon set
+Features/Base/src/main/resources/images/xor.png	GHIDRA	
+Features/ByteViewer/src/main/resources/images/wrench.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/DataGraph/src/main/resources/images/view_detailed_16.png	Nuvola Icons - LGPL 2.1	Nuvola icon set
+Features/Decompiler/src/main/resources/images/decompileFunction.gif	GHIDRA	reviewed
+Features/Decompiler/src/main/resources/images/eliminateUnreachable.png	GHIDRA	
+Features/Decompiler/src/main/resources/images/readOnly.png	GHIDRA	
+Features/DecompilerDependent/src/main/resources/images/default-query.png	GHIDRA	
+Features/DecompilerDependent/src/main/resources/images/gate-set.png	GHIDRA	
+Features/FunctionGraph/src/main/resources/images/brick_link.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/FunctionGraph/src/main/resources/images/fgblock.png	GHIDRA	reviewed
+Features/FunctionGraph/src/main/resources/images/fgin.png	GHIDRA	reviewed
+Features/FunctionGraph/src/main/resources/images/fginout.png	GHIDRA	reviewed
+Features/FunctionGraph/src/main/resources/images/fgloop.png	GHIDRA	reviewed
+Features/FunctionGraph/src/main/resources/images/fgloopall.png	GHIDRA	reviewed
+Features/FunctionGraph/src/main/resources/images/fgout.png	GHIDRA	reviewed
+Features/FunctionGraph/src/main/resources/images/fgpaths.png	GHIDRA	reviewed
+Features/FunctionGraph/src/main/resources/images/fgrevblock.png	GHIDRA	reviewed
+Features/FunctionGraph/src/main/resources/images/field.header.png	GHIDRA	reviewed Custom icon
+Features/FunctionGraph/src/main/resources/images/fullscreen_view.png	FAMFAMFAM Icons - CC 2.5	
+Features/FunctionGraph/src/main/resources/images/function_graph_flowchart.png	GHIDRA	
+Features/FunctionGraph/src/main/resources/images/function_graph_flowchart_left.png	GHIDRA	
+Features/FunctionGraph/src/main/resources/images/graph_view.png	FAMFAMFAM Icons - CC 2.5	
+Features/FunctionGraph/src/main/resources/images/id.png	FAMFAMFAM Icons - CC 2.5	
+Features/FunctionGraph/src/main/resources/images/paintbrush.png	FAMFAMFAM Icons - CC 2.5	
+Features/FunctionGraph/src/main/resources/images/palette.png	FAMFAMFAM Icons - CC 2.5	
+Features/FunctionGraph/src/main/resources/images/shape_handles.png	FAMFAMFAM Icons - CC 2.5	famfam
+Features/FunctionGraph/src/main/resources/images/shape_square_add.png	FAMFAMFAM Icons - CC 2.5	famfam
+Features/FunctionGraph/src/main/resources/images/shape_ungroup.png	FAMFAMFAM Icons - CC 2.5	famfam
+Features/FunctionGraphDecompilerExtension/src/main/resources/images/function_graph_code_flow.png	GHIDRA	reviewed
+Features/ProgramDiff/src/main/resources/images/Diff16.png	GHIDRA	reviewed
+Features/ProgramDiff/src/main/resources/images/DiffSelect16.png	GHIDRA	reviewed
+Features/ProgramDiff/src/main/resources/images/eraser_arrow16.png	GHIDRA	
+Features/ProgramDiff/src/main/resources/images/pencil_arrow16.png	GHIDRA	reviewed
+Features/VersionTracking/src/main/resources/images/accept.png	FAMFAMFAM Icons - CC 2.5	
+Features/VersionTracking/src/main/resources/images/application_tile_horizontal.png	FAMFAMFAM Icons - CC 2.5	fam fam
+Features/VersionTracking/src/main/resources/images/application_view_detail.png	FAMFAMFAM Icons - CC 2.5	copied application_view_detail.png from famfamfam silk icon set.
+Features/VersionTracking/src/main/resources/images/asterisk_orange.png	FAMFAMFAM Icons - CC 2.5	
+Features/VersionTracking/src/main/resources/images/bullet_error.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/VersionTracking/src/main/resources/images/cache.png	Nuvola Icons - LGPL 2.1	Nuvola icon set. LGPL 2.1. Copied from nuvola/16x16/cache.png.
+Features/VersionTracking/src/main/resources/images/doubleArrowUpDown.png	GHIDRA	reviewed
+Features/VersionTracking/src/main/resources/images/edit-rename.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0) copied from oxygen/16x16/edit-rename.png.
+Features/VersionTracking/src/main/resources/images/filter_matched.png	Tango Icons - Public Domain	tango - with overlay
+Features/VersionTracking/src/main/resources/images/function.png	GHIDRA	
+Features/VersionTracking/src/main/resources/images/go-down.png	Oxygen Icons - LGPL 3.0	
+Features/VersionTracking/src/main/resources/images/go-next.png	Oxygen Icons - LGPL 3.0	
+Features/VersionTracking/src/main/resources/images/ledblue.png	Nuvola Icons - LGPL 2.1	
+Features/VersionTracking/src/main/resources/images/ledorange.png	Nuvola Icons - LGPL 2.1	
+Features/VersionTracking/src/main/resources/images/ledpurple.png	Nuvola Icons - LGPL 2.1	
+Features/VersionTracking/src/main/resources/images/lightbulb.png	FAMFAMFAM Icons - CC 2.5	famfam
+Features/VersionTracking/src/main/resources/images/lightbulb_off.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Features/VersionTracking/src/main/resources/images/start-here_16.png	Tango Icons - Public Domain	From tango
+Features/VersionTracking/src/main/resources/images/table_gear.png	FAMFAMFAM Icons - CC 2.5	fam fam
+Features/VersionTracking/src/main/resources/images/tag_blue_add.png	FAMFAMFAM Icons - CC 2.5	famfam
+Features/VersionTracking/src/main/resources/images/tag_blue_delete.png	FAMFAMFAM Icons - CC 2.5	famfam
+Features/VersionTracking/src/main/resources/images/tag_blue_edit.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set - Copied from famfamfam_silk/icons/tag_blue_edit.png
+Features/VersionTracking/src/main/resources/images/undo-apply.png	Nuvola Icons - LGPL 2.1	originally named undo.png
+Features/VersionTracking/src/main/resources/images/user-online.png	Oxygen Icons - LGPL 3.0	
+Framework/Docking/src/main/resources/images/Minus.png	GHIDRA	
+Framework/Docking/src/main/resources/images/Plus.png	GHIDRA	reviewed
+Framework/Docking/src/main/resources/images/StackFrameElement.png	GHIDRA	reviewed
+Framework/Docking/src/main/resources/images/StackFrame_Red.png	GHIDRA	reviewed
+Framework/Docking/src/main/resources/images/VCRFastForward.gif	GHIDRA	
+Framework/Docking/src/main/resources/images/accessories-text-editor.png	Tango Icons - Public Domain	
+Framework/Docking/src/main/resources/images/application-vnd.oasis.opendocument.spreadsheet-template.png	Oxygen Icons - LGPL 3.0	oxygen
+Framework/Docking/src/main/resources/images/application_xp.png	FAMFAMFAM Icons - CC 2.5	fam fam
+Framework/Docking/src/main/resources/images/bullet_delete.png	FAMFAMFAM Icons - CC 2.5	
+Framework/Docking/src/main/resources/images/check.png	GHIDRA	
+Framework/Docking/src/main/resources/images/closedFolder.png	Modified Nuvola Icons - LGPL 2.1	
+Framework/Docking/src/main/resources/images/collapse.gif	GHIDRA	
+Framework/Docking/src/main/resources/images/computer.png	Tango Icons - Public Domain	tango
+Framework/Docking/src/main/resources/images/desktop.png	Nuvola Icons - LGPL 2.1	Nuvola icon set
+Framework/Docking/src/main/resources/images/dialog-warning.png	Oxygen Icons - LGPL 3.0	
+Framework/Docking/src/main/resources/images/document-properties.png	Tango Icons - Public Domain	tango icon set
+Framework/Docking/src/main/resources/images/drive.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Framework/Docking/src/main/resources/images/eatbits1.png	GHIDRA	reviewed
+Framework/Docking/src/main/resources/images/eatbits2.png	GHIDRA	reviewed
+Framework/Docking/src/main/resources/images/eatbits3.png	GHIDRA	reviewed
+Framework/Docking/src/main/resources/images/eatbits4.png	GHIDRA	reviewed
+Framework/Docking/src/main/resources/images/eatbits5.png	GHIDRA	reviewed
+Framework/Docking/src/main/resources/images/eatbits6.png	GHIDRA	reviewed
+Framework/Docking/src/main/resources/images/eatbits7.png	GHIDRA	reviewed
+Framework/Docking/src/main/resources/images/edit-redo.png	Tango Icons - Public Domain	tango icon set
+Framework/Docking/src/main/resources/images/edit-undo.png	Tango Icons - Public Domain	tango icon set
+Framework/Docking/src/main/resources/images/empty8x16.png	GHIDRA	
+Framework/Docking/src/main/resources/images/expand.gif	GHIDRA	
+Framework/Docking/src/main/resources/images/filter_off.png	GHIDRA	
+Framework/Docking/src/main/resources/images/filter_on.png	GHIDRA	
+Framework/Docking/src/main/resources/images/folder-downloads-32.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Framework/Docking/src/main/resources/images/folder_add.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Framework/Docking/src/main/resources/images/font.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Framework/Docking/src/main/resources/images/hourglass.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Framework/Docking/src/main/resources/images/hourglass24_01.png	GHIDRA	reviewed
+Framework/Docking/src/main/resources/images/hourglass24_02.png	GHIDRA	reviewed
+Framework/Docking/src/main/resources/images/hourglass24_03.png	GHIDRA	reviewed
+Framework/Docking/src/main/resources/images/hourglass24_04.png	GHIDRA	reviewed
+Framework/Docking/src/main/resources/images/hourglass24_05.png	GHIDRA	reviewed
+Framework/Docking/src/main/resources/images/hourglass24_06.png	GHIDRA	reviewed
+Framework/Docking/src/main/resources/images/hourglass24_07.png	GHIDRA	reviewed
+Framework/Docking/src/main/resources/images/hourglass24_08.png	GHIDRA	reviewed
+Framework/Docking/src/main/resources/images/hourglass24_09.png	GHIDRA	reviewed
+Framework/Docking/src/main/resources/images/hourglass24_10.png	GHIDRA	reviewed
+Framework/Docking/src/main/resources/images/hourglass24_11.png	GHIDRA	reviewed
+Framework/Docking/src/main/resources/images/info_small.png	GHIDRA	
+Framework/Docking/src/main/resources/images/info_small_hover.png	GHIDRA	
+Framework/Docking/src/main/resources/images/inode-directory.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Framework/Docking/src/main/resources/images/magnifier.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Framework/Docking/src/main/resources/images/mail-folder-outbox.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Framework/Docking/src/main/resources/images/mail-receive.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Framework/Docking/src/main/resources/images/media-playback-start.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Framework/Docking/src/main/resources/images/menu16.gif	GHIDRA	reviewed
+Framework/Docking/src/main/resources/images/oxygen-edit-redo.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Framework/Docking/src/main/resources/images/page_code.png	FAMFAMFAM Icons - CC 2.5	
+Framework/Docking/src/main/resources/images/page_excel.png	FAMFAMFAM Icons - CC 2.5	
+Framework/Docking/src/main/resources/images/page_go.png	FAMFAMFAM Icons - CC 2.5	
+Framework/Docking/src/main/resources/images/page_green.png	FAMFAMFAM Icons - CC 2.5	
+Framework/Docking/src/main/resources/images/pinkX.gif	GHIDRA	
+Framework/Docking/src/main/resources/images/play.png	GHIDRA	
+Framework/Docking/src/main/resources/images/software-update-available.png	Tango Icons - Public Domain	tango icon set
+Framework/Docking/src/main/resources/images/table.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Framework/Docking/src/main/resources/images/table_delete.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Framework/Docking/src/main/resources/images/table_relationship.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Framework/Docking/src/main/resources/images/tag.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Framework/Docking/src/main/resources/images/text_lowercase.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Framework/Docking/src/main/resources/images/textfield_rename.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Framework/Docking/src/main/resources/images/trash-empty.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Framework/Docking/src/main/resources/images/user-home.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Framework/Docking/src/main/resources/images/view-filter.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Framework/Docking/src/main/resources/images/www_128.png	Nuvola Icons - LGPL 2.1	nuvola www.png
+Framework/Docking/src/main/resources/images/www_16.png	Nuvola Icons - LGPL 2.1	nuvola www 16x16
+Framework/Docking/src/main/resources/images/x.gif	GHIDRA	
+Framework/Docking/src/main/resources/images/zoom.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Framework/Docking/src/main/resources/images/zoom_in.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Framework/Docking/src/main/resources/images/zoom_out.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Framework/Graph/src/main/resources/images/Lasso.png	GHIDRA	
+Framework/Graph/src/main/resources/images/color_swatch.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Framework/Graph/src/main/resources/images/katomic.png	Nuvola Icons - LGPL 2.1	Nuvola icon set
+Framework/Graph/src/main/resources/images/network-wireless-16.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Framework/Graph/src/main/resources/images/network-wireless.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Framework/Graph/src/main/resources/images/project-open.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Framework/Graph/src/main/resources/images/redspheregraph.png	GHIDRA	
+Framework/Graph/src/main/resources/images/view-fullscreen.png	Tango Icons - Public Domain	tango icon set
+Framework/Gui/src/main/resources/images/EmptyIcon.gif	GHIDRA	
+Framework/Gui/src/main/resources/images/EmptyIcon16.gif	GHIDRA	
+Framework/Gui/src/main/resources/images/GhidraIcon128.png	GHIDRA	
+Framework/Gui/src/main/resources/images/GhidraIcon16.png	GHIDRA	
+Framework/Gui/src/main/resources/images/GhidraIcon24.png	GHIDRA	
+Framework/Gui/src/main/resources/images/GhidraIcon256.png	GHIDRA	
+Framework/Gui/src/main/resources/images/GhidraIcon32.png	GHIDRA	
+Framework/Gui/src/main/resources/images/GhidraIcon40.png	GHIDRA	
+Framework/Gui/src/main/resources/images/GhidraIcon48.png	GHIDRA	
+Framework/Gui/src/main/resources/images/GhidraIcon64.png	GHIDRA	
+Framework/Gui/src/main/resources/images/Plus2.png	GHIDRA	
+Framework/Gui/src/main/resources/images/checkmark_green.gif	GHIDRA	
+Framework/Gui/src/main/resources/images/closedSmallFolder.png	Modified Nuvola Icons - LGPL 2.1	
+Framework/Gui/src/main/resources/images/collapse_all.png	GHIDRA	
+Framework/Gui/src/main/resources/images/dialog-cancel.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Framework/Gui/src/main/resources/images/disk.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Framework/Gui/src/main/resources/images/disk_save_as.png	FAMFAMFAM Icons - CC 2.5	
+Framework/Gui/src/main/resources/images/down.png	GHIDRA	
+Framework/Gui/src/main/resources/images/edit-cut.png	Tango Icons - Public Domain	tango icon set
+Framework/Gui/src/main/resources/images/edit-delete.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Framework/Gui/src/main/resources/images/emblem-important.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Framework/Gui/src/main/resources/images/erase16.png	GHIDRA	
+Framework/Gui/src/main/resources/images/exec.png	Crystal Clear Icons - LGPL 2.1	
+Framework/Gui/src/main/resources/images/expand_all.png	GHIDRA	
+Framework/Gui/src/main/resources/images/flag.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Framework/Gui/src/main/resources/images/go-home.png	Tango Icons - Public Domain	tango icon set
+Framework/Gui/src/main/resources/images/help-browser.png	Tango Icons - Public Domain	tango icon set
+Framework/Gui/src/main/resources/images/information.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Framework/Gui/src/main/resources/images/kgpg.png	Nuvola Icons - LGPL 2.1	Nuvola icon set
+Framework/Gui/src/main/resources/images/left.alternate.png	GHIDRA	
+Framework/Gui/src/main/resources/images/left.png	GHIDRA	
+Framework/Gui/src/main/resources/images/list-remove.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Framework/Gui/src/main/resources/images/locationIn.gif	GHIDRA	
+Framework/Gui/src/main/resources/images/locationOut.gif	GHIDRA	
+Framework/Gui/src/main/resources/images/openFolder.png	Modified Nuvola Icons - LGPL 2.1	
+Framework/Gui/src/main/resources/images/openSmallFolder.png	Modified Nuvola Icons - LGPL 2.1	
+Framework/Gui/src/main/resources/images/page_paste.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Framework/Gui/src/main/resources/images/page_white_copy.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Framework/Gui/src/main/resources/images/process-stop.png	Tango Icons - Public Domain	tango icon set
+Framework/Gui/src/main/resources/images/program_obj.png	GHIDRA	
+Framework/Gui/src/main/resources/images/reload3.png	Crystal Clear Icons - LGPL 2.1	
+Framework/Gui/src/main/resources/images/right.alternate.png	GHIDRA	
+Framework/Gui/src/main/resources/images/right.png	GHIDRA	
+Framework/Gui/src/main/resources/images/software-update-urgent.png	Tango Icons - Public Domain	tango icon set
+Framework/Gui/src/main/resources/images/sortascending.png	GHIDRA	
+Framework/Gui/src/main/resources/images/sortdescending.png	GHIDRA	
+Framework/Gui/src/main/resources/images/stack.png	GHIDRA	
+Framework/Gui/src/main/resources/images/text_align_justify.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Framework/Gui/src/main/resources/images/tick.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Framework/Gui/src/main/resources/images/up.png	GHIDRA	
+Framework/Gui/src/main/resources/images/video-x-generic16.png	Tango Icons - Public Domain	tango icon set
+Framework/Gui/src/main/resources/images/viewmagfit.png	Nuvola Icons - LGPL 2.1	Nuvola icon set
+Framework/Gui/src/main/resources/images/warning.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Framework/Project/src/main/resources/images/checkNotLatest.gif	GHIDRA	reviewed
+Framework/Project/src/main/resources/images/checkex.png	GHIDRA	reviewed
+Framework/Project/src/main/resources/images/connected.gif	GHIDRA	reviewed
+Framework/Project/src/main/resources/images/disconnected.gif	GHIDRA	reviewed
+Framework/Project/src/main/resources/images/green_can.png	GHIDRA	
+Framework/Project/src/main/resources/images/link.png	Crystal Clear Icons - LGPL 2.1	
+Framework/Project/src/main/resources/images/lock.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Framework/Project/src/main/resources/images/monitor.png	FAMFAMFAM Icons - CC 2.5	silk
+Framework/Project/src/main/resources/images/page_add.png	FAMFAMFAM Icons - CC 2.5	
+Framework/Project/src/main/resources/images/page_delete.png	FAMFAMFAM Icons - CC 2.5	
+Framework/Project/src/main/resources/images/page_edit.png	FAMFAMFAM Icons - CC 2.5	
+Framework/Project/src/main/resources/images/plasma.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Framework/Project/src/main/resources/images/plugin.png	GHIDRA	reviewed
+Framework/Project/src/main/resources/images/red_can.png	GHIDRA	
+Framework/Project/src/main/resources/images/small_hijack.gif	GHIDRA	reviewed
+Framework/Project/src/main/resources/images/undo_hijack.png	GHIDRA	reviewed
+Framework/Project/src/main/resources/images/unknownFile.gif	GHIDRA	reviewed
+Framework/Project/src/main/resources/images/user-busy.png	Oxygen Icons - LGPL 3.0	Oxygen icon theme (dual license; LGPL or CC-SA-3.0)
+Framework/Project/src/main/resources/images/user.png	FAMFAMFAM Icons - CC 2.5	
+Framework/Project/src/main/resources/images/vcAdd.png	GHIDRA	reviewed
+Framework/Project/src/main/resources/images/vcCheckIn.png	GHIDRA	reviewed
+Framework/Project/src/main/resources/images/vcCheckOut.png	GHIDRA	reviewed
+Framework/Project/src/main/resources/images/vcMerge.png	GHIDRA	reviewed
+Framework/Project/src/main/resources/images/vcUndoCheckOut.png	GHIDRA	reviewed
+Framework/Project/src/main/resources/images/view-refresh.png	Tango Icons - Public Domain	
+Framework/Project/src/main/resources/images/wand.png	FAMFAMFAM Icons - CC 2.5	famfamfam silk icon set
+Framework/SoftwareModeling/src/main/resources/images/audio-volume-medium.png	Tango Icons - Public Domain	tango icon set
+Framework/SoftwareModeling/src/main/resources/images/closedBookBlue.png	GHIDRA	

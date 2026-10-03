@@ -1,3 +1,4 @@
+use std::any::Any;
 use crate::program::model::address::Address;
 use crate::program::model::symbol::{RefType, Reference, SourceType};
 use std::cmp::Ordering;
@@ -131,6 +132,10 @@ impl Reference for MemReferenceImpl {
 
     fn source(&self) -> SourceType {
         self.source_type
+    }
+
+    fn as_any(&self) -> &dyn Any {
+        self
     }
 }
 

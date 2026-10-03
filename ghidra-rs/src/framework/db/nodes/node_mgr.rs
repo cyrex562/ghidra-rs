@@ -58,4 +58,33 @@ impl NodeMgr {
             self.schema.get_fixed_record_length(),
         ))
     }
+
+    /// Determine whether the node stored in buffer `buffer_id` is (or was) a `VarKeyNode`, used
+    /// by legacy-schema compatibility checks.
+    ///
+    /// Port of the static `NodeMgr.isVarKeyNode(BufferMgr, int)`. Real Ghidra tags every stored
+    /// node buffer with a type byte drawn from a single global numbering scheme spanning
+    /// `LongKeyNode`, `FixedKeyNode`, `VarKeyNode`, and index-key node variants, and this method
+    /// inspects that byte to see whether it names one of the `VarKeyNode` type constants.
+    ///
+    /// This port's on-disk node-type tagging (`NODE_TYPE_OFFSET` plus the `TYPE_LONGKEY_*`
+    /// constants in [`super::long_key_node`]) is so far only modeled for the long-key node
+    /// family; [`super::super::var_key_node::VarKeyNode`]/[`super::super::fixed_key_node::FixedKeyNode`]
+    /// do not yet write or read an equivalent type tag of their own, so there is no tag here to
+    /// faithfully decode a `VarKeyNode` identity from.
+    ///
+    /// This is a real capability gap rather than a "fixed" bug: this method is only ever called
+    /// (by [`super::super::table_record::TableRecord`]'s legacy-schema compatibility path) after
+    /// its caller has already confirmed the key type is *not* `Long`, not variable-length, and
+    /// not `Fixed` -- i.e. only for the rare legacy-schema edge case the real method exists to
+    /// detect at all. Conservatively answering `false` here (never forcing variable-length key
+    /// nodes) matches the answer Ghidra itself would give for any buffer that was never actually
+    /// written as a `VarKeyNode`, which covers every case this port's `NodeMgr` can currently
+    /// produce.
+    pub fn is_var_key_node(
+        _buffer_mgr: &Arc<RwLock<BufferMgr>>,
+        _buffer_id: i32,
+    ) -> io::Result<bool> {
+        Ok(false)
+    }
 }

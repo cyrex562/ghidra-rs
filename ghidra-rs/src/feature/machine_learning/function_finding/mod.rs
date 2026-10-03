@@ -1,2 +1,4 @@
 pub mod function_start_alignment_row_object;
+pub mod random_forest_function_finder_plugin;
+pub mod random_forest_row_object;
 pub mod similar_start_row_object;

@@ -161,13 +161,13 @@ mod tests {
 
     fn create_address(offset: u64) -> Address {
         let ram = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 0);
-        Address::new(ram, offset)
+        Address::new(ram, offset as i64)
     }
 
     fn create_address_set(start: u64, end: u64) -> AddressSet {
         let ram = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 0);
-        let start_addr = Address::new(ram, start);
-        let end_addr = Address::new(ram, end);
+        let start_addr = Address::new(ram.clone(), start as i64);
+        let end_addr = Address::new(ram, end as i64);
         let mut set = AddressSet::new();
         set.add_range(&start_addr, &end_addr);
         set

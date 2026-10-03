@@ -1,11 +1,14 @@
 use std::collections::HashMap;
 
+use serde::Serialize;
+
 use super::{IsfObject, IsfWinPDB, IsfWinPE};
 
 /// Represents an ISF Windows OS descriptor.
 ///
 /// Mirrors `IsfWinOS` from Ghidra's `Debugger-isf` module. Aggregates a
 /// [`IsfWinPE`] and [`IsfWinPDB`] constructed from the same metadata map.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct IsfWinOS {
     pub pe: IsfWinPE,
     pub pdb: IsfWinPDB,

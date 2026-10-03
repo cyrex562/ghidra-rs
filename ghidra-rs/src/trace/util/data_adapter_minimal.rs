@@ -59,7 +59,8 @@ mod tests {
     use crate::docking::settings::settings::Settings;
     use crate::program::model::lang::register::Register;
     use crate::program::model::data::data_type_display_options::DataTypeDisplayOptions;
-    use crate::program::seam_stubs::{CommentType, MemBuffer};
+    use crate::program::model::mem::MemBuffer;
+use crate::program::model::listing::CommentType;
     use std::any::{Any, TypeId};
     use std::sync::Arc;
 
@@ -113,84 +114,31 @@ mod tests {
     }
 
     impl MemBuffer for MockDataAdapterMinimal {
+        fn get_byte(&self, _offset: i32) -> Result<u8, crate::program::model::mem::MemoryAccessException> {
+            unimplemented!("not exercised by these tests")
+        }
+        fn get_bytes(&self, _buf: &mut [u8], _offset: i32) -> usize {
+            unimplemented!("not exercised by these tests")
+        }
+        fn is_big_endian(&self) -> bool {
+            unimplemented!("not exercised by these tests")
+        }
         fn get_address(&self) -> Address {
             self.address.clone()
         }
-
-        fn get_bytes(
-            &self,
-            _start: i32,
-            _end: i32,
-        ) -> Result<Vec<u8>, MemoryAccessException> {
-            Ok(vec![])
-        }
-
-        fn get_byte(&self, _offset: i32) -> Result<u8, MemoryAccessException> {
-            Ok(0)
-        }
-
-        fn get_short(
-            &self,
-            _offset: i32,
-        ) -> Result<u16, MemoryAccessException> {
-            Ok(0)
-        }
-
-        fn get_int(&self, _offset: i32) -> Result<u32, MemoryAccessException> {
-            Ok(0)
-        }
-
-        fn get_long(
-            &self,
-            _offset: i32,
-        ) -> Result<u64, MemoryAccessException> {
-            Ok(0)
-        }
-
-        fn get_var_length(&self) -> i32 {
-            1
-        }
     }
 
-    impl PropertySet for MockDataAdapterMinimal {
-        fn get_property(&self, _property_name: &str) -> Option<Box<dyn Any>> {
-            None
-        }
-
-        fn set_property(&mut self, _property_name: &str, _property_value: Box<dyn Any>) {}
-
-        fn delete_property(&mut self, _property_name: &str) {}
-    }
+    impl PropertySet for MockDataAdapterMinimal {}
 
     impl Settings for MockDataAdapterMinimal {
-        fn get_value(&self, _key: &str) -> Box<dyn Any> {
-            Box::new(None::<i32>)
+        fn get_value(&self, _key: &str) -> Option<Box<dyn Any>> {
+            None
         }
 
         fn set_value(&mut self, _key: &str, _value: Box<dyn Any>) {}
 
         fn get_names(&self) -> Vec<String> {
             vec![]
-        }
-
-        fn copy_settings(&mut self, _src: &dyn Settings) {}
-
-        fn clear(&mut self) {}
-
-        fn get_default_value(&self, _key: &str) -> Box<dyn Any> {
-            Box::new(None::<i32>)
-        }
-
-        fn contains(&self, _key: &str) -> bool {
-            false
-        }
-
-        fn to_string(&self) -> String {
-            String::new()
-        }
-
-        fn is_immutable(&self) -> bool {
-            false
         }
     }
 
@@ -386,7 +334,7 @@ mod tests {
             todo!()
         }
 
-        fn get_value_references(&self) -> Vec<Box<dyn Reference>> {
+        fn get_value_references(&self) -> Vec<Box<dyn crate::program::seam_stubs::Reference>> {
             vec![]
         }
 
@@ -509,7 +457,7 @@ mod tests {
             address: addr(&space, 0x1000),
         };
 
-        assert_eq!(mock.get_num_operands(), 1);
+        assert_eq!(DataAdapterMinimal::get_num_operands(&mock), 1);
     }
 
     #[test]
@@ -547,7 +495,7 @@ mod tests {
             address: addr(&space, 0x1000),
         };
 
-        let refs = mock.get_value_references();
+        let refs = DataAdapterMinimal::get_value_references(&mock);
         assert_eq!(refs.len(), 0);
     }
 

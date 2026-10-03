@@ -12,6 +12,10 @@
 //! given concrete state piece. The factory creates that state for use by
 //! `SymZ3TracePcodeEmulator`.
 
+pub mod sym_z3_trace_space;
+
+pub use sym_z3_trace_space::{SymZ3TraceSpace, SymZ3TraceSpaceBase};
+
 #[cfg(test)]
 mod tests {
     #[test]

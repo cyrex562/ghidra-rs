@@ -1,3 +1,8 @@
+//! Iterator for symbols.
+//!
+//! Port of `ghidra.program.model.symbol.SymbolIterator` and
+//! `ghidra.program.model.symbol.SymbolIteratorAdapter`.
+
 use crate::program::model::symbol::Symbol;
 use std::sync::Arc;
 
@@ -52,6 +57,39 @@ impl SymbolIterator for SymbolIteratorAdapter {
         let symbol = self.symbols[self.index].clone();
         self.index += 1;
         Some(symbol)
+    }
+}
+
+/// Adapter that wraps any iterator of symbols.
+///
+/// This is the Rust equivalent of Java's `SymbolIteratorAdapter`, providing
+/// a convenient way to wrap a boxed iterator to implement the `SymbolIterator` trait.
+pub struct SymbolAdapter {
+    iter: Box<dyn Iterator<Item = Arc<dyn Symbol>>>,
+    current: Option<Arc<dyn Symbol>>,
+}
+
+impl SymbolAdapter {
+    /// Creates an adapter from a boxed iterator of symbols.
+    ///
+    /// # Arguments
+    ///
+    /// * `iter` - A boxed iterator that yields symbols
+    pub fn new(mut iter: Box<dyn Iterator<Item = Arc<dyn Symbol>>>) -> Self {
+        let current = iter.next();
+        Self { iter, current }
+    }
+}
+
+impl SymbolIterator for SymbolAdapter {
+    fn has_next(&self) -> bool {
+        self.current.is_some()
+    }
+
+    fn next_symbol(&mut self) -> Option<Arc<dyn Symbol>> {
+        let result = self.current.take();
+        self.current = self.iter.next();
+        result
     }
 }
 
@@ -115,7 +153,7 @@ mod tests {
     }
 
     #[test]
-    fn adapter_iterates_symbols_and_then_returns_none() {
+    fn vec_adapter_iterates_symbols_and_then_returns_none() {
         let symbols: Vec<Arc<dyn Symbol>> = vec![
             Arc::new(TestSymbol::new("first", 0x1000)),
             Arc::new(TestSymbol::new("second", 0x1001)),
@@ -126,6 +164,48 @@ mod tests {
         assert_eq!(iterator.next_symbol().unwrap().get_name(), "first");
         assert!(iterator.has_next());
         assert_eq!(iterator.next_symbol().unwrap().get_name(), "second");
+        assert!(!iterator.has_next());
+        assert!(iterator.next_symbol().is_none());
+    }
+
+    #[test]
+    fn symbol_adapter_iterates_from_boxed_iterator() {
+        let symbols: Vec<Arc<dyn Symbol>> = vec![
+            Arc::new(TestSymbol::new("first", 0x1000)),
+            Arc::new(TestSymbol::new("second", 0x1001)),
+            Arc::new(TestSymbol::new("third", 0x1002)),
+        ];
+        let boxed_iter: Box<dyn Iterator<Item = Arc<dyn Symbol>>> = Box::new(symbols.into_iter());
+        let mut iterator = SymbolAdapter::new(boxed_iter);
+
+        assert!(iterator.has_next());
+        assert_eq!(iterator.next_symbol().unwrap().get_name(), "first");
+        assert!(iterator.has_next());
+        assert_eq!(iterator.next_symbol().unwrap().get_name(), "second");
+        assert!(iterator.has_next());
+        assert_eq!(iterator.next_symbol().unwrap().get_name(), "third");
+        assert!(!iterator.has_next());
+        assert!(iterator.next_symbol().is_none());
+    }
+
+    #[test]
+    fn symbol_adapter_with_single_element() {
+        let symbols: Vec<Arc<dyn Symbol>> = vec![Arc::new(TestSymbol::new("only", 0x5000))];
+        let boxed_iter: Box<dyn Iterator<Item = Arc<dyn Symbol>>> = Box::new(symbols.into_iter());
+        let mut iterator = SymbolAdapter::new(boxed_iter);
+
+        assert!(iterator.has_next());
+        assert_eq!(iterator.next_symbol().unwrap().get_name(), "only");
+        assert!(!iterator.has_next());
+        assert!(iterator.next_symbol().is_none());
+    }
+
+    #[test]
+    fn symbol_adapter_with_empty_iterator() {
+        let symbols: Vec<Arc<dyn Symbol>> = vec![];
+        let boxed_iter: Box<dyn Iterator<Item = Arc<dyn Symbol>>> = Box::new(symbols.into_iter());
+        let mut iterator = SymbolAdapter::new(boxed_iter);
+
         assert!(!iterator.has_next());
         assert!(iterator.next_symbol().is_none());
     }

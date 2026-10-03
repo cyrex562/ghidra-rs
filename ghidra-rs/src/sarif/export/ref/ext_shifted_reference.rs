@@ -22,7 +22,7 @@ impl ExtShiftedReference {
     /// shift amount, and base value from the given reference.
     pub fn new(reference: &dyn ShiftedReference) -> Self {
         let reference_type = reference.reference_type();
-        let index = (reference_type.value() as u8).to_string();
+        let index = reference_type.value().to_string();
         let kind = reference_type.name().to_string();
         let op_index = reference.operand_index();
         let source_type = reference.source().display_string().to_string();
@@ -46,6 +46,17 @@ impl IsfObject for ExtShiftedReference {}
 mod tests {
     use super::*;
     use crate::program::model::address::{Address, AddressSpace};
+
+    fn default_space() -> std::sync::Arc<crate::program::model::address::AddressSpace> {
+        crate::program::model::address::AddressSpace::new(
+            "ram",
+            64,
+            1,
+            crate::program::model::address::AddressSpaceType::Ram,
+            0,
+        )
+    }
+
     use crate::program::model::symbol::{RefType, SourceType};
 
     struct MockShiftedReference {
@@ -67,12 +78,16 @@ mod tests {
     }
 
     impl crate::program::model::symbol::Reference for MockShiftedReference {
+        fn as_any(&self) -> &dyn std::any::Any {
+            self
+        }
+
         fn from_address(&self) -> Address {
-            Address::default()
+            Address::new(default_space(), 0)
         }
 
         fn to_address(&self) -> Address {
-            Address::default()
+            Address::new(default_space(), 0)
         }
 
         fn is_primary(&self) -> bool {

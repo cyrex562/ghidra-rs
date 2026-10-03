@@ -13,6 +13,8 @@ pub enum MachoPrelinkValue {
     Int(i32),
     Bool(bool),
     Map(MachoPrelinkMap),
+    /// Java's `null`, stored when a plist `IDREF` names no earlier `ID`.
+    Null,
 }
 
 /// A property-list map parsed from a Mach-O prelink segment.
@@ -50,6 +52,11 @@ impl MachoPrelinkMap {
 
     pub fn put_map(&mut self, key: impl Into<String>, value: MachoPrelinkMap) {
         self.map.insert(key.into(), MachoPrelinkValue::Map(value));
+    }
+
+    /// Stores Java's `null` (`put(key, (String) null)`).
+    pub fn put_null(&mut self, key: impl Into<String>) {
+        self.map.insert(key.into(), MachoPrelinkValue::Null);
     }
 
     /// Returns the bundle path string, or `None` if absent or not a string.
@@ -115,6 +122,7 @@ impl fmt::Display for MachoPrelinkMap {
                 MachoPrelinkValue::String(s) => writeln!(f, "{}={}", key, s)?,
                 MachoPrelinkValue::Bool(b) => writeln!(f, "{}={}", key, b)?,
                 MachoPrelinkValue::Map(m) => writeln!(f, "{}={}", key, m)?,
+                MachoPrelinkValue::Null => writeln!(f, "{}=null", key)?,
             }
         }
         Ok(())

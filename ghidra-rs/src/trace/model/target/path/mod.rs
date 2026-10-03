@@ -4,4 +4,7 @@ pub use key_path::{
 };
 
 pub mod path_pattern;
-pub use path_pattern::{key_matches, PathPattern};
+pub use path_pattern::{key_matches, Align, PathPattern};
+
+pub mod path_matcher;
+pub use path_matcher::{HasPatterns, PathMatcher};
