@@ -68,6 +68,24 @@ impl std::fmt::Debug for LiveProgram {
     }
 }
 
+/// The instructions starting in `start..=end`, in address order.
+pub fn instructions_in(
+    program: &ProgramDB,
+    start: &ghidra_rs::program::model::address::Address,
+    end: &ghidra_rs::program::model::address::Address,
+) -> Vec<InstructionSnapshot> {
+    program
+        .instruction_summaries(start, end)
+        .into_iter()
+        .map(|u| InstructionSnapshot {
+            start: u.address.offset() as u64,
+            len: u32::try_from(u.length).unwrap_or(u32::MAX),
+            mnemonic: u.mnemonic,
+            operands: u.operand_text,
+        })
+        .collect()
+}
+
 /// Every instruction in the program's loaded memory, in address order.
 pub fn snapshot_instructions(program: &ProgramDB) -> Vec<InstructionSnapshot> {
     use ghidra_rs::program::model::listing::Program;
@@ -77,13 +95,7 @@ pub fn snapshot_instructions(program: &ProgramDB) -> Vec<InstructionSnapshot> {
         .iter()
         .filter_map(|h| h.read().ok().map(|b| (b.get_start(), b.get_end())))
         .filter(|(start, _)| start.space().is_loaded_memory_space())
-        .flat_map(|(start, end)| program.instruction_summaries(&start, &end))
-        .map(|u| InstructionSnapshot {
-            start: u.address.offset() as u64,
-            len: u32::try_from(u.length).unwrap_or(u32::MAX),
-            mnemonic: u.mnemonic,
-            operands: u.operand_text,
-        })
+        .flat_map(|(start, end)| instructions_in(program, &start, &end))
         .collect();
     instructions.sort_by_key(|i| i.start);
     instructions

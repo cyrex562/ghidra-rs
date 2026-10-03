@@ -306,6 +306,28 @@ fn code_unit_listing(p: &ImportedProgram, instructions: Vec<crate::code_unit_lis
     )
 }
 
+/// Merges `new` (sorted) into `existing` (sorted); a new instruction replaces
+/// an old one at the same start. Linear: a disassembly only adds its ranges.
+fn merge_instructions(
+    existing: Vec<crate::code_unit_listing::InstructionSnapshot>,
+    new: Vec<crate::code_unit_listing::InstructionSnapshot>,
+) -> Vec<crate::code_unit_listing::InstructionSnapshot> {
+    let mut out = Vec::with_capacity(existing.len() + new.len());
+    let (mut old, mut new) = (existing.into_iter().peekable(), new.into_iter().peekable());
+    loop {
+        match (old.peek(), new.peek()) {
+            (Some(o), Some(n)) if o.start < n.start => out.extend(old.next()),
+            (Some(o), Some(n)) if o.start == n.start => {
+                old.next();
+                out.extend(new.next());
+            }
+            (_, Some(_)) => out.extend(new.next()),
+            (Some(_), None) => out.extend(old.next()),
+            (None, None) => return out,
+        }
+    }
+}
+
 /// Java `DisassemblerPlugin` "Disassemble" (`D`, listing popup): disassembles
 /// from the selection, else the cursor, following flows, then re-reads the
 /// program's code units into the listing.
@@ -317,12 +339,15 @@ fn add_disassemble_action(tool: &mut DockingTool, events: &UiEventQueue, listing
     use ghidra_rs::util::task::DummyMonitor;
 
     let Some(live) = p.live.clone() else { return };
-    let snapshot = p.clone();
-    let (ev, h, enabled) = (events.clone(), listing.clone(), listing);
+    let space = live.program().get_language().get_default_space();
+    let at = move |offset: u64| Address::new(space.clone(), offset as i64);
+    // What the listing is rebuilt from: blocks share their bytes, and only the
+    // disassembled ranges are re-read from the program.
+    let base = ImportedProgram { instructions: Vec::new(), live: None, ..p.clone() };
+    let instructions = Arc::new(Mutex::new(p.instructions.clone()));
+    let (ev, h, enabled, enabled_live, enabled_at) = (events.clone(), listing.clone(), listing, live.clone(), at.clone());
     let mut a = ClosureAction::new("Disassemble", "DisassemblerPlugin", move |_| {
         let program = live.program();
-        let space = program.get_language().get_default_space();
-        let at = |offset: u64| Address::new(space.clone(), offset as i64);
         let (cursor, ranges) = {
             let c = lock(&h);
             let m = c.model();
@@ -333,6 +358,12 @@ fn add_disassemble_action(tool: &mut DockingTool, events: &UiEventQueue, listing
         };
         let mut cmd = if ranges.is_empty() {
             let Some(cursor) = cursor else { return };
+            // DisassemblerPlugin.disassembleCallback
+            let initialized = base.blocks.iter().any(|b| cursor >= b.start && b.byte(cursor - b.start).is_some());
+            if !initialized {
+                ev.post(UiEvent::Status("Can't disassemble uninitialized memory!".into()));
+                return;
+            }
             DisassembleCommand::new(at(cursor), None, true)
         } else {
             let mut set = AddressSet::new();
@@ -341,20 +372,46 @@ fn add_disassemble_action(tool: &mut DockingTool, events: &UiEventQueue, listing
             }
             DisassembleCommand::with_start_set(set, None, true)
         };
-        if !cmd.apply(program, &DummyMonitor) {
+        let applied = cmd.apply(program, &DummyMonitor);
+        let done = cmd.get_disassembled_address_set().to_list();
+        if !applied || done.is_empty() {
             ev.post(UiEvent::Status(cmd.get_status_msg().unwrap_or_else(|| "Disassembly failed".into())));
             return;
         }
         if let Some(msg) = cmd.get_status_msg() {
             ev.post(UiEvent::Status(msg));
         }
-        let rebuilt = code_unit_listing(&snapshot, crate::program_import::snapshot_instructions(program));
-        lock(&h).replace_model(Box::new(rebuilt));
+        let mut added: Vec<_> = done
+            .iter()
+            .flat_map(|r| crate::program_import::instructions_in(program, r.min_address(), r.max_address()))
+            .collect();
+        added.sort_by_key(|i| i.start);
+        let merged = {
+            let mut current = instructions.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+            *current = merge_instructions(std::mem::take(&mut *current), added);
+            current.clone()
+        };
+        lock(&h).replace_model(Box::new(code_unit_listing(&base, merged)));
         ev.post(UiEvent::ViewChanged(listing_id.0));
         ev.post(UiEvent::ActionsChanged);
     });
+    // DisassemblerPlugin.checkDisassemblyEnabled: a selection, or a cursor not
+    // inside an instruction
     a.state_mut().enabled_when(Box::new(move |context| {
-        context.component_provider() == Some(listing_id) && lock(&enabled).cursor().is_some()
+        if context.component_provider() != Some(listing_id) {
+            return false;
+        }
+        let (cursor, selected) = {
+            let c = lock(&enabled);
+            (c.cursor().and_then(|cur| c.model().address_of(cur.index)), !c.selection().is_empty())
+        };
+        if selected {
+            return true;
+        }
+        let Some(cursor) = cursor else { return false };
+        let store = enabled_live.program().get_listing_store();
+        let store = store.read().unwrap_or_else(std::sync::PoisonError::into_inner);
+        store.instruction_containing(&enabled_at(cursor)).is_none()
     }));
     a.state_mut().set_popup_menu_data(MenuData::full(&["Disassemble"], None, Some("Disassembly"), None, None).ok());
     a.state_mut().set_key_binding_data(Some(KeyBindingData::new(KeyStroke::new(vk::D, 0))));
@@ -929,13 +986,40 @@ mod tests {
         let Some(bss) = program.block_names.iter().position(|n| n == ".bss").map(|i| program.block_starts[i]) else { return };
         let mut s = build_session_for(Some(&program));
         let (id, h) = listing(&s);
-        lock(&h).goto_address(bss).unwrap();
+        let (cursor, top) = {
+            let mut c = lock(&h);
+            c.set_viewport(400);
+            c.goto_address(bss + 8).unwrap();
+            c.key(crate::listing::Move::Down, false); // not the first row at its address
+            (c.cursor(), c.top())
+        };
         let before = lock(&h).model().index_count();
         s.events().drain();
         s.tool_mut().dispatch_key(KeyStroke::new(vk::D, 0), Some(id));
-        assert_eq!(lock(&h).model().index_count(), before);
-        let events = s.events().drain();
-        assert!(events.iter().any(|e| matches!(e, UiEvent::Status(m) if !m.is_empty())), "{events:?}");
+        let c = lock(&h);
+        assert_eq!((c.model().index_count(), c.cursor(), c.top()), (before, cursor, top), "nothing changed");
+        drop(c);
+        // DisassemblerPlugin.disassembleCallback
+        assert_eq!(s.events().drain(), vec![UiEvent::Status("Can't disassemble uninitialized memory!".into())]);
+    }
+
+    #[test]
+    fn disassemble_is_disabled_where_an_instruction_already_is() {
+        let Some((program, _)) = bin_ls_with_undefined_code() else { return };
+        let Some(insn) = program.instructions.iter().find(|i| i.len > 1).cloned() else { return };
+        let mut s = build_session_for(Some(&program));
+        let (id, h) = listing(&s);
+        lock(&h).goto_address(insn.start + 1).unwrap(); // inside it
+        let r = s.tool_mut().dispatch_key(KeyStroke::new(vk::D, 0), Some(id));
+        assert!(matches!(r, DispatchResult::Disabled(_)), "checkDisassemblyEnabled");
+    }
+
+    #[test]
+    fn new_instructions_merge_into_the_sorted_snapshot() {
+        use crate::code_unit_listing::InstructionSnapshot;
+        let i = |start: u64| InstructionSnapshot { start, len: 1, mnemonic: format!("I{start}"), operands: String::new() };
+        let merged = merge_instructions(vec![i(1), i(5), i(9)], vec![i(3), i(5), i(10)]);
+        assert_eq!(merged.iter().map(|x| x.start).collect::<Vec<_>>(), vec![1, 3, 5, 9, 10]);
     }
 
     #[test]

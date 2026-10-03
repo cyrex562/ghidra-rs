@@ -96,7 +96,8 @@ pub trait ListingViewModel: Send {
 pub struct MemoryBlockSnapshot {
     /// First address.
     pub start: u64,
-    bytes: Vec<u8>,
+    /// Shared: clones of a snapshot never copy memory.
+    bytes: std::sync::Arc<[u8]>,
     len: u64,
 }
 
@@ -104,19 +105,19 @@ impl MemoryBlockSnapshot {
     /// An initialized block holding `bytes`.
     pub fn initialized(start: u64, bytes: Vec<u8>) -> Self {
         let len = bytes.len() as u64;
-        Self { start, bytes, len }
+        Self { start, bytes: bytes.into(), len }
     }
 
     /// An initialized block of `len` bytes of which only the leading `bytes`
     /// could be read; the rest shows as `??`.
     pub fn partial(start: u64, mut bytes: Vec<u8>, len: u64) -> Self {
         bytes.truncate(usize::try_from(len).unwrap_or(usize::MAX));
-        Self { start, bytes, len }
+        Self { start, bytes: bytes.into(), len }
     }
 
     /// An uninitialized block of `len` bytes (shown as `??`).
     pub fn uninitialized(start: u64, len: u64) -> Self {
-        Self { start, bytes: Vec::new(), len }
+        Self { start, bytes: std::sync::Arc::from([]), len }
     }
 
     /// Length in bytes.
@@ -365,6 +366,13 @@ impl ListingViewModel for MemoryListing {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn cloned_block_snapshots_share_their_bytes() {
+        let a = MemoryBlockSnapshot::initialized(0x1000, vec![1, 2, 3]);
+        let b = a.clone();
+        assert!(std::ptr::eq(a.bytes.as_ptr(), b.bytes.as_ptr()), "a clone must not copy memory");
+    }
 
     fn metrics() -> FontMetrics {
         FontMetrics::monospace(7, 11, 3)
