@@ -19,6 +19,21 @@ impl IndexSelection {
         self.ranges = vec![(a.min(b), a.max(b))];
     }
 
+    /// Adds rows `a..=b`, merging with overlapping or adjacent ranges.
+    pub fn add_range(&mut self, a: u128, b: u128) {
+        let (mut lo, mut hi) = (a.min(b), a.max(b));
+        self.ranges.retain(|&(l, h)| {
+            let touches = l <= hi.saturating_add(1) && lo <= h.saturating_add(1);
+            if touches {
+                lo = lo.min(l);
+                hi = hi.max(h);
+            }
+            !touches
+        });
+        let at = self.ranges.partition_point(|&(l, _)| l < lo);
+        self.ranges.insert(at, (lo, hi));
+    }
+
     /// Whether row `i` is selected.
     pub fn contains(&self, i: u128) -> bool {
         self.ranges.iter().any(|&(lo, hi)| lo <= i && i <= hi)
@@ -43,6 +58,17 @@ impl IndexSelection {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn added_ranges_stay_sorted_and_merge_when_touching() {
+        let mut s = IndexSelection::default();
+        s.add_range(10, 12);
+        s.add_range(1, 2);
+        s.add_range(4, 3); // adjacent to 1..=2
+        assert_eq!(s.ranges(), &[(1, 4), (10, 12)]);
+        s.add_range(5, 9); // bridges both
+        assert_eq!(s.ranges(), &[(1, 12)]);
+    }
 
     #[test]
     fn ranges_are_order_insensitive_and_inclusive() {

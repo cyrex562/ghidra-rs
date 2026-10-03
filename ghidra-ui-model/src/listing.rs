@@ -82,6 +82,8 @@ pub trait ListingViewModel: Send {
     fn goto(&self, address: u64) -> Option<u128>;
     /// The address of a row as text.
     fn address_text(&self, index: u128) -> String;
+    /// The address of a row (a label row: its code unit's), if listed.
+    fn address_of(&self, index: u128) -> Option<u64>;
     /// Pixel x of the cursor's column, if the cursor is on a listed row.
     fn cursor_x(&self, cursor: CursorPos) -> Option<i32>;
     /// Full text of the cursor's field.
@@ -345,6 +347,10 @@ impl ListingViewModel for MemoryListing {
 
     fn address_text(&self, index: u128) -> String {
         self.locate(index).map(|(a, _)| format!("{:0width$x}", a, width = self.addr_digits)).unwrap_or_default()
+    }
+
+    fn address_of(&self, index: u128) -> Option<u64> {
+        self.locate(index).map(|(a, _)| a)
     }
 
     fn cursor_x(&self, c: CursorPos) -> Option<i32> {

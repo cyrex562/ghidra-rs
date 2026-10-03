@@ -57,14 +57,23 @@ pub struct ListingFrame {
     pub location: String,
 }
 
-/// History entries compare by row (Java `LocationMemento` compares the
-/// program location; for undefined bytes that is the address).
+/// A history entry: the row, plus its address for after the model changes
+/// (Java `LocationMemento` holds a program location). Entries of one model
+/// compare by row, across models by address.
 #[derive(Debug, Clone, Copy)]
-struct Memento(CursorPos);
+struct Memento {
+    pos: CursorPos,
+    address: Option<u64>,
+    epoch: u64,
+}
 
 impl PartialEq for Memento {
     fn eq(&self, other: &Self) -> bool {
-        self.0.index == other.0.index
+        if self.epoch == other.epoch {
+            self.pos.index == other.pos.index
+        } else {
+            self.address.is_some() && self.address == other.address
+        }
     }
 }
 
@@ -83,6 +92,8 @@ pub struct ListingController {
     press: Option<(i32, i32)>,
     /// The press has moved past the jitter threshold.
     dragging: bool,
+    /// Bumped by [`Self::replace_model`]; older history resolves by address.
+    epoch: u64,
 }
 
 impl ListingController {
@@ -100,6 +111,7 @@ impl ListingController {
             history: HistoryList::new(MAX_HISTORY_SIZE),
             press: None,
             dragging: false,
+            epoch: 0,
         }
     }
 
@@ -231,10 +243,10 @@ impl ListingController {
         // Java's navigatable always has a location: before any click or key
         // that is the top row, so the first goto is still undoable.
         if let Some(c) = self.location() {
-            self.history.add(Memento(c));
+            self.history.add(self.memento(c));
         }
         let target = CursorPos { index, field: 0, col: 0 };
-        self.history.add(Memento(target));
+        self.history.add(self.memento(target));
         self.navigate(target);
         Ok(())
     }
@@ -246,11 +258,11 @@ impl ListingController {
         }
         if !self.history.has_next() {
             if let Some(c) = self.location() {
-                self.history.add(Memento(c));
+                self.history.add(self.memento(c));
             }
         }
-        match self.history.previous() {
-            Some(Memento(c)) => {
+        match self.history.previous().and_then(|m| self.resolve(m)) {
+            Some(c) => {
                 self.navigate(c);
                 true
             }
@@ -260,8 +272,8 @@ impl ListingController {
 
     /// Next location.
     pub fn forward(&mut self) -> bool {
-        match self.history.next() {
-            Some(Memento(c)) => {
+        match self.history.next().and_then(|m| self.resolve(m)) {
+            Some(c) => {
                 self.navigate(c);
                 true
             }
@@ -277,6 +289,54 @@ impl ListingController {
     /// Whether `forward` would move.
     pub fn can_go_forward(&self) -> bool {
         self.history.has_next()
+    }
+
+    /// Swaps in a new view-model of the same program (after an edit), keeping
+    /// the top row, cursor, selection and history by address: each lands on
+    /// the first row at its address (a selection's end on the last), so an
+    /// address now inside a code unit lands on that unit.
+    pub fn replace_model(&mut self, mut model: Box<dyn ListingViewModel>) {
+        model.set_metrics(self.metrics);
+        let old = std::mem::replace(&mut self.model, model);
+        let first = |m: &dyn ListingViewModel, i: u128| old.address_of(i).and_then(|a| m.goto(a));
+        let top = first(self.model.as_ref(), self.top).unwrap_or(0);
+        self.cursor = self.cursor.and_then(|c| first(self.model.as_ref(), c.index)).map(|index| CursorPos { index, field: 0, col: 0 });
+        self.anchor = self.anchor.and_then(|a| first(self.model.as_ref(), a));
+        let ranges: Vec<(u128, u128)> = self
+            .selection
+            .ranges()
+            .iter()
+            .filter_map(|&(a, b)| {
+                let start = first(self.model.as_ref(), a)?;
+                let end_address = old.address_of(b)?;
+                let mut end = self.model.goto(end_address)?;
+                while self.model.address_of(end + 1) == Some(end_address) {
+                    end += 1;
+                }
+                Some((start, end.max(start)))
+            })
+            .collect();
+        self.selection.clear();
+        for (a, b) in ranges {
+            self.selection.add_range(a, b);
+        }
+        self.top = self.scroll().clamp(top);
+        self.press = None;
+        self.dragging = false;
+        self.epoch += 1;
+    }
+
+    fn memento(&self, pos: CursorPos) -> Memento {
+        Memento { pos, address: self.model.address_of(pos.index), epoch: self.epoch }
+    }
+
+    /// A history entry's row in the current model.
+    fn resolve(&self, m: Memento) -> Option<CursorPos> {
+        if m.epoch == self.epoch {
+            return Some(m.pos);
+        }
+        let index = self.model.goto(m.address?)?;
+        Some(CursorPos { index, field: 0, col: 0 })
     }
 
     /// The current location: the cursor, else the top row (none when empty).
@@ -461,6 +521,69 @@ mod tests {
 
     fn at(c: &ListingController) -> u128 {
         c.cursor().expect("cursor").index
+    }
+
+    /// The same memory as [`controller`] with a label and a 3-byte
+    /// instruction at 0x401000: rows label, insn, 0x401003, 0x402000.
+    fn disassembled() -> Box<dyn ListingViewModel> {
+        use crate::code_unit_listing::{CodeUnitListing, InstructionSnapshot, LabelSnapshot};
+        Box::new(CodeUnitListing::new(
+            32,
+            vec![
+                MemoryBlockSnapshot::initialized(0x401000, vec![0x55, 0x48, 0x89, 0x55]),
+                MemoryBlockSnapshot::initialized(0x402000, vec![0xc3]),
+            ],
+            vec![InstructionSnapshot { start: 0x401000, len: 3, mnemonic: "PUSH".into(), operands: String::new() }],
+            vec![LabelSnapshot { address: 0x401000, name: "f".into(), primary: true }],
+        ))
+    }
+
+    #[test]
+    fn rows_know_their_addresses() {
+        let c = controller(10);
+        assert_eq!(c.model().address_of(1), Some(0x401001));
+        assert_eq!(c.model().address_of(4), Some(0x402000));
+        assert_eq!(c.model().address_of(5), None);
+        let d = disassembled();
+        assert_eq!((d.address_of(0), d.address_of(1), d.address_of(2)), (Some(0x401000), Some(0x401000), Some(0x401003)));
+    }
+
+    #[test]
+    fn replacing_the_model_keeps_cursor_and_selection_by_address() {
+        let mut c = controller(10);
+        c.click(1, H + 1, false); // row 1 = 0x401001
+        c.key(Move::Down, true); // select 0x401001..0x401002, cursor 0x401002
+        assert_eq!(at(&c), 2);
+        c.replace_model(disassembled());
+        // both bytes are inside the new instruction (row 1)
+        assert_eq!(at(&c), 1);
+        assert_eq!(c.model().address_of(at(&c)), Some(0x401000));
+        assert!(c.selection().contains(1) && !c.selection().is_empty());
+        assert!(!c.selection().contains(2));
+    }
+
+    #[test]
+    fn history_from_before_a_model_change_resolves_by_address() {
+        let mut c = controller(10);
+        c.click(1, 3 * H + 1, false); // 0x401003
+        c.goto_address(0x402000).unwrap();
+        c.replace_model(disassembled());
+        assert_eq!(c.model().address_of(at(&c)), Some(0x402000));
+        assert!(c.back());
+        assert_eq!(c.model().address_of(at(&c)), Some(0x401003));
+        assert_eq!(at(&c), 2);
+        assert!(c.forward());
+        assert_eq!(at(&c), 3);
+    }
+
+    #[test]
+    fn replacing_with_an_empty_model_drops_the_cursor() {
+        let mut c = controller(10);
+        c.click(1, 1, false);
+        c.replace_model(Box::new(MemoryListing::new(32, vec![])));
+        assert!(c.cursor().is_none());
+        assert!(c.selection().is_empty());
+        assert_eq!(c.top(), 0);
     }
 
     #[test]

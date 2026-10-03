@@ -353,6 +353,9 @@ impl ListingViewModel for CodeUnitListing {
     fn address_text(&self, index: u128) -> String {
         self.row_address(index).map(|a| self.address_string(a)).unwrap_or_default()
     }
+    fn address_of(&self, index: u128) -> Option<u64> {
+        self.row_address(index)
+    }
     fn cursor_x(&self, c: CursorPos) -> Option<i32> {
         Some(self.layout(c.index)?.fields().get(c.field)?.x(c.col))
     }
