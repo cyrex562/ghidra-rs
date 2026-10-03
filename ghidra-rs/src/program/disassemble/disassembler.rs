@@ -974,6 +974,66 @@ impl Disassembler {
         }
     }
 
+    /// Disassembles into `listing` from every undefined, aligned address of `start_set` that an
+    /// earlier flow of this call has not reached. Port of `disassemble(AddressSetView,
+    /// AddressSetView, RegisterValue, boolean)`; see [`Disassembler::disassemble_into`].
+    pub fn disassemble_set_into(
+        &mut self,
+        listing: &mut ListingStore,
+        memory: Arc<dyn Memory>,
+        start_set: &dyn AddressSetView,
+        restricted_set: Option<&dyn AddressSetView>,
+        initial_context_value: Option<&RegisterValue>,
+        follow_flow: bool,
+    ) -> DisassembleResult {
+        let mut result = DisassembleResult::default();
+        let alignment = self.inst_alignment as i64;
+        let initialized = memory.get_all_initialized_address_set();
+        let mut ranges = start_set.address_ranges();
+        while let Some(range) = ranges.next() {
+            if self.monitor.is_cancelled() {
+                break;
+            }
+            if result.disassembled.contains_range(range.min_address(), range.max_address()) {
+                continue;
+            }
+            let mut todo = AddressSet::from_range(range.clone());
+            while !self.monitor.is_cancelled() {
+                let Some(next_addr) = todo.min_address() else {
+                    break;
+                };
+                // Check if location is already on disassembly list
+                if let Some(done) = result.disassembled.range_containing(&next_addr) {
+                    todo.delete_range_object(&done);
+                    continue;
+                }
+                todo.delete_range(&next_addr, &next_addr);
+                // must be aligned
+                if next_addr.offset() % alignment != 0 {
+                    continue;
+                }
+                let undefined_here = initialized.contains(&next_addr)
+                    && listing.instruction_containing(&next_addr).is_none();
+                if !undefined_here {
+                    todo = listing.undefined_ranges(&*memory, &todo);
+                } else {
+                    let current = self.disassemble_into(
+                        listing,
+                        Arc::clone(&memory),
+                        &next_addr,
+                        restricted_set,
+                        initial_context_value,
+                        follow_flow,
+                    );
+                    todo.delete_set(&current.disassembled);
+                    result.disassembled.add_set(&current.disassembled);
+                    result.errors.extend(current.errors);
+                }
+            }
+        }
+        result
+    }
+
     /// Disassembles into `listing` from `start_addr`, following flows when `follow_flow` is set
     /// (otherwise only fall-throughs), within `restricted_set` (if any) and the loaded,
     /// initialized `memory`. Port of `disassemble(Address, AddressSetView, RegisterValue,

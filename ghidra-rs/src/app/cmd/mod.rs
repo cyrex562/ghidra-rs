@@ -6,3 +6,4 @@ pub mod label;
 pub mod memory;
 pub mod module;
 pub mod refs;
+pub mod disassemble;

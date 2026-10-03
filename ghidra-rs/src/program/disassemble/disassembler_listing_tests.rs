@@ -299,3 +299,19 @@ fn bin_ls_disassembles_from_its_entry_point() {
         }
     }
 }
+
+/// Java's `disassemble(AddressSetView, ...)`: every undefined, aligned address of the start set
+/// starts a flow, unless an earlier flow already reached it.
+#[test]
+fn a_start_set_disassembles_from_each_undefined_address() {
+    let mut f = Fixture::new(&FLOWS);
+    let start_set = set(&f, &[(0x1000, 0x100b)]);
+    let memory = MemoryMapDB::as_memory(&f.memory);
+    let result = f.disassembler.disassemble_set_into(&mut f.listing, memory.clone(), &start_set, None, None, true);
+    // 0x1000 reaches 0x1000-0x1009; 0x100a starts its own flow
+    assert_eq!(result.disassembled, set(&f, &[(0x1000, 0x100b)]));
+    assert_eq!(f.instructions().last().unwrap(), &(0x100a, "mov r1,0x7".to_string()));
+    // nothing undefined is left to start from
+    let again = f.disassembler.disassemble_set_into(&mut f.listing, memory, &start_set, None, None, true);
+    assert!(again.disassembled.is_empty());
+}

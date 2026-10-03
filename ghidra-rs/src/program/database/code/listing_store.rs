@@ -31,7 +31,7 @@ use std::sync::Arc;
 
 use crate::app::util::pseudo_instruction::byte_cache_size;
 use crate::program::disassemble::DisassemblerInstructionContext;
-use crate::program::model::address::Address;
+use crate::program::model::address::{Address, AddressSet, AddressSetView};
 use crate::program::model::lang::instruction_context::InstructionContextError;
 use crate::program::model::lang::instruction_prototype::GetPseudoParserContextError;
 use crate::program::model::lang::parser_context::ParserContext;
@@ -203,6 +203,22 @@ impl ListingStore {
     pub fn is_undefined(&self, start: &Address, end: &Address) -> bool {
         self.by_address.range(start.clone()..=end.clone()).next().is_none()
             && self.instruction_containing(start).is_none()
+    }
+
+    /// The addresses of `set` in initialized memory that no instruction covers. Port of
+    /// `CodeManager.getUndefinedRanges(AddressSetView, boolean initializedMemoryOnly = true,
+    /// TaskMonitor)` (the store has no defined data).
+    pub fn undefined_ranges(&self, memory: &dyn Memory, set: &dyn AddressSetView) -> AddressSet {
+        let mut undefined = set.intersect(&*memory.get_all_initialized_address_set());
+        for range in set.address_ranges() {
+            let (min, max) = (range.min_address(), range.max_address());
+            let first = self.instruction_containing(min).into_iter();
+            for id in first.chain(self.instructions_in(min, max)) {
+                let record = &self.records[&id].record;
+                undefined.delete_range(record.address(), &Self::max_address(record));
+            }
+        }
+        undefined
     }
 
     /// Removes every instruction intersecting `[start, end]`. Port of

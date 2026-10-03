@@ -200,3 +200,17 @@ fn instruction_summaries_list_only_instructions_in_the_range() {
     assert_eq!(rows, vec![(0x1004, "jmp".to_string(), "0x100b".to_string())]);
     assert_eq!(f.store.instruction_summaries(&*mem, &f.at(0x1000), &f.at(0x1fff)).count(), 3);
 }
+
+#[test]
+fn undefined_ranges_are_initialized_memory_without_instructions() {
+    let mut f = Fixture::new();
+    f.create(0x1002).unwrap();
+    let mut set = crate::program::model::address::AddressSet::new();
+    set.add_range(&f.at(0x0ff0), &f.at(0x2003));
+    let mem = f.memory.read().unwrap();
+    let undefined = f.store.undefined_ranges(&*mem, &set);
+    let mut expected = crate::program::model::address::AddressSet::new();
+    expected.add_range(&f.at(0x1000), &f.at(0x1001));
+    expected.add_range(&f.at(0x1004), &f.at(0x1007));
+    assert_eq!(undefined, expected);
+}
