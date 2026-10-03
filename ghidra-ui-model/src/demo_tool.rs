@@ -379,6 +379,31 @@ impl ListingEditor {
         self.busy.load(std::sync::atomic::Ordering::Acquire)
     }
 
+    /// Runs `work` as a background Task (Java `executeBackgroundCommand`;
+    /// spec §3 rule 2): TaskProgress, then TaskDone (with a panic's
+    /// message); the edit actions are disabled meanwhile. No-op while busy.
+    fn run_task(&self, message: &str, work: impl FnOnce(&ListingEditor) + Send + 'static) {
+        if self.busy.swap(true, std::sync::atomic::Ordering::AcqRel) {
+            return;
+        }
+        let task = NEXT_TASK.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        self.events.post(UiEvent::TaskProgress { task, message: message.into(), progress: 0, maximum: 0 });
+        self.events.post(UiEvent::ActionsChanged);
+        let ed = self.clone();
+        std::thread::spawn(move || {
+            let run = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| work(&ed)));
+            let error = run.err().map(|p| {
+                p.downcast_ref::<&str>()
+                    .map(|m| (*m).to_owned())
+                    .or_else(|| p.downcast_ref::<String>().cloned())
+                    .unwrap_or_else(|| "the task panicked".into())
+            });
+            ed.busy.store(false, std::sync::atomic::Ordering::Release);
+            ed.events.post(UiEvent::TaskDone { task, cancelled: false, error });
+            ed.events.post(UiEvent::ActionsChanged);
+        });
+    }
+
     /// The cursor's address and the selection as address ranges.
     fn location(&self) -> (Option<u64>, Vec<(u64, u64)>) {
         let c = lock(&self.listing);
@@ -388,31 +413,67 @@ impl ListingEditor {
         (cursor, ranges)
     }
 
-    /// Drops the snapshot's instructions intersecting `cleared`, re-reads
-    /// `added` from the program, and swaps the listing model.
+    /// Drops the snapshot's units intersecting `cleared`, re-reads `added`
+    /// from the program, and swaps the listing model.
     fn refresh(&self, cleared: &[(u64, u64)], added: &[(u64, u64)]) {
+        self.refresh_with(cleared, added, &[]);
+    }
+
+    /// [`Self::refresh`], plus `renamed` addresses whose symbol name changed.
+    /// Dynamic labels are re-asked for every address the edit can rename:
+    /// the reference targets of the removed and added units, those units'
+    /// own starts, and existing dynamic labels inside the edited ranges. Units
+    /// whose operands show a changed name are re-read, one pointer hop deep
+    /// (CodeUnitFormat follows pointers: `[->name]`).
+    fn refresh_with(&self, cleared: &[(u64, u64)], added: &[(u64, u64)], renamed: &[u64]) {
+        let within = |a: u64, ranges: &[(u64, u64)]| ranges.iter().any(|&(lo, hi)| lo <= a && a <= hi);
         let mut new: Vec<_> = added.iter().flat_map(|&(lo, hi)| self.live.instructions_in(lo, hi)).collect();
         new.sort_by_key(|i| i.start);
-        // the reference targets whose dynamic labels may change: those of
-        // the units removed and the units added
-        let mut affected: Vec<u64> = new.iter().flat_map(|i| i.references.iter().map(|r| r.to)).collect();
-        let merged = {
+        let mut affected: Vec<u64> = new.iter().flat_map(|i| i.references.iter().map(|r| r.to).chain([i.start])).collect();
+        {
+            // retain without taking: a panic here leaves the snapshot intact
             let mut current = self.instructions.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
-            let mut kept = std::mem::take(&mut *current);
-            kept.retain(|i| {
+            let mut kept = Vec::with_capacity(current.len());
+            for i in current.iter() {
                 let gone = cleared.iter().any(|&(lo, hi)| i.start <= hi && lo < i.start + u64::from(i.len.max(1)))
-                    || new.iter().any(|n| n.start == i.start);
+                    || new.binary_search_by_key(&i.start, |n| n.start).is_ok();
                 if gone {
-                    affected.extend(i.references.iter().map(|r| r.to));
+                    affected.extend(i.references.iter().map(|r| r.to).chain([i.start]));
+                } else {
+                    kept.push(i.clone());
                 }
-                !gone
-            });
+            }
             *current = merge_instructions(kept, new);
-            current.clone()
+        }
+        let old_labels: Vec<crate::code_unit_listing::LabelSnapshot> = {
+            let base = self.base.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+            base.dynamic_labels.clone()
         };
+        affected.extend(old_labels.iter().map(|l| l.address).filter(|&a| within(a, cleared) || within(a, added)));
         affected.sort_unstable();
         affected.dedup();
         let relabeled = self.live.dynamic_labels_at(&affected);
+        // names that changed (appeared, vanished, renamed)
+        let name_at = |labels: &[crate::code_unit_listing::LabelSnapshot], a: u64| labels.iter().find(|l| l.address == a).map(|l| l.name.clone());
+        let mut changed: Vec<u64> = affected.iter().copied().filter(|&a| name_at(&old_labels, a) != name_at(&relabeled, a)).collect();
+        changed.extend_from_slice(renamed);
+        // the units showing those names re-read, one pointer hop deep
+        let mut referrers: Vec<u64> = changed.iter().flat_map(|&a| self.live.references_to(a)).collect();
+        referrers.sort_unstable();
+        referrers.dedup();
+        let mut hop: Vec<u64> = referrers.iter().flat_map(|&a| self.live.references_to(a)).collect();
+        referrers.append(&mut hop);
+        referrers.sort_unstable();
+        referrers.dedup();
+        if !referrers.is_empty() {
+            let mut reread: Vec<_> = referrers.iter().flat_map(|&a| self.live.instructions_in(a, a)).collect();
+            reread.sort_by_key(|i| i.start);
+            reread.dedup_by_key(|i| i.start);
+            let mut current = self.instructions.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+            let kept: Vec<_> = current.iter().filter(|i| reread.binary_search_by_key(&i.start, |n| n.start).is_err()).cloned().collect();
+            *current = merge_instructions(kept, reread);
+        }
+        let merged = self.instructions.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone();
         let rebuilt = {
             let mut base = self.base.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
             base.dynamic_labels.retain(|l| affected.binary_search(&l.address).is_err());
@@ -430,9 +491,11 @@ impl ListingEditor {
     /// program, then the listing row and the Symbols pane row; the cursor
     /// stays on the label.
     fn rename_label(&self, id: i64, name: &str) -> Result<(), String> {
+        // the dialog may outlive the D pressed right after L
+        if self.is_busy() {
+            return Err("Disassembly in progress; try again when it finishes".into());
+        }
         let crate::program_edit::Renamed { address, source } = self.live.rename_symbol(id, name)?;
-        // instructions whose operands show the name re-read it (CodeUnitFormat)
-        let referring: Vec<(u64, u64)> = self.live.references_to(address).into_iter().map(|a| (a, a)).collect();
         let renamed = {
             let mut base = self.base.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
             base.symbols.iter().position(|s| s.id == id).map(|index| {
@@ -452,7 +515,8 @@ impl ListingEditor {
             });
             self.events.post(UiEvent::ViewChanged(symbols_id.0));
         }
-        self.refresh(&[], &referring);
+        // units whose operands show the name re-read it (CodeUnitFormat)
+        self.refresh_with(&[], &[], &[address]);
         // labels re-sort by name: find the renamed row again
         let mut c = lock(&self.listing);
         if let Some(index) = c.cursor().map(|cur| cur.index) {
@@ -526,33 +590,16 @@ fn add_disassemble_action(tool: &mut DockingTool, editor: &ListingEditor) {
                 return;
             }
         }
-        // Java executeBackgroundCommand: a Task off the UI thread (spec §3 rule 2)
-        if ed.busy.swap(true, std::sync::atomic::Ordering::AcqRel) {
-            return;
-        }
-        let task = NEXT_TASK.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-        ed.events.post(UiEvent::TaskProgress { task, message: "Disassembling...".into(), progress: 0, maximum: 0 });
-        ed.events.post(UiEvent::ActionsChanged);
-        let worker = ed.clone();
-        std::thread::spawn(move || {
-            let ed = worker;
-            let run = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                let done = ed.live.disassemble(start, &ranges);
-                if done.ranges.is_empty() {
-                    ed.events.post(UiEvent::Status(done.status.unwrap_or_else(|| "Disassembly failed".into())));
-                    return;
-                }
-                if let Some(msg) = done.status {
-                    ed.events.post(UiEvent::Status(msg));
-                }
-                ed.refresh(&[], &done.ranges);
-            }));
-            let error = run.err().map(|p| {
-                p.downcast_ref::<&str>().map(|m| (*m).to_owned()).or_else(|| p.downcast_ref::<String>().cloned()).unwrap_or_else(|| "Disassembly panicked".into())
-            });
-            ed.busy.store(false, std::sync::atomic::Ordering::Release);
-            ed.events.post(UiEvent::TaskDone { task, cancelled: false, error });
-            ed.events.post(UiEvent::ActionsChanged);
+        ed.run_task("Disassembling...", move |ed| {
+            let done = ed.live.disassemble(start, &ranges);
+            if done.ranges.is_empty() {
+                ed.events.post(UiEvent::Status(done.status.unwrap_or_else(|| "Disassembly failed".into())));
+                return;
+            }
+            if let Some(msg) = done.status {
+                ed.events.post(UiEvent::Status(msg));
+            }
+            ed.refresh(&[], &done.ranges);
         });
     });
     // DisassemblerPlugin.checkDisassemblyEnabled: a selection, or a cursor not
@@ -582,10 +629,13 @@ fn add_clear_code_bytes_action(tool: &mut DockingTool, editor: &ListingEditor) {
             let Some(cursor) = cursor else { return };
             ranges.push((cursor, cursor));
         }
-        let cleared = ed.live.clear_code(&ranges);
-        if !cleared.is_empty() {
-            ed.refresh(&cleared, &[]);
-        }
+        // Java ClearPlugin executes ClearCmd in the background too
+        ed.run_task("Clearing...", move |ed| {
+            let cleared = ed.live.clear_code(&ranges);
+            if !cleared.is_empty() {
+                ed.refresh(&cleared, &[]);
+            }
+        });
     });
     a.state_mut().enabled_when(Box::new(move |context| {
         context.component_provider() == Some(enabled.listing_id) && !enabled.is_busy() && {
@@ -1236,9 +1286,12 @@ mod tests {
         s.events().drain();
         let r = s.tool_mut().dispatch_key(KeyStroke::new(vk::C, 0), Some(id));
         assert!(matches!(r, DispatchResult::Performed(_)));
+        // Java ClearPlugin runs ClearCmd in the background: a Task
+        let events = wait_for_task(&s);
+        assert!(events.iter().any(|e| matches!(e, UiEvent::TaskProgress { .. })), "{events:?}");
         assert_eq!(mnemonic_at(&h, insn.start), "??");
         assert_eq!(lock(&h).model().index_count(), rows + u128::from(insn.len) - 1, "one row per byte again");
-        assert!(s.events().drain().contains(&UiEvent::ViewChanged(id.0)));
+        assert!(events.contains(&UiEvent::ViewChanged(id.0)));
         // and D brings it back
         s.tool_mut().dispatch_key(KeyStroke::new(vk::D, 0), Some(id));
         wait_for_task(&s);
@@ -1261,6 +1314,7 @@ mod tests {
             }
         }
         s.tool_mut().dispatch_key(KeyStroke::new(vk::C, 0), Some(id));
+        wait_for_task(&s);
         for i in program.instructions.iter().filter(|i| i.start >= first.start && i.start <= third.start) {
             assert_eq!(mnemonic_at(&h, i.start), "??", "{:x} cleared", i.start);
         }
@@ -1284,8 +1338,9 @@ mod tests {
         };
         s.events().drain();
         s.tool_mut().dispatch_key(KeyStroke::new(vk::C, 0), Some(id));
+        let events = wait_for_task(&s);
         assert_eq!(lock(&h).cursor(), cursor);
-        assert!(!s.events().drain().contains(&UiEvent::ViewChanged(id.0)), "no rebuild");
+        assert!(!events.contains(&UiEvent::ViewChanged(id.0)), "no rebuild");
     }
 
     /// Moves the cursor onto the row of label `id`.
@@ -1484,6 +1539,108 @@ mod tests {
         let cleared = editor.live.clear_code(&[(0x401001, 0x401001)]);
         editor.refresh(&cleared, &[]);
         assert_eq!(lock(&listing).model().index_count(), 4, "bytes again");
+    }
+
+    /// A program logging its re-reads: a PUSH at 0x401000 once decoded, a
+    /// pointer at 0x401100 referenced by it, and a symbol at 0x402000 the
+    /// pointer reaches.
+    #[derive(Default)]
+    struct ScriptedProgram {
+        decoded: Mutex<bool>,
+        reads: Mutex<Vec<(u64, u64)>>,
+    }
+
+    impl crate::program_edit::EditableProgram for ScriptedProgram {
+        fn instruction_containing(&self, address: u64) -> bool {
+            *self.decoded.lock().unwrap() && (0x401000..0x401003).contains(&address)
+        }
+        fn disassemble(&self, _start: u64, _ranges: &[(u64, u64)]) -> crate::program_edit::Disassembled {
+            *self.decoded.lock().unwrap() = true;
+            crate::program_edit::Disassembled { ranges: vec![(0x401000, 0x401002)], status: None }
+        }
+        fn clear_code(&self, _ranges: &[(u64, u64)]) -> Vec<(u64, u64)> {
+            vec![]
+        }
+        fn instructions_in(&self, lo: u64, hi: u64) -> Vec<crate::code_unit_listing::InstructionSnapshot> {
+            self.reads.lock().unwrap().push((lo, hi));
+            let push = crate::code_unit_listing::InstructionSnapshot {
+                start: 0x401000,
+                len: 3,
+                mnemonic: "PUSH".into(),
+                operands: String::new(),
+                references: vec![],
+                operand_starts: vec![],
+            };
+            if *self.decoded.lock().unwrap() && lo <= 0x401000 && 0x401000 <= hi { vec![push] } else { vec![] }
+        }
+        fn rename_symbol(&self, _id: i64, _name: &str) -> Result<crate::program_edit::Renamed, String> {
+            Ok(crate::program_edit::Renamed { address: 0x402000, source: "User Defined".into() })
+        }
+        fn references_to(&self, address: u64) -> Vec<u64> {
+            match address {
+                0x402000 => vec![0x401100, 0x401100], // two operands of the pointer unit
+                0x401100 => vec![0x401000],
+                _ => vec![],
+            }
+        }
+        fn dynamic_labels_at(&self, addresses: &[u64]) -> Vec<crate::code_unit_listing::LabelSnapshot> {
+            // SymbolUtilities.getDynamicName: LAB_ once code is there, DAT_ before
+            let name = if *self.decoded.lock().unwrap() { "LAB_00401000" } else { "DAT_00401000" };
+            let label = crate::code_unit_listing::LabelSnapshot { address: 0x401000, name: name.into(), primary: true, id: 0 };
+            if addresses.contains(&0x401000) { vec![label] } else { vec![] }
+        }
+    }
+
+    fn scripted_editor() -> (ListingEditor, Arc<ScriptedProgram>, crate::listing_controller::ListingHandle, UiSession) {
+        let program = ImportedProgram {
+            name: "scripted".into(),
+            language: "x".into(),
+            address_bits: 32,
+            blocks: vec![
+                MemoryBlockSnapshot::initialized(0x401000, vec![0x55, 0x48, 0x89, 0x55]),
+                MemoryBlockSnapshot::initialized(0x401100, vec![0; 8]),
+                MemoryBlockSnapshot::initialized(0x402000, vec![0xc3]),
+            ],
+            block_names: vec![],
+            block_starts: vec![],
+            symbols: vec![],
+            block_headers: vec![],
+            instructions: vec![],
+            dynamic_labels: vec![crate::code_unit_listing::LabelSnapshot { address: 0x401000, name: "DAT_00401000".into(), primary: true, id: 0 }],
+            live: None,
+        };
+        let session = UiSession::new();
+        let listing = ListingController::handle(Box::new(code_unit_listing(&program, vec![])));
+        let scripted = Arc::new(ScriptedProgram::default());
+        let editor = ListingEditor::new(&program, scripted.clone(), listing.clone(), ProviderId(1), session.events());
+        (editor, scripted, listing, session)
+    }
+
+    #[test]
+    fn an_edited_units_own_dynamic_label_is_renamed() {
+        let (editor, _scripted, listing, _s) = scripted_editor();
+        assert_eq!(lock(&listing).model().label_at(0).map(|l| l.1), Some("DAT_00401000".to_string()));
+        let done = editor.live.disassemble(0x401000, &[]);
+        editor.refresh(&[], &done.ranges);
+        assert_eq!(lock(&listing).model().label_at(0).map(|l| l.1), Some("LAB_00401000".to_string()), "DAT_ became code: LAB_");
+    }
+
+    #[test]
+    fn a_rename_reaches_operands_that_read_through_a_pointer() {
+        let (editor, scripted, _listing, _s) = scripted_editor();
+        editor.rename_label(7, "renamed").unwrap();
+        let reads = scripted.reads.lock().unwrap().clone();
+        assert!(reads.contains(&(0x401100, 0x401100)), "the pointer unit: {reads:x?}");
+        assert!(reads.contains(&(0x401000, 0x401000)), "its referrer shows [->renamed]: {reads:x?}");
+        assert_eq!(reads.iter().filter(|r| **r == (0x401100, 0x401100)).count(), 1, "referrers deduplicated");
+    }
+
+    #[test]
+    fn a_rename_waits_for_a_running_disassembly() {
+        let (editor, _scripted, _listing, _s) = scripted_editor();
+        editor.busy.store(true, std::sync::atomic::Ordering::Release);
+        let err = editor.rename_label(7, "renamed").unwrap_err();
+        assert!(err.contains("in progress"), "{err}");
     }
 
     #[test]
