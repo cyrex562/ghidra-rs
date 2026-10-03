@@ -419,6 +419,27 @@ fn disassemble_at_the_cursor_shows_the_decoded_instruction() {
     assert!(!line.contains("??"), "the PLT is code after D: {text}");
 }
 
+#[test]
+fn clear_code_bytes_at_the_bin_ls_entry_leaves_undefined_bytes() {
+    let dist = std::env::var("GHIDRA_RS_GHIDRA_DIST")
+        .unwrap_or_else(|_| concat!(env!("CARGO_MANIFEST_DIR"), "/../tools/ghidra-dist/ghidra_12.1.2_PUBLIC").to_string());
+    let Ok(bytes) = std::fs::read("/bin/ls") else { return };
+    if !std::path::Path::new(&dist).is_dir() || bytes.len() < 64 || bytes[..4] != *b"\x7fELF" || bytes[4] != 2 || bytes[18] != 62 {
+        return; // needs the Ghidra dist and an x86-64 /bin/ls
+    }
+    let e_entry = u64::from_le_bytes(bytes[0x18..0x20].try_into().unwrap());
+    let entry = if u16::from_le_bytes([bytes[16], bytes[17]]) == 3 { e_entry + 0x10_0000 } else { e_entry };
+    let out = shell()
+        .env_var("GHIDRA_RS_GHIDRA_DIST", &dist)
+        .args(["--open", "/bin/ls", "--focus", "Listing", "--prompt-answer", &format!("{entry:x}")])
+        .args(["--press", "G,C,Shift-Down,Shift-Down,Ctrl-C", "--print-clipboard", "--quit-after-ms", "5000"])
+        .output()
+        .expect("spawn");
+    let text = String::from_utf8_lossy(&out.stdout).to_string();
+    let line = text.lines().find(|l| l.starts_with(&format!("clipboard: {entry:016x}"))).unwrap_or_else(|| panic!("{text}"));
+    assert!(line.contains("??"), "the entry is undefined after C: {text}");
+}
+
 fn options_run(dir: &std::path::Path, answer: &str) -> String {
     let out = shell_with_config(dir)
         .args(["--invoke-menu", "Tool Options", "--prompt-answer", answer, "--press", "Escape", "--quit-after-ms", "2000"])

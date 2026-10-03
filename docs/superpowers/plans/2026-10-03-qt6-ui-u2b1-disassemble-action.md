@@ -27,3 +27,14 @@
 3. Disassemble on a label row, or a row past the end: the cursor address is the row's code unit, and the action is a no-op outside memory.
 4. A disassembly that fails (uninitialized memory): a status message and an unchanged listing.
 5. Selection across rows that merge into one instruction: it stays non-empty and covers the instruction.
+
+## Addendum — T5: Clear Code Bytes (spec §5 M1 "inline edits: … clear")
+- Java `ClearPlugin` "Clear Code Bytes" is wired the same way as Disassemble:
+  - key `C`;
+  - Edit menu "Clear Code Bytes" (group "Clear Code Bytes", sub-group "1");
+  - popup "Clear > Clear Code Bytes".
+- It is enabled on the Listing with a selection or a cursor.
+- It clears the code unit containing the cursor, or every code unit intersecting the selection.
+- The listing refresh is shared with Disassemble:
+  - remove the cleared instructions from the snapshot, then merge in the new ones and swap the model;
+  - no rebuild when nothing was cleared.
