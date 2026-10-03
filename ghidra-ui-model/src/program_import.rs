@@ -6,7 +6,7 @@
 
 use std::path::{Path, PathBuf};
 
-use crate::code_unit_listing::{BlockHeader, InstructionSnapshot};
+use crate::code_unit_listing::{BlockHeader, InstructionSnapshot, OperandRef};
 use crate::listing::MemoryBlockSnapshot;
 use ghidra_rs::program::database::program_db::ProgramDB;
 use std::sync::Arc;
@@ -74,10 +74,18 @@ pub fn instructions_in(
     start: &ghidra_rs::program::model::address::Address,
     end: &ghidra_rs::program::model::address::Address,
 ) -> Vec<InstructionSnapshot> {
-    program
-        .instruction_summaries(start, end)
+    use ghidra_rs::program::model::symbol::reference::Reference;
+    let summaries = program.instruction_summaries(start, end);
+    let refs = program.get_reference_store();
+    let refs = refs.read().unwrap_or_else(std::sync::PoisonError::into_inner);
+    summaries
         .into_iter()
         .map(|u| InstructionSnapshot {
+            references: (0..u.operands.len() as i32)
+                .filter_map(|op| refs.primary_reference_from(&u.address, op))
+                .filter(|r| r.is_memory_reference())
+                .map(|r| OperandRef { op_index: r.operand_index(), to: r.to_address().offset() as u64 })
+                .collect(),
             start: u.address.offset() as u64,
             len: u32::try_from(u.length).unwrap_or(u32::MAX),
             mnemonic: u.mnemonic,
@@ -434,6 +442,14 @@ mod tests {
         let stray: Vec<u64> =
             p.instructions.iter().map(|i| i.start).filter(|&a| !exec.iter().any(|&(lo, hi)| lo <= a && a <= hi)).collect();
         assert!(stray.is_empty(), "instructions outside executable blocks: {:x?}", &stray[..stray.len().min(5)]);
+        // CodeManager's default references: _start's CALL [GOT] reads its slot
+        let call = p
+            .instructions
+            .iter()
+            .find(|i| i.mnemonic == "CALL" && (i.operands.contains('[') || i.operands.starts_with("0x")))
+            .expect("a CALL through memory or to an address");
+        assert!(call.references.iter().any(|r| r.op_index == 0), "{call:?}");
+        assert!(p.instructions.iter().filter(|i| i.mnemonic == "PUSH" && !i.operands.contains('[')).all(|i| i.references.is_empty()));
         let first = p.instructions.iter().find(|i| i.start == entry).expect("an instruction at the entry");
         if bytes.windows(4).any(|w| w == [0xf3, 0x0f, 0x1e, 0xfa]) && first.len == 4 {
             assert_eq!(first.mnemonic, "ENDBR64");

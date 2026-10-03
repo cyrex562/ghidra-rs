@@ -550,7 +550,7 @@ mod tests {
                 MemoryBlockSnapshot::initialized(0x401000, vec![0x55, 0x48, 0x89, 0x55]),
                 MemoryBlockSnapshot::initialized(0x402000, vec![0xc3]),
             ],
-            vec![InstructionSnapshot { start: 0x401000, len: 3, mnemonic: "PUSH".into(), operands: String::new() }],
+            vec![InstructionSnapshot { start: 0x401000, len: 3, mnemonic: "PUSH".into(), operands: String::new(), references: vec![] }],
             vec![LabelSnapshot { address: 0x401000, name: "f".into(), primary: true }],
         ))
     }

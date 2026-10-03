@@ -20,6 +20,17 @@ pub struct InstructionSnapshot {
     pub mnemonic: String,
     /// Operands, comma separated, as the listing shows them.
     pub operands: String,
+    /// Each operand's primary memory reference.
+    pub references: Vec<OperandRef>,
+}
+
+/// An operand's primary memory reference (Java `getPrimaryReferenceFrom`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct OperandRef {
+    /// The operand (0-based).
+    pub op_index: i32,
+    /// The referenced address.
+    pub to: u64,
 }
 
 /// A label at an address.
@@ -378,7 +389,7 @@ mod tests {
     }
 
     fn insn(start: u64, len: u32, mnemonic: &str, operands: &str) -> InstructionSnapshot {
-        InstructionSnapshot { start, len, mnemonic: mnemonic.into(), operands: operands.into() }
+        InstructionSnapshot { start, len, mnemonic: mnemonic.into(), operands: operands.into(), references: vec![] }
     }
 
     fn label(address: u64, name: &str, primary: bool) -> LabelSnapshot {

@@ -1167,7 +1167,7 @@ mod tests {
     #[test]
     fn new_instructions_merge_into_the_sorted_snapshot() {
         use crate::code_unit_listing::InstructionSnapshot;
-        let i = |start: u64| InstructionSnapshot { start, len: 1, mnemonic: format!("I{start}"), operands: String::new() };
+        let i = |start: u64| InstructionSnapshot { start, len: 1, mnemonic: format!("I{start}"), operands: String::new(), references: vec![] };
         let merged = merge_instructions(vec![i(1), i(5), i(9)], vec![i(3), i(5), i(10)]);
         assert_eq!(merged.iter().map(|x| x.start).collect::<Vec<_>>(), vec![1, 3, 5, 9, 10]);
     }
