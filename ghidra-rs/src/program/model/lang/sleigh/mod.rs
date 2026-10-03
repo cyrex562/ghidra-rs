@@ -20,8 +20,8 @@
 //! * Reading the `.sla` file itself: the decode functions take a decoder;
 //!   [`SleighLanguageProvider`](crate::app::plugin::processors::sleigh::sleigh_language_provider::SleighLanguageProvider)
 //!   builds it from the file (`SlaFormat.buildDecoder`) when it loads a language.
-//! * [`Language::parse`] builds a [`SleighInstructionPrototype`] but does not cache prototypes
-//!   by hash (Java's `instructProtoMap`), and cannot apply the instruction's global context
+//! * [`Language::parse`] builds a [`SleighInstructionPrototype`] (cached by hash, as Java's
+//!   `instructProtoMap` does) but cannot apply the instruction's global context
 //!   commits: Java only applies them when the processor context is a `DisassemblerContext`,
 //!   which a `&mut dyn ProcessorContext` cannot be tested for here; callers holding one (the
 //!   [`Disassembler`](crate::program::disassemble::Disassembler)) use
@@ -166,6 +166,11 @@ pub struct SleighLanguage {
     /// This language, once shared through [`SleighLanguage::into_shared`]: instruction
     /// prototypes hold their language (Java passes `this`).
     self_ref: Weak<SleighLanguage>,
+    /// `instructProtoMap`: the prototypes parsed so far, by hash, so every instruction with the
+    /// same constructor tree shares one. Prototypes hold their language, so a language that has
+    /// parsed is kept alive by its own cache (Java's map has the same reference shape; the GC
+    /// collects the cycle, `Arc` does not) — languages are long-lived service singletons.
+    instruct_proto_map: Mutex<HashMap<i32, SleighInstructionPrototype>>,
     /// `registerManager`: every register of this language, built from the symbol table and the
     /// `.pspec` when the language is decoded.
     register_manager: RegisterManager,
@@ -421,6 +426,7 @@ impl SleighLanguage {
             max_instruction_length: None,
             manual: OnceLock::new(),
             self_ref: Weak::new(),
+            instruct_proto_map: Mutex::new(HashMap::new()),
             compiler_specs: Mutex::new(HashMap::new()),
             additional_inject: None,
             program_counter: None,
@@ -906,6 +912,11 @@ impl SleighLanguage {
         Ok(self.parse_with_parser_context(buf, view, in_delay_slot)?.0)
     }
 
+    /// The number of distinct prototypes parsed so far (the size of Java's `instructProtoMap`).
+    pub fn cached_prototype_count(&self) -> usize {
+        self.instruct_proto_map.lock().unwrap_or_else(|p| p.into_inner()).len()
+    }
+
     /// [`SleighLanguage::parse_sleigh`] with a [`DisassemblerContext`](crate::program::model::lang::disassembler_context::DisassemblerContext):
     /// the instruction's global context commits (`globalset`) are applied to `context` as future
     /// register values at their target addresses, as Java's `parse` does
@@ -948,6 +959,14 @@ impl SleighLanguage {
                 return Err(UnknownInstructionException::with_message(e.message()).into())
             }
         };
+        // get existing proto and use it; if it doesn't exist in the map, store the new proto
+        let proto = self
+            .instruct_proto_map
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .entry(proto.java_hash_code())
+            .or_insert(proto)
+            .clone();
         // Java builds the instruction's parser context here to apply its context commits; a
         // failure to do so is an unknown instruction
         let proto_context = proto
@@ -1051,7 +1070,7 @@ impl Language for SleighLanguage {
 
     /// Port of `parse(MemBuffer, ProcessorContext, boolean)`: resolves the instruction at
     /// `buf` into a [`SleighInstructionPrototype`]. See the module docs for what differs from
-    /// Java (no prototype cache; global context commits are not applied).
+    /// Java (global context commits are not applied; see [`SleighLanguage::parse_with_commits`]).
     ///
     /// # Errors
     /// [`ParseError::InsufficientBytes`] if the instruction bytes cannot be read, or
@@ -1310,6 +1329,28 @@ mod tests {
     };
     use crate::program::model::mem::MemoryAccessException;
     use crate::program::model::pcode::PackedDecode;
+
+    /// Java's `instructProtoMap`: instructions with the same constructor tree share one
+    /// prototype, whatever their operand values.
+    #[test]
+    fn parsed_prototypes_are_shared_by_hash() {
+        use crate::app::plugin::processors::sleigh::sleigh_instruction_prototype::decode_tests;
+        use crate::program::model::lang::processor_context_impl::ProcessorContextImpl;
+        use crate::program::model::mem::ByteMemBufferImpl;
+        let lang = decode_tests::language();
+        let parse = |offset: i64, bytes: &[u8]| {
+            let buf = ByteMemBufferImpl::new(Address::new(lang.get_default_space(), offset), bytes.to_vec(), true);
+            let mut context = ProcessorContextImpl::new(lang.clone());
+            lang.parse_sleigh(&buf, &mut context, false).unwrap()
+        };
+        assert_eq!(lang.cached_prototype_count(), 0);
+        let a = parse(0x1000, &[0x11, 0x2a]); // mov r1,0x2a
+        let b = parse(0x2000, &[0x11, 0x07]); // mov r1,0x7: same constructors
+        assert_eq!(lang.cached_prototype_count(), 1);
+        assert_eq!(a.java_hash_code(), b.java_hash_code());
+        parse(0x1000, &[0x20, 0x05]); // jmp
+        assert_eq!(lang.cached_prototype_count(), 2);
+    }
 
     #[test]
     fn test_sleigh_decode_basic() {
