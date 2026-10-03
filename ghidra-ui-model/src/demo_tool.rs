@@ -1350,7 +1350,15 @@ mod tests {
         use ghidra_rs::program::model::symbol::{SourceType, SymbolTable};
         let Some((program, _)) = bin_ls_with_undefined_code() else { return };
         // an instruction whose operand refers to an address shown by its dynamic name
-        let Some((from, target)) = program.instructions.iter().find_map(|i| Some((i.start, i.references.first()?.to))) else { return };
+        // (not a pointer slot: those display through the pointer, `->target`)
+        let Some((from, target)) = program
+            .instructions
+            .iter()
+            .filter(|i| ["DAT_", "LAB_", "SUB_"].iter().any(|d| i.operands.contains(d)) && !i.operands.contains("->"))
+            .find_map(|i| Some((i.start, i.references.first()?.to)))
+        else {
+            return;
+        };
         let live = program.live.clone().unwrap();
         let space = {
             use ghidra_rs::program::model::lang::language::Language;
