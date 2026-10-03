@@ -81,6 +81,59 @@ impl TableModel for VecTable {
     }
 }
 
+impl VecTable {
+    /// Edits rows in place (all of them, filtered or not), then re-applies
+    /// the filter.
+    pub fn update_rows(&mut self, mut f: impl FnMut(&mut Vec<CellValue>)) {
+        self.rows.iter_mut().for_each(&mut f);
+        self.refilter();
+    }
+}
+
+/// A [`VecTable`] shared between its pane and the code that edits it.
+#[derive(Clone)]
+pub struct SharedTable(std::sync::Arc<std::sync::Mutex<VecTable>>);
+
+impl SharedTable {
+    /// Shares `table`.
+    pub fn new(table: VecTable) -> Self {
+        Self(std::sync::Arc::new(std::sync::Mutex::new(table)))
+    }
+
+    fn lock(&self) -> std::sync::MutexGuard<'_, VecTable> {
+        self.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+    }
+
+    /// [`VecTable::update_rows`] for every holder.
+    pub fn update_rows(&self, f: impl FnMut(&mut Vec<CellValue>)) {
+        self.lock().update_rows(f);
+    }
+}
+
+impl TableModel for SharedTable {
+    fn column_count(&self) -> usize {
+        self.lock().column_count()
+    }
+    fn column_name(&self, column: usize) -> String {
+        self.lock().column_name(column)
+    }
+    fn row_count(&self) -> usize {
+        self.lock().row_count()
+    }
+    fn cell(&self, row: usize, column: usize) -> CellValue {
+        self.lock().cell(row, column)
+    }
+    fn sort(&mut self, column: usize, ascending: bool) {
+        self.lock().sort(column, ascending);
+    }
+    fn location(&self, row: usize, column: usize) -> Option<u64> {
+        self.lock().location(row, column)
+    }
+    fn set_filter(&mut self, text: &str) {
+        self.lock().set_filter(text);
+    }
+}
+
 /// A tree built from `/`-separated paths.
 pub struct StaticTree {
     labels: Vec<String>,
@@ -219,6 +272,24 @@ impl FormModel for MapForm {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_shared_table_updates_every_view_and_refilters() {
+        let t = SharedTable::new(VecTable::new(
+            vec!["Name".into()],
+            vec![vec![CellValue::Text("alpha".into())], vec![CellValue::Text("beta".into())]],
+        ));
+        let mut view = t.clone();
+        view.set_filter("al");
+        assert_eq!(view.row_count(), 1);
+        t.update_rows(|row| {
+            if row[0] == CellValue::Text("beta".into()) {
+                row[0] = CellValue::Text("alpha2".into());
+            }
+        });
+        assert_eq!(view.row_count(), 2, "the renamed row now matches the filter");
+        assert_eq!(view.cell(1, 0), CellValue::Text("alpha2".into()));
+    }
     use crate::view_models::TableModel;
 
     #[test]
