@@ -229,6 +229,14 @@ impl ListingController {
         }
     }
 
+    /// Puts the cursor at the start of row `index` (after an edit re-lays the
+    /// rows); keeps the selection and scrolls it into view.
+    pub fn set_cursor_row(&mut self, index: u128) {
+        if index < self.model.index_count() {
+            self.navigate(CursorPos { index, field: 0, col: 0 });
+        }
+    }
+
     /// Double click (Java `OperandFieldMouseHandler`): the cursor goes there,
     /// then to the operand's referenced address if it has one, with history.
     /// Returns whether it navigated.

@@ -9,6 +9,7 @@ pub mod demo;
 pub mod demo_tool;
 mod events;
 pub mod dialogs;
+pub mod edit_label_dialog;
 pub mod go_to_dialog;
 pub mod icons;
 pub mod listing;

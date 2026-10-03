@@ -115,25 +115,29 @@ pub fn build_session_for(program: Option<&ImportedProgram>) -> UiSession {
     let mut s = UiSession::new();
     let events = s.events().clone();
 
+    // Java SymbolTablePlugin columns (Namespace, reference counts: later);
+    // shared so label edits update it
+    let symbols_table = program.map(|p| {
+        crate::demo::SharedTable::new(VecTable::new(
+            vec!["Name".into(), "Location".into(), "Type".into(), "Source".into()],
+            p.symbols
+                .iter()
+                .map(|s| {
+                    vec![
+                        CellValue::Text(s.name.clone()),
+                        CellValue::Address(s.address),
+                        CellValue::Text(s.kind.clone()),
+                        CellValue::Text(s.source.clone()),
+                    ]
+                })
+                .collect(),
+        ))
+    });
     let symbols = s.add_provider(
         provider("Symbols", ProviderViewKind::Table, WindowPosition::Left),
-        Some(ViewModelBox::Table(Box::new(match program {
-            // Java SymbolTablePlugin columns (Namespace, reference counts: later)
-            Some(p) => VecTable::new(
-                vec!["Name".into(), "Location".into(), "Type".into(), "Source".into()],
-                p.symbols
-                    .iter()
-                    .map(|s| {
-                        vec![
-                            CellValue::Text(s.name.clone()),
-                            CellValue::Address(s.address),
-                            CellValue::Text(s.kind.clone()),
-                            CellValue::Text(s.source.clone()),
-                        ]
-                    })
-                    .collect(),
-            ),
-            None => VecTable::new(
+        Some(ViewModelBox::Table(match symbols_table.clone() {
+            Some(t) => Box::new(t),
+            None => Box::new(VecTable::new(
             vec!["Name".into(), "Address".into(), "Size".into()],
             {
                 vec![
@@ -143,8 +147,8 @@ pub fn build_session_for(program: Option<&ImportedProgram>) -> UiSession {
                     vec![CellValue::Text("helper".into()), CellValue::Address(0x401100), CellValue::Int(64)],
                 ]
             },
-            ),
-        }))),
+            )),
+        })),
         true,
     );
     s.add_provider(
@@ -282,9 +286,11 @@ pub fn build_session_for(program: Option<&ImportedProgram>) -> UiSession {
     s.tool_mut().add_action(Box::new(switch));
     let mut config = Vec::new();
     if let Some((p, live)) = program.and_then(|p| Some((p, p.live.clone()?))) {
-        let editor = ListingEditor::new(p, live, listing.clone(), listing_id, &events);
+        let mut editor = ListingEditor::new(p, live, listing.clone(), listing_id, &events);
+        editor.symbols = symbols_table.map(|t| (symbols, t));
         add_disassemble_action(s.tool_mut(), &editor);
         add_clear_code_bytes_action(s.tool_mut(), &editor);
+        add_edit_label_action(s.tool_mut(), &editor);
     }
     let go_to = add_navigation_actions(s.tool_mut(), &events, listing, listing_id, &mut config);
     add_tool_options(s.tool_mut(), &events, go_to, &mut config);
@@ -335,7 +341,8 @@ fn merge_instructions(
 #[derive(Clone)]
 struct ListingEditor {
     live: crate::program_import::LiveProgram,
-    base: Arc<ImportedProgram>,
+    base: Arc<Mutex<ImportedProgram>>,
+    symbols: Option<(ProviderId, crate::demo::SharedTable)>,
     instructions: Arc<Mutex<Vec<crate::code_unit_listing::InstructionSnapshot>>>,
     listing: ListingHandle,
     listing_id: ProviderId,
@@ -346,7 +353,8 @@ impl ListingEditor {
     fn new(p: &ImportedProgram, live: crate::program_import::LiveProgram, listing: ListingHandle, listing_id: ProviderId, events: &UiEventQueue) -> Self {
         Self {
             live,
-            base: Arc::new(ImportedProgram { instructions: Vec::new(), live: None, ..p.clone() }),
+            base: Arc::new(Mutex::new(ImportedProgram { instructions: Vec::new(), live: None, ..p.clone() })),
+            symbols: None,
             instructions: Arc::new(Mutex::new(p.instructions.clone())),
             listing,
             listing_id,
@@ -384,10 +392,95 @@ impl ListingEditor {
             *current = merge_instructions(kept, new);
             current.clone()
         };
-        lock(&self.listing).replace_model(Box::new(code_unit_listing(&self.base, merged)));
+        let rebuilt = code_unit_listing(&self.base.lock().unwrap_or_else(std::sync::PoisonError::into_inner), merged);
+        lock(&self.listing).replace_model(Box::new(rebuilt));
         self.events.post(UiEvent::ViewChanged(self.listing_id.0));
         self.events.post(UiEvent::ActionsChanged);
     }
+}
+
+impl ListingEditor {
+    /// Java `RenameLabelCmd` (USER_DEFINED): renames symbol `id` in the
+    /// program, then the listing row and the Symbols pane row; the cursor
+    /// stays on the label.
+    fn rename_label(&self, id: i64, name: &str) -> Result<(), String> {
+        use ghidra_rs::program::model::symbol::{SourceType, SymbolTable};
+        self.live
+            .program()
+            .get_symbol_table()
+            .write()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .set_symbol_name(id, name, SourceType::UserDefined)
+            .map_err(|e| e.to_string())?;
+        let source = SourceType::UserDefined.display_string().to_owned();
+        let renamed = {
+            let mut base = self.base.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+            let sym = base.symbols.iter_mut().find(|s| s.id == id);
+            sym.map(|s| {
+                let old = std::mem::replace(&mut s.name, name.to_owned());
+                s.source = source.clone();
+                (old, s.address)
+            })
+        };
+        if let (Some((old, address)), Some((symbols_id, table))) = (renamed, &self.symbols) {
+            table.update_rows(|row| {
+                if row.first() == Some(&CellValue::Text(old.clone())) && row.get(1) == Some(&CellValue::Address(address)) {
+                    row[0] = CellValue::Text(name.to_owned());
+                    if let Some(cell) = row.get_mut(3) {
+                        *cell = CellValue::Text(source.clone());
+                    }
+                }
+            });
+            self.events.post(UiEvent::ViewChanged(symbols_id.0));
+        }
+        self.refresh(&[], &[]);
+        // labels re-sort by name: find the renamed row again
+        let mut c = lock(&self.listing);
+        if let Some(index) = c.cursor().map(|cur| cur.index) {
+            let address = c.model().address_of(index);
+            let (mut row, count) = (index, c.model().index_count());
+            while row > 0 && c.model().address_of(row - 1) == address {
+                row -= 1;
+            }
+            while row < count && c.model().address_of(row) == address {
+                if c.model().label_at(row).map(|l| l.0) == Some(id) {
+                    c.set_cursor_row(row);
+                    break;
+                }
+                row += 1;
+            }
+        }
+        Ok(())
+    }
+}
+
+/// Java `LabelMgrPlugin` "Edit Label" (`L`, popup "Edit Label..."): the
+/// label under the cursor in Java's `AddEditDialog`.
+fn add_edit_label_action(tool: &mut DockingTool, editor: &ListingEditor) {
+    let (ed, enabled) = (editor.clone(), editor.clone());
+    let mut a = ClosureAction::new("Edit Label", "LabelMgrPlugin", move |_| {
+        let label = {
+            let c = lock(&ed.listing);
+            let Some(row) = c.cursor().map(|cur| cur.index) else { return };
+            c.model().label_at(row).map(|l| (l, c.model().address_text(row)))
+        };
+        let Some(((id, name), address)) = label else { return };
+        let renamer = ed.clone();
+        ed.events.open_dialog(Box::new(crate::edit_label_dialog::EditLabelDialog::new(
+            address,
+            name,
+            Box::new(move |new| renamer.rename_label(id, new)),
+        )));
+    });
+    a.state_mut().enabled_when(Box::new(move |context| {
+        context.component_provider() == Some(enabled.listing_id) && {
+            let c = lock(&enabled.listing);
+            c.cursor().and_then(|cur| c.model().label_at(cur.index)).is_some_and(|(id, _)| id != 0)
+        }
+    }));
+    a.state_mut().set_popup_menu_data(MenuData::full(&["Edit Label..."], None, Some("Label"), None, None).ok());
+    a.state_mut().set_key_binding_data(Some(KeyBindingData::new(KeyStroke::new(vk::L, 0))));
+    tool.add_action(Box::new(a));
 }
 
 /// Java `DisassemblerPlugin` "Disassemble" (`D`, listing popup): disassembles
@@ -404,7 +497,13 @@ fn add_disassemble_action(tool: &mut DockingTool, editor: &ListingEditor) {
         let mut cmd = if ranges.is_empty() {
             let Some(cursor) = cursor else { return };
             // DisassemblerPlugin.disassembleCallback
-            let initialized = ed.base.blocks.iter().any(|b| cursor >= b.start && b.byte(cursor - b.start).is_some());
+            let initialized = ed
+                .base
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .blocks
+                .iter()
+                .any(|b| cursor >= b.start && b.byte(cursor - b.start).is_some());
             if !initialized {
                 ed.events.post(UiEvent::Status("Can't disassemble uninitialized memory!".into()));
                 return;
@@ -1162,6 +1261,78 @@ mod tests {
         s.tool_mut().dispatch_key(KeyStroke::new(vk::C, 0), Some(id));
         assert_eq!(lock(&h).cursor(), cursor);
         assert!(!s.events().drain().contains(&UiEvent::ViewChanged(id.0)), "no rebuild");
+    }
+
+    /// Moves the cursor onto the row of label `id`.
+    fn cursor_to_label(h: &crate::listing_controller::ListingHandle, address: u64, id: i64) -> u128 {
+        let mut c = lock(h);
+        c.goto_address(address).unwrap();
+        let mut row = c.cursor().unwrap().index;
+        while c.model().label_at(row).map(|l| l.0) != Some(id) {
+            c.key(crate::listing::Move::Down, false);
+            row = c.cursor().unwrap().index;
+            assert!(c.model().address_of(row) == Some(address), "label {id} not found at {address:x}");
+        }
+        row
+    }
+
+    #[test]
+    fn edit_label_renames_the_symbol_in_the_program_listing_and_symbols_pane() {
+        let Some((program, _)) = bin_ls_with_undefined_code() else { return };
+        // (Ghidra allows a label name at several addresses: no duplicate check here)
+        let Some(sym) = program.symbols.iter().find(|s| s.source == "Imported" && !s.kind.starts_with("External")).cloned() else { return };
+        let mut s = build_session_for(Some(&program));
+        let (id, h) = listing(&s);
+        let row = cursor_to_label(&h, sym.address, sym.id);
+        let address_text = lock(&h).model().address_text(row);
+        s.events().drain();
+        assert!(matches!(s.tool_mut().dispatch_key(KeyStroke::new(vk::L, 0), Some(id)), DispatchResult::Performed(_)));
+        let dialog = take_dialog(&s);
+        let spec = s.events().dialog_spec(dialog).unwrap();
+        assert_eq!(spec.title, format!("Edit Label at {address_text}"));
+        assert_eq!(spec.combo.unwrap().text, sym.name);
+        // AddEditDialog checks
+        match s.events().dialog_ok(dialog, "  ", &[]).unwrap() {
+            crate::dialogs::DialogReply::Stay(spec) => assert_eq!(spec.status, "Name cannot be blank"),
+            r => panic!("{r:?}"),
+        }
+        let reply = s.events().dialog_ok(dialog, "my_label", &[]);
+        assert!(matches!(reply, Ok(crate::dialogs::DialogReply::Close)), "{} ({}): {reply:?}", sym.name, sym.kind);
+        // the program
+        let live = program.live.as_ref().unwrap().program().clone();
+        let table = live.get_symbol_table();
+        let renamed = {
+            use ghidra_rs::program::model::symbol::SymbolTable;
+            let t = table.read().unwrap();
+            t.get_symbol(sym.id).ok().flatten().map(|x| x.get_name().to_owned())
+        };
+        assert_eq!(renamed.as_deref(), Some("my_label"));
+        // the listing: the cursor stays on the renamed label row
+        let c = lock(&h);
+        let cur = c.cursor().unwrap().index;
+        assert_eq!(c.model().label_at(cur), Some((sym.id, "my_label".to_string())));
+        drop(c);
+        // the Symbols pane
+        let symbols = s.tool().find_provider("Demo", "Symbols").unwrap();
+        let Some(ViewModelBox::Table(t)) = s.model(symbols) else { panic!("table") };
+        let rows: Vec<(String, String)> = (0..t.row_count()).filter(|&r| t.cell(r, 1) == CellValue::Address(sym.address)).map(|r| (t.cell(r, 0).to_string(), t.cell(r, 3).to_string())).collect();
+        assert!(rows.contains(&("my_label".to_string(), "User Defined".to_string())), "{rows:?}");
+        let events = s.events().drain();
+        assert!(events.contains(&UiEvent::ViewChanged(id.0)) && events.contains(&UiEvent::ViewChanged(symbols.0)), "{events:?}");
+    }
+
+    #[test]
+    fn edit_label_is_disabled_off_label_rows() {
+        let Some((program, _)) = bin_ls_with_undefined_code() else { return };
+        let block = program.block_starts[0];
+        let mut s = build_session_for(Some(&program));
+        let (id, h) = listing(&s);
+        lock(&h).goto_address(block).unwrap(); // the block's `//` header
+        {
+            let c = lock(&h);
+            assert!(c.model().label_at(c.cursor().unwrap().index).is_none());
+        }
+        assert!(matches!(s.tool_mut().dispatch_key(KeyStroke::new(vk::L, 0), Some(id)), DispatchResult::Disabled(_)));
     }
 
     #[test]
