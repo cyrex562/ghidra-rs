@@ -29,7 +29,6 @@
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 
-use crate::app::plugin::processors::sleigh::sleigh_parser_context::SleighParserContext;
 use crate::app::util::pseudo_instruction::byte_cache_size;
 use crate::program::disassemble::DisassemblerInstructionContext;
 use crate::program::model::address::{Address, AddressSet, AddressSetView};
@@ -351,7 +350,7 @@ pub struct ProgramInstructionSnapshot {
     context: DisassemblerInstructionContext,
     /// The instruction's own parser context, built on first use: every prototype query asks
     /// for it, and building it dominates the cost of describing an instruction.
-    own_context: std::cell::OnceCell<Option<SleighParserContext>>,
+    own_context: std::cell::OnceCell<Option<Box<dyn ParserContext>>>,
 }
 
 impl InstructionSnapshot for ProgramInstructionSnapshot {
@@ -359,18 +358,17 @@ impl InstructionSnapshot for ProgramInstructionSnapshot {
         &self.mem
     }
 
-    /// Built once per snapshot and handed out as copies (a sleigh context is plain data); a
-    /// prototype whose context is not a [`SleighParserContext`] builds it on every call.
+    /// Built once per snapshot and handed out as copies ([`ParserContext::clone_box`]); a
+    /// context that cannot be copied is built on every call.
     fn own_parser_context(&self, record: &InstructionRecord) -> Result<Box<dyn ParserContext>, MemoryAccessException> {
         if let Some(cached) = self.own_context.get() {
-            if let Some(context) = cached {
-                return Ok(Box::new(SleighParserContext::clone(context)));
+            if let Some(copy) = cached.as_ref().and_then(|context| context.clone_box()) {
+                return Ok(copy);
             }
             return record.prototype().get_parser_context(&self.mem, &self.context);
         }
         let built = record.prototype().get_parser_context(&self.mem, &self.context)?;
-        let sleigh = built.as_any().and_then(|any| any.downcast_ref::<SleighParserContext>()).cloned();
-        let _ = self.own_context.set(sleigh);
+        let _ = self.own_context.set(built.clone_box());
         Ok(built)
     }
 

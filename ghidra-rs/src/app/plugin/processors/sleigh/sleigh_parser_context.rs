@@ -642,6 +642,11 @@ impl ParserContext for SleighParserContext {
     fn as_any(&self) -> Option<&dyn Any> {
         Some(self)
     }
+
+    /// A sleigh context is plain data: copying it is far cheaper than resolving it again.
+    fn clone_box(&self) -> Option<Box<dyn ParserContext>> {
+        Some(Box::new(self.clone()))
+    }
 }
 
 /// Reads the packed context words of `ctx` for `language` (Java's

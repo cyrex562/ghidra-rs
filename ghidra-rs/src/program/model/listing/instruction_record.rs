@@ -298,6 +298,52 @@ pub trait InstructionSnapshot {
     }
 }
 
+/// Wraps a snapshot for a burst of queries on one instruction: the instruction's own parser
+/// context is built once (through the wrapped snapshot) and copied for every later query
+/// ([`ParserContext::clone_box`]); a context that cannot be copied is rebuilt as before.
+/// Single-threaded and short-lived by design (the cache is a `OnceCell`).
+pub struct CachingSnapshot<'a, S: ?Sized> {
+    inner: &'a S,
+    own: std::cell::OnceCell<Option<Box<dyn ParserContext>>>,
+}
+
+impl<'a, S: InstructionSnapshot + ?Sized> CachingSnapshot<'a, S> {
+    /// A cache in front of `inner`.
+    pub fn new(inner: &'a S) -> Self {
+        CachingSnapshot { inner, own: std::cell::OnceCell::new() }
+    }
+}
+
+impl<S: InstructionSnapshot + ?Sized> InstructionSnapshot for CachingSnapshot<'_, S> {
+    fn mem_buffer(&self) -> &dyn MemBuffer {
+        self.inner.mem_buffer()
+    }
+
+    fn processor_context(&self) -> &dyn ProcessorContextView {
+        self.inner.processor_context()
+    }
+
+    fn parser_context_at(
+        &self,
+        record: &InstructionRecord,
+        address: &Address,
+    ) -> Result<Box<dyn ParserContext>, InstructionContextError> {
+        self.inner.parser_context_at(record, address)
+    }
+
+    fn own_parser_context(&self, record: &InstructionRecord) -> Result<Box<dyn ParserContext>, MemoryAccessException> {
+        if let Some(cached) = self.own.get() {
+            if let Some(copy) = cached.as_ref().and_then(|context| context.clone_box()) {
+                return Ok(copy);
+            }
+            return self.inner.own_parser_context(record);
+        }
+        let built = self.inner.own_parser_context(record)?;
+        let _ = self.own.set(built.clone_box());
+        Ok(built)
+    }
+}
+
 /// A record resolved against a snapshot: the queries every instruction backing answers the same
 /// way.
 ///
@@ -611,6 +657,49 @@ mod tests {
             .unwrap();
         let context = ProcessorContextImpl::new(lang.clone());
         (InstructionRecord::new(addr, Arc::new(proto)), Bytes { mem, context })
+    }
+
+    /// Counts how often the wrapped snapshot builds the instruction's own parser context.
+    struct Counting {
+        inner: Bytes,
+        builds: std::cell::Cell<usize>,
+    }
+
+    impl InstructionSnapshot for Counting {
+        fn mem_buffer(&self) -> &dyn MemBuffer {
+            self.inner.mem_buffer()
+        }
+        fn processor_context(&self) -> &dyn ProcessorContextView {
+            self.inner.processor_context()
+        }
+        fn parser_context_at(
+            &self,
+            record: &InstructionRecord,
+            address: &Address,
+        ) -> Result<Box<dyn ParserContext>, InstructionContextError> {
+            self.inner.parser_context_at(record, address)
+        }
+        fn own_parser_context(&self, record: &InstructionRecord) -> Result<Box<dyn ParserContext>, MemoryAccessException> {
+            self.builds.set(self.builds.get() + 1);
+            self.inner.own_parser_context(record)
+        }
+    }
+
+    #[test]
+    fn a_caching_snapshot_builds_the_parser_context_once_and_answers_the_same() {
+        let lang = decode_tests::language();
+        let (record, inner) = decode(&lang, 0x1000, &[0x70, 0x04]); // bz r0,0x1006
+        let counting = Counting { inner, builds: std::cell::Cell::new(0) };
+        let uncached = InstructionView::new(&record, &counting);
+        let expected = (uncached.display_string(), uncached.flow_type(), uncached.default_flows(), uncached.fall_through());
+        let uncached_builds = counting.builds.replace(0);
+        assert!(uncached_builds > 1, "each query rebuilds: {uncached_builds}");
+
+        let cached = CachingSnapshot::new(&counting);
+        let view = InstructionView::new(&record, &cached);
+        let got = (view.display_string(), view.flow_type(), view.default_flows(), view.fall_through());
+        assert_eq!(got, expected);
+        assert_eq!(counting.builds.get(), 1);
     }
 
     #[test]

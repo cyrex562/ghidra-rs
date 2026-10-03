@@ -15,6 +15,12 @@ pub trait ParserContext {
     fn as_any(&self) -> Option<&dyn std::any::Any> {
         None
     }
+
+    /// A copy of this context, for a caller that asks the same instruction many questions (see
+    /// `CachingSnapshot`). Contexts that cannot be copied report `None` and are rebuilt instead.
+    fn clone_box(&self) -> Option<Box<dyn ParserContext>> {
+        None
+    }
 }
 
 #[cfg(test)]
