@@ -235,7 +235,15 @@ impl ListingController {
     pub fn activate(&mut self, x: i32, y: i32) -> bool {
         self.click(x, y, false);
         let Some(target) = self.cursor.and_then(|c| self.model.reference_target(c)) else { return false };
-        self.goto_address(target).is_ok()
+        if self.goto_address(target).is_err() {
+            return false;
+        }
+        // The button is still down (Qt sends the double-click on the second
+        // press); Java follows on mouseClicked, after the release, so no drag
+        // may start from here.
+        self.press = None;
+        self.dragging = false;
+        true
     }
 
     /// Middle click: cursor there, then highlight the word under it (Java
@@ -667,6 +675,10 @@ mod tests {
         assert!(!c.activate(mnemonic_x, 1), "the mnemonic only places the cursor");
         assert_eq!(c.cursor().unwrap().field, 2);
         assert!(c.activate(operand_x, 1));
+        assert_eq!(c.model().address_of(at(&c)), Some(0x402000));
+        // the button is still down after a double-click: a jittery release is no drag
+        c.drag(operand_x + 10, 1); // back over the CALL row, 10px away
+        assert!(c.selection().is_empty(), "no stray selection after following");
         assert_eq!(c.model().address_of(at(&c)), Some(0x402000));
         assert!(c.back());
         assert_eq!(at(&c), 0);
