@@ -19,8 +19,9 @@ use crate::program::model::listing::variable_storage::VariableStorage;
 use crate::program::model::address::BoxedAddressIterator;
 use crate::program::model::symbol::{Namespace, SymbolIteratorAdapter};
 use crate::util::user_search_utils::UserSearchUtils;
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::io;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, RwLock};
 
 pub struct SymbolManagerDB {
@@ -37,6 +38,16 @@ pub struct SymbolManagerDB {
     /// symbols (Java's `refManager` and `program.getListing()` as `SymbolManager` uses them).
     /// Without one -- a symbol manager outside a program -- there are no dynamic symbols.
     dynamic_source: Option<Arc<dyn DynamicSymbolSource>>,
+    /// The symbol table's address index: each address key's symbol IDs, ascending (the order
+    /// Java's indexed `ADDR` column hands them out for one address). Stands in for the
+    /// secondary index `SymbolDatabaseAdapter.getSymbolIDs(Address)` reads -- the table layer
+    /// here keeps no index tables (`Table` writes only its primary B-tree) -- so this manager,
+    /// the table's only writer, keeps the index beside it: built from the table when the manager
+    /// is constructed and updated by every record write and removal.
+    addr_index: RwLock<BTreeMap<i64, BTreeSet<i64>>>,
+    /// Symbol records read from the table (a whole-table scan reads every one); a test hook
+    /// for pinning that address queries read only the records at the address.
+    record_visits: AtomicU64,
 }
 
 impl SymbolManagerDB {
@@ -88,13 +99,55 @@ impl SymbolManagerDB {
             let mut handle = db_handle.write().unwrap();
             handle.create_table(Self::SYMBOL_TABLE_NAME.to_string(), Arc::new(schema))?;
         }
-        Ok(Self {
+        let manager = Self {
             db_handle,
             addr_map,
             namespace_mgr,
             external_entry_points: BTreeSet::new(),
             dynamic_source: None,
-        })
+            addr_index: RwLock::new(BTreeMap::new()),
+            record_visits: AtomicU64::new(0),
+        };
+        manager.rebuild_address_index()?;
+        Ok(manager)
+    }
+
+    /// Rebuilds the address index from the symbol table (one whole-table scan).
+    fn rebuild_address_index(&self) -> io::Result<()> {
+        let mut index = BTreeMap::<i64, BTreeSet<i64>>::new();
+        for rec in self.all_records()? {
+            if let Some(addr_key) = rec.get_long(Self::SYMBOL_ADDR_COL) {
+                index.entry(addr_key).or_default().insert(rec.get_key().get_long_value());
+            }
+        }
+        *self.addr_index.write().unwrap_or_else(|p| p.into_inner()) = index;
+        Ok(())
+    }
+
+    fn index_insert(&self, addr_key: i64, id: i64) {
+        self.addr_index.write().unwrap_or_else(|p| p.into_inner()).entry(addr_key).or_default().insert(id);
+    }
+
+    fn index_remove(&self, addr_key: i64, id: i64) {
+        let mut index = self.addr_index.write().unwrap_or_else(|p| p.into_inner());
+        if let Some(ids) = index.get_mut(&addr_key) {
+            ids.remove(&id);
+            if ids.is_empty() {
+                index.remove(&addr_key);
+            }
+        }
+    }
+
+    /// The IDs of the symbols at the address key `addr_key`, ascending.
+    fn symbol_ids_at_key(&self, addr_key: i64) -> Vec<i64> {
+        let index = self.addr_index.read().unwrap_or_else(|p| p.into_inner());
+        index.get(&addr_key).map(|ids| ids.iter().copied().collect()).unwrap_or_default()
+    }
+
+    /// How many symbol records this manager has read from its table (test hook).
+    #[cfg(test)]
+    pub(crate) fn record_visits(&self) -> u64 {
+        self.record_visits.load(Ordering::Relaxed)
     }
 
     /// Installs what dynamic symbols are decided and named from (see [`DynamicSymbolSource`]).
@@ -258,6 +311,7 @@ impl SymbolManagerDB {
         }
 
         table_lock.put_record(rec.clone())?;
+        self.index_insert(address_key, next_id);
 
         Ok(rec)
     }
@@ -296,26 +350,67 @@ impl SymbolManagerDB {
                 records.push(rec);
             }
         }
+        self.record_visits.fetch_add(records.len() as u64, Ordering::Relaxed);
         Ok(records)
     }
 
-    /// The records at `addr`, in table (ID) order.
+    /// The records at `addr`, in table (ID) order: the address index's IDs, each read by key
+    /// (Java's `adapter.getSymbolIDs(addr)` then `getSymbol(id)`).
     fn records_at(&self, addr: &Address) -> io::Result<Vec<DBRecord>> {
         let addr_key = self.addr_map.read().unwrap().get_key(addr, false);
-        Ok(self
-            .all_records()?
-            .into_iter()
-            .filter(|rec| rec.get_long(Self::SYMBOL_ADDR_COL) == Some(addr_key))
-            .collect())
+        let ids = self.symbol_ids_at_key(addr_key);
+        if ids.is_empty() {
+            return Ok(Vec::new());
+        }
+        let handle = self.db_handle.read().unwrap();
+        let Some(table) = handle.get_table(Self::SYMBOL_TABLE_NAME) else { return Ok(Vec::new()) };
+        let table_lock = table.read().unwrap();
+        let mut records = Vec::with_capacity(ids.len());
+        for id in ids {
+            if let Some(rec) = table_lock.get_record(&Field::Long(Some(id)))? {
+                records.push(rec);
+            }
+        }
+        self.record_visits.fetch_add(records.len() as u64, Ordering::Relaxed);
+        Ok(records)
     }
 
+    /// Writes `rec` over the record of its key, moving it in the address index when its
+    /// address changed.
     fn put_record(&self, rec: DBRecord) -> io::Result<()> {
         let handle = self.db_handle.read().unwrap();
         let table = handle
             .get_table(Self::SYMBOL_TABLE_NAME)
             .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Symbol table not found"))?;
         let mut table_lock = table.write().unwrap();
-        table_lock.put_record(rec)
+        let id = rec.get_key().get_long_value();
+        let old_key = table_lock.get_record(rec.get_key())?.and_then(|old| old.get_long(Self::SYMBOL_ADDR_COL));
+        let new_key = rec.get_long(Self::SYMBOL_ADDR_COL);
+        table_lock.put_record(rec)?;
+        if old_key != new_key {
+            if let Some(old_key) = old_key {
+                self.index_remove(old_key, id);
+            }
+            if let Some(new_key) = new_key {
+                self.index_insert(new_key, id);
+            }
+        }
+        Ok(())
+    }
+
+    /// Deletes the record of the symbol `id` and its address index entry; false when there is
+    /// no such record (Java's `adapter.removeSymbol(id)`).
+    fn delete_record(&self, id: i64) -> io::Result<bool> {
+        let handle = self.db_handle.read().unwrap();
+        let Some(table) = handle.get_table(Self::SYMBOL_TABLE_NAME) else { return Ok(false) };
+        let mut table_lock = table.write().unwrap();
+        let key = Field::Long(Some(id));
+        let Some(old) = table_lock.get_record(&key)? else { return Ok(false) };
+        table_lock.delete_record(&key)?;
+        if let Some(addr_key) = old.get_long(Self::SYMBOL_ADDR_COL) {
+            self.index_remove(addr_key, id);
+        }
+        Ok(true)
     }
 
     /// Every symbol, ordered by address (ties in ID order) as Java's `getSymbolsByAddress`
@@ -552,8 +647,8 @@ impl SymbolTable for SymbolManagerDB {
         Ok(None)
     }
 
+    /// The stored symbols at `addr`, in ID order, read through the address index.
     fn get_symbols(&self, addr: &Address) -> io::Result<Vec<Arc<dyn Symbol>>> {
-        // This is inefficient without a secondary index iterator: every record is scanned.
         self.records_at(addr)?.into_iter().map(|rec| self.record_to_symbol(rec)).collect()
     }
 
@@ -620,6 +715,35 @@ impl SymbolTable for SymbolManagerDB {
             rec.set_long(Self::SYMBOL_HASH_COL, hash);
         }
         self.put_record(rec).map_err(|e| invalid(e.to_string()))
+    }
+
+    /// Port of `SymbolManager.removeSymbolSpecial(Symbol)` for the symbols this manager stores
+    /// (labels): `CodeSymbol.delete` through `doRemoveSymbol` -- the record goes, and when it
+    /// was primary and the first remaining symbol at its memory address is not DEFAULT, the last
+    /// remaining one becomes primary. False for a function symbol (none are stored here, so
+    /// Java's absorb-a-label rename does not apply), a dynamic symbol, or a symbol already gone.
+    ///
+    /// Not ported: removing child symbols, reference associations (`refManager.symbolRemoved`),
+    /// the label history record and the removal event.
+    fn remove_symbol_special(&mut self, symbol: &dyn Symbol) -> bool {
+        if symbol.get_symbol_type() == SymbolType::Function || symbol.get_id() < 0 {
+            return false;
+        }
+        let Ok(Some(removed)) = self.get_symbol(symbol.get_id()) else { return false };
+        if !matches!(self.delete_record(symbol.get_id()), Ok(true)) {
+            return false;
+        }
+        let address = removed.get_address();
+        if removed.is_primary() && address.is_memory_address() {
+            if let Ok(remaining) = self.get_symbols(&address) {
+                if let (Some(first), Some(last)) = (remaining.first(), remaining.last()) {
+                    if first.get_source() != SourceType::Default {
+                        let _ = self.set_primary_symbol(last.get_id());
+                    }
+                }
+            }
+        }
+        true
     }
 
     fn set_symbol_pinned(&mut self, symbol_id: i64, pinned: bool) -> io::Result<()> {
@@ -1284,5 +1408,93 @@ mod symbol_manager_db_tests {
         assert_eq!(all, [0x100, 0x200]);
         mgr.remove_external_entry_point(&a).unwrap();
         assert!(!mgr.is_external_entry_point(&a).unwrap());
+    }
+
+    fn names_at(mgr: &SymbolManagerDB, addr: &Address) -> Vec<String> {
+        mgr.get_symbols(addr).unwrap().iter().map(|s| s.get_name().to_string()).collect()
+    }
+
+    /// The address index (Java's indexed `ADDR` column) follows every write: creation,
+    /// renaming, primary changes, removal (`removeSymbolSpecial`, with `doRemoveSymbol`'s
+    /// primary hand-off), a record moved to another address, and a manager reopened over the
+    /// same database.
+    #[test]
+    fn address_index_follows_create_rename_set_primary_remove_and_move() {
+        let (mut mgr, space) = manager();
+        let (a1, a2, a3) =
+            (Address::new(space.clone(), 0x100), Address::new(space.clone(), 0x200), Address::new(space, 0x300));
+        let a = mgr.create_label(&a1, "a", SourceType::Imported).unwrap();
+        let b = mgr.create_label(&a1, "b", SourceType::Imported).unwrap();
+        let c = mgr.create_label(&a2, "c", SourceType::Imported).unwrap();
+        assert_eq!(names_at(&mgr, &a1), ["a", "b"]);
+        assert_eq!(names_at(&mgr, &a2), ["c"]);
+        assert!(names_at(&mgr, &a3).is_empty());
+
+        mgr.set_symbol_name(b.get_id(), "b2", SourceType::UserDefined).unwrap();
+        assert_eq!(names_at(&mgr, &a1), ["a", "b2"]);
+
+        assert!(mgr.set_primary_symbol(b.get_id()).unwrap());
+        assert_eq!(mgr.get_primary_symbol(&a1).unwrap().unwrap().get_name(), "b2");
+
+        // removing the primary symbol hands primary status to the last remaining one
+        let b = mgr.get_symbol(b.get_id()).unwrap().unwrap();
+        assert!(mgr.remove_symbol_special(b.as_ref()));
+        assert!(!mgr.remove_symbol_special(b.as_ref()), "already removed");
+        assert_eq!(names_at(&mgr, &a1), ["a"]);
+        assert_eq!(mgr.get_primary_symbol(&a1).unwrap().unwrap().get_id(), a.get_id());
+        assert!(mgr.get_symbol(b.get_id()).unwrap().is_none());
+
+        assert!(mgr.remove_symbol_special(a.as_ref()));
+        assert!(names_at(&mgr, &a1).is_empty());
+        assert!(mgr.get_primary_symbol(&a1).unwrap().is_none());
+
+        // a record rewritten at another address moves in the index
+        let mut rec = {
+            let handle = mgr.db_handle.read().unwrap();
+            let table = handle.get_table(SymbolManagerDB::SYMBOL_TABLE_NAME).unwrap();
+            let rec = table.read().unwrap().get_record(&Field::Long(Some(c.get_id()))).unwrap().unwrap();
+            rec
+        };
+        let key3 = mgr.addr_map.read().unwrap().get_key(&a3, true);
+        rec.set_long(SymbolManagerDB::SYMBOL_ADDR_COL, key3);
+        rec.set_long(SymbolManagerDB::SYMBOL_PRIMARY_COL, key3);
+        mgr.put_record(rec).unwrap();
+        assert!(names_at(&mgr, &a2).is_empty());
+        assert_eq!(names_at(&mgr, &a3), ["c"]);
+        assert_eq!(mgr.get_primary_symbol(&a3).unwrap().unwrap().get_name(), "c");
+
+        // a manager opened over the same database builds its index from the table
+        let d = mgr.create_label(&a1, "d", SourceType::Imported).unwrap();
+        let reopened =
+            SymbolManagerDB::new(mgr.db_handle.clone(), mgr.addr_map.clone(), mgr.namespace_mgr.clone(), false).unwrap();
+        assert_eq!(names_at(&reopened, &a1), ["d"]);
+        assert_eq!(names_at(&reopened, &a3), ["c"]);
+        assert_eq!(reopened.get_primary_symbol(&a1).unwrap().unwrap().get_id(), d.get_id());
+    }
+
+    /// Records an address query reads with `count` symbols at distinct addresses: the primary
+    /// symbol, the symbols, and a duplicate-label check at one address.
+    fn record_visits_for_one_address(count: i64) -> u64 {
+        let (mut mgr, space) = manager();
+        for i in 0..count {
+            mgr.create_label(&Address::new(space.clone(), 0x1000 + i * 4), &format!("l{i}"), SourceType::Imported)
+                .unwrap();
+        }
+        let addr = Address::new(space, 0x1000 + (count / 2) * 4);
+        let before = mgr.record_visits();
+        assert!(mgr.get_primary_symbol(&addr).unwrap().is_some());
+        assert_eq!(mgr.get_symbols(&addr).unwrap().len(), 1);
+        mgr.create_label(&addr, &format!("l{}", count / 2), SourceType::Imported).unwrap();
+        mgr.record_visits() - before
+    }
+
+    /// Performance guard by record reads, not wall-clock: a query at one address reads only
+    /// that address's records however many symbols the table holds.
+    #[test]
+    fn address_queries_read_only_the_records_at_the_address() {
+        let small = record_visits_for_one_address(10);
+        let large = record_visits_for_one_address(10_000);
+        assert_eq!(small, 3);
+        assert_eq!(large, small);
     }
 }
