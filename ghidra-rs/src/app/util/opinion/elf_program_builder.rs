@@ -16,15 +16,17 @@
 //!
 //! Phase 2 (the `symbols` submodule) then ports `processSymbolTables` (symbols, the artificial
 //! EXTERNAL block for imports, external entry points), the extension's `processElf`,
-//! `processEntryPoints` and `processImports`, in Java's order.
+//! `processEntryPoints` and `processImports`, in Java's order, with x86-64 dynamic relocations
+//! (`processRelocations`) and the default GOT markup (`processGotPlt`: GOT slots typed as
+//! pointers through the program's `create_data` seam) from the `got_markup` submodule.
 //!
 //! # Not yet ported
 //!
 //! ELF header/program header/section header/dynamic-table/interpreter markup, string tables,
-//! relocations, the extension's `processGotPlt`, hash tables, GNU notes, read-only adjustments,
-//! info producers, `addProgramProperties` and `setExecutableFormat`: the ported `ProgramDB` has no
-//! listing/data/function/external managers, program options or relocation table to write them
-//! into. Where phase 2 reaches one of those (functions, data, equates, comments, external
+//! other machines' relocations and the relocation table, PLT markup, hash tables, GNU notes,
+//! read-only adjustments, info producers, `addProgramProperties` and `setExecutableFormat`: the
+//! ported `ProgramDB` has no full listing, function/external managers, program options or
+//! relocation table to write them into. Where phase 2 reaches one of those (functions, data, equates, comments, external
 //! library paths) it logs once per kind that it is unavailable -- see the `symbols` module docs.
 //!
 //! # Divergences
@@ -268,12 +270,16 @@ impl<'a> ElfProgramBuilder<'a> {
         self.elf.get_load_adapter().process_elf(self, monitor)?;
         monitor.set_indeterminate(false);
 
-        // relocations need a relocation table
+        // x86-64 dynamic relocations only (see the got_markup module)
+        self.process_relocations(monitor)?;
         self.process_entry_points(monitor)?;
         self.process_imports(monitor)?;
 
-        // PLT/GOT, hash table and GNU markup, read-only adjustments and info producers need a
-        // listing
+        monitor.set_indeterminate(true);
+        // the default GOT markup only (see the got_markup module)
+        self.process_got_plt(monitor)?;
+
+        // hash table and GNU markup, read-only adjustments and info producers are not ported
         Ok(())
     }
 
@@ -1620,6 +1626,7 @@ impl ElfLoadHelper for ElfProgramBuilder<'_> {
     }
 }
 
+mod got_markup;
 mod symbols;
 
 #[cfg(test)]

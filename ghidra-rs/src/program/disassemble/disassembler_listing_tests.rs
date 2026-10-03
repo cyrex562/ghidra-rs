@@ -554,16 +554,16 @@ fn operand_display_shows_referenced_addresses_by_symbol() {
 
 /// Acceptance (milestone C4): `/bin/ls` disassembled from `_start` (and the C runtime helpers
 /// after it) reads in the listing the way stock Ghidra shows it right after import, before
-/// analysis: an operand address with a reference shows the destination's symbol -- here always
-/// a dynamic one (`DAT_` for data such as the GOT slot `_start` calls through, `LAB_` for a jump
-/// target, `SUB_` for a call target), since the import creates no symbols there -- and every
+/// analysis: an operand address with a reference shows the destination's symbol -- a dynamic
+/// one where the import creates none (`DAT_` for undefined data, `LAB_` for a jump target,
+/// `SUB_` for a call target), `->` and the import for a GOT pointer to one -- and every
 /// operand without a reference keeps its default representation.
 ///
-/// Java shows `_start`'s call as `CALL qword ptr [->__libc_start_main]`: its ELF import defines
-/// a pointer at the GOT slot, and `CodeUnitFormat` follows a READ reference to a pointer whose
-/// single data reference reaches a non-dynamic symbol. The program has no defined data yet, so
-/// the slot is undefined data, which Java (and this) shows as `qword ptr [DAT_<slot>]`.
-/// Skipped when the distribution or an x86-64 `/bin/ls` is absent.
+/// `_start`'s call reads `CALL qword ptr [->__libc_start_main]` (milestone C5): the ELF import
+/// defines a pointer at the GOT slot, and `CodeUnitFormat` follows a READ reference to a
+/// pointer whose single data reference reaches a non-dynamic symbol. References to other
+/// defined data (Java names it `PTR_...`) are not checked here. Skipped when the distribution
+/// or an x86-64 `/bin/ls` is absent.
 #[test]
 fn bin_ls_operands_read_as_ghidras_listing_shows_them() {
     use crate::program::model::symbol::{Reference, SymbolTable};
@@ -600,6 +600,23 @@ fn bin_ls_operands_read_as_ghidras_listing_shows_them() {
         format!("{prefix}{:08x}", to.offset())
     };
 
+    // CodeUnitFormat.getExtendedPointerReferenceMarkup: a READ (or indirect) reference to
+    // defined data whose only reference is a DATA reference to a non-dynamic symbol reads as
+    // `->` and that symbol
+    let through_pointer = |to: &Address, ref_type: RefType| -> Option<String> {
+        if !(ref_type.is_indirect() || ref_type == RefType::Read) {
+            return None;
+        }
+        program.defined_data_at(to)?;
+        let from_pointer = program.references_from(to);
+        if from_pointer.len() != 1 || from_pointer[0].reference_type() != RefType::Data {
+            return None;
+        }
+        let target = from_pointer[0].to_address();
+        let symbol = program.get_symbol_table().read().unwrap().get_primary_symbol(&target).unwrap()?;
+        (!symbol.is_dynamic()).then(|| format!("->{}", symbol.get_name()))
+    };
+
     let rel32 = |b: &[u8]| i64::from(i32::from_le_bytes(b.try_into().unwrap()));
     let (mut saw_got_call, mut marked_up) = (false, Vec::new());
     for u in program.instruction_summaries(&entry, &crt_end) {
@@ -614,7 +631,13 @@ fn bin_ls_operands_read_as_ghidras_listing_shows_them() {
         }
         assert_eq!(refs.len(), 1, "{u:?} {refs:?}");
         let to = refs[0].to_address();
-        let name = name_of(&to);
+        let name = match through_pointer(&to, refs[0].reference_type()) {
+            Some(name) => name,
+            // a reference to other defined data reads in Java as the data's dynamic name
+            // (`PTR_...` for a pointer), which dynamic symbols do not answer yet
+            None if program.defined_data_at(&to).is_some() => continue,
+            None => name_of(&to),
+        };
         let expected = u.operand_text.replacen(&format!("0x{:x}", to.offset()), &name, 1);
         assert_ne!(expected, u.operand_text, "{u:?} does not show {to}");
         assert_eq!(shown.operand_field, expected, "{u:?}");
@@ -622,12 +645,60 @@ fn bin_ls_operands_read_as_ghidras_listing_shows_them() {
         if let [0xff, 0x15, d @ ..] = u.bytes.as_slice() {
             let slot = u.address.add_wrap(u.length as i64 + rel32(d));
             assert_eq!(to, slot);
-            assert_eq!((shown.mnemonic.as_str(), shown.operand_field.clone()), ("CALL", format!("qword ptr [DAT_{:08x}]", slot.offset())));
+            assert_eq!((shown.mnemonic.as_str(), shown.operand_field.as_str()), ("CALL", "qword ptr [->__libc_start_main]"));
             saw_got_call = true;
         }
     }
     assert!(saw_got_call, "no CALL [GOT] in _start");
-    for prefix in ["LAB_", "SUB_", "DAT_"] {
+    for prefix in ["LAB_", "SUB_", "DAT_", "->"] {
         assert!(marked_up.iter().any(|t| t.contains(prefix)), "no {prefix} operand among {marked_up:?}");
     }
+}
+
+/// Acceptance (milestone C5): the ELF import types `/bin/ls`'s GOT slots as pointers (after
+/// applying the x86-64 dynamic relocations that fill them), so the slot `_start` calls through
+/// is pointer data whose DATA reference reaches `__libc_start_main` in the EXTERNAL block, and
+/// `CodeUnitFormat` follows the call's reference through that pointer the way Java's listing
+/// shows it: `CALL qword ptr [->__libc_start_main]`. Skipped when the distribution or an x86-64
+/// `/bin/ls` is absent.
+#[test]
+fn bin_ls_start_calls_libc_start_main_through_a_got_pointer() {
+    use crate::program::model::symbol::{Reference, SymbolTable};
+    let Some((program, _, entry)) = load_bin_ls() else { return };
+    let mut disassembler = Disassembler::get_program_disassembler(&program, Arc::new(DummyMonitor), None);
+    disassembler.disassemble_program(&program, &entry, None, true);
+
+    let call = program
+        .instruction_summaries(&entry, &entry.add_wrap(0x40))
+        .into_iter()
+        .find(|u| u.bytes.starts_with(&[0xff, 0x15]))
+        .expect("no CALL [GOT] in _start");
+    let rel32 = i64::from(i32::from_le_bytes(call.bytes[2..6].try_into().unwrap()));
+    let slot = call.address.add_wrap(call.length as i64 + rel32);
+
+    let data = program.defined_data_at(&slot).expect("the GOT slot is not defined data");
+    assert!(data.is_pointer());
+    assert_eq!(data.length(), 8);
+    let refs = program.references_from(&slot);
+    assert_eq!(refs.len(), 1, "{refs:?}");
+    assert_eq!(refs[0].reference_type(), RefType::Data);
+    let target = refs[0].to_address();
+    let symbol = program.get_symbol_table().read().unwrap().get_primary_symbol(&target).unwrap().expect("no symbol at the import");
+    assert_eq!(symbol.get_name(), "__libc_start_main");
+    let block = MemoryMapDB::as_memory(&program.get_memory()).get_block(&target).map(|b| b.get_name().to_string());
+    assert_eq!(block.as_deref(), Some("EXTERNAL"));
+
+    // every slot of the GOT is a pointer (ElfDefaultGotPltMarkup.processGOT)
+    let got = MemoryMapDB::as_memory(&program.get_memory()).get_block(&slot).unwrap();
+    assert!(got.get_name().starts_with(".got"));
+    let (got_start, got_end) = (got.get_start(), got.get_end());
+    let pointers = program.data_summaries(&got_start, &got_end);
+    assert_eq!(pointers.len() as i64, (got_end.subtract(&got_start) + 1) / 8);
+    assert!(pointers.iter().all(|p| p.mnemonic == "addr" && p.length == 8));
+
+    let summary = program.data_summaries(&slot, &slot).pop().unwrap();
+    assert_eq!((summary.mnemonic.as_str(), summary.operand_text.clone()), ("addr", target.to_string()));
+
+    let shown = program.operand_display(&call.address).unwrap();
+    assert_eq!((shown.mnemonic.as_str(), shown.operand_field.as_str()), ("CALL", "qword ptr [->__libc_start_main]"));
 }
