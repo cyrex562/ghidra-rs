@@ -84,8 +84,8 @@ pub trait ListingViewModel: Send {
     fn address_text(&self, index: u128) -> String;
     /// The address of a row (a label row: its code unit's), if listed.
     fn address_of(&self, index: u128) -> Option<u64>;
-    /// The symbol (id, name) of a label row.
-    fn label_at(&self, index: u128) -> Option<(i64, String)> {
+    /// The symbol (id, name, its address) of a label row.
+    fn label_at(&self, index: u128) -> Option<(i64, String, u64)> {
         let _ = index;
         None
     }

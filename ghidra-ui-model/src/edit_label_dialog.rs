@@ -38,6 +38,11 @@ impl DialogModel for EditLabelDialog {
             self.status = "Name cannot be blank".into();
             return DialogReply::Stay(self.spec());
         }
+        if name.contains("::") {
+            // RenameLabelCmd.parseNameAndNamespace would move the label
+            self.status = format!("Namespaces are not supported yet: {name}");
+            return DialogReply::Stay(self.spec());
+        }
         match (self.rename)(name) {
             Ok(()) => DialogReply::Close,
             Err(message) => {
@@ -68,6 +73,11 @@ mod tests {
         assert_eq!(d.spec().title, "Edit Label at 00401000");
         match d.ok("taken", &[]) {
             DialogReply::Stay(s) => assert_eq!(s.status, "taken is already defined"),
+            r => panic!("{r:?}"),
+        }
+        // RenameLabelCmd would move the label into namespace "ns": not ported
+        match d.ok("ns::g", &[]) {
+            DialogReply::Stay(s) => assert_eq!(s.status, "Namespaces are not supported yet: ns::g"),
             r => panic!("{r:?}"),
         }
         assert_eq!(d.ok("  g  ", &[]), DialogReply::Close);

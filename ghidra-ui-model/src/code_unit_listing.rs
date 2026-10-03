@@ -70,8 +70,9 @@ pub struct CodeUnitListing {
 
 #[derive(Debug, Clone)]
 enum SegKind {
-    /// A label row: the symbol's name and id.
-    Label { name: String, id: i64 },
+    /// A label row: the symbol's name, id and own address (an offcut label's
+    /// differs from its row's code unit).
+    Label { name: String, id: i64, address: u64 },
     /// A block-start `//` header line.
     Header(String),
     Instruction { len: u64, mnemonic: String, operands: String, references: Vec<OperandRef> },
@@ -185,11 +186,11 @@ impl CodeUnitListing {
                 // offcuts before the code unit's own symbols)
                 let unit_end = p + len.unwrap_or(0);
                 while li < labels.len() && labels[li].address < unit_end {
-                    push(&mut segments, 1, p, bi, SegKind::Label { name: labels[li].name.clone(), id: labels[li].id });
+                    push(&mut segments, 1, p, bi, SegKind::Label { name: labels[li].name.clone(), id: labels[li].id, address: labels[li].address });
                     li += 1;
                 }
                 for l in labels[at..].iter().take_while(|l| l.address == p) {
-                    push(&mut segments, 1, p, bi, SegKind::Label { name: l.name.clone(), id: l.id });
+                    push(&mut segments, 1, p, bi, SegKind::Label { name: l.name.clone(), id: l.id, address: l.address });
                 }
                 if let Some(len) = len {
                     let insn = &instructions[ii];
@@ -294,9 +295,9 @@ pub fn operand_index_at(text: &str, col: usize) -> i32 {
 }
 
 impl ListingViewModel for CodeUnitListing {
-    fn label_at(&self, index: u128) -> Option<(i64, String)> {
+    fn label_at(&self, index: u128) -> Option<(i64, String, u64)> {
         match &self.segment(index)?.kind {
-            SegKind::Label { name, id } => Some((*id, name.clone())),
+            SegKind::Label { name, id, address } => Some((*id, name.clone(), *address)),
             _ => None,
         }
     }
@@ -554,8 +555,8 @@ mod tests {
         l.set_metrics(FontMetrics::monospace(7, 11, 3));
         // 4 header rows, offcut "mid", "f", the instruction
         assert_eq!(l.label_at(0), None, "a header row");
-        assert_eq!(l.label_at(4), Some((9, "mid".to_string())), "the offcut label keeps its own symbol");
-        assert_eq!(l.label_at(5), Some((7, "f".to_string())));
+        assert_eq!(l.label_at(4), Some((9, "mid".to_string(), 0x1002)), "the offcut label keeps its own symbol and address");
+        assert_eq!(l.label_at(5), Some((7, "f".to_string(), 0x1000)));
         assert_eq!(l.label_at(6), None, "the instruction row");
     }
 

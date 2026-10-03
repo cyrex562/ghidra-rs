@@ -432,20 +432,19 @@ impl ListingEditor {
             .unwrap_or_default();
         let renamed = {
             let mut base = self.base.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
-            let sym = base.symbols.iter_mut().find(|s| s.id == id);
-            sym.map(|s| {
-                let old = std::mem::replace(&mut s.name, name.to_owned());
+            base.symbols.iter().position(|s| s.id == id).map(|index| {
+                let s = &mut base.symbols[index];
+                s.name = name.to_owned();
                 s.source = source.clone();
-                (old, s.address)
+                index
             })
         };
-        if let (Some((old, address)), Some((symbols_id, table))) = (renamed, &self.symbols) {
-            table.update_rows(|row| {
-                if row.first() == Some(&CellValue::Text(old.clone())) && row.get(1) == Some(&CellValue::Address(address)) {
-                    row[0] = CellValue::Text(name.to_owned());
-                    if let Some(cell) = row.get_mut(3) {
-                        *cell = CellValue::Text(source.clone());
-                    }
+        // the Symbols table's stored rows are the imported symbols, in order
+        if let (Some(index), Some((symbols_id, table))) = (renamed, &self.symbols) {
+            table.update_row(index, |row| {
+                row[0] = CellValue::Text(name.to_owned());
+                if let Some(cell) = row.get_mut(3) {
+                    *cell = CellValue::Text(source.clone());
                 }
             });
             self.events.post(UiEvent::ViewChanged(symbols_id.0));
@@ -479,9 +478,12 @@ fn add_edit_label_action(tool: &mut DockingTool, editor: &ListingEditor) {
         let label = {
             let c = lock(&ed.listing);
             let Some(row) = c.cursor().map(|cur| cur.index) else { return };
-            c.model().label_at(row).map(|l| (l, c.model().address_text(row)))
+            // AddEditDialog titles the label's own address (an offcut label's
+            // differs from its row's code unit), formatted like the row's
+            let width = c.model().address_text(row).len();
+            c.model().label_at(row).map(|(id, name, address)| (id, name, format!("{address:0width$x}")))
         };
-        let Some(((id, name), address)) = label else { return };
+        let Some((id, name, address)) = label else { return };
         let renamer = ed.clone();
         ed.events.open_dialog(Box::new(crate::edit_label_dialog::EditLabelDialog::new(
             address,
@@ -492,7 +494,7 @@ fn add_edit_label_action(tool: &mut DockingTool, editor: &ListingEditor) {
     a.state_mut().enabled_when(Box::new(move |context| {
         context.component_provider() == Some(enabled.listing_id) && {
             let c = lock(&enabled.listing);
-            c.cursor().and_then(|cur| c.model().label_at(cur.index)).is_some_and(|(id, _)| id != 0)
+            c.cursor().and_then(|cur| c.model().label_at(cur.index)).is_some_and(|(id, _, _)| id != 0)
         }
     }));
     a.state_mut().set_popup_menu_data(MenuData::full(&["Edit Label..."], None, Some("Label"), None, None).ok());
@@ -1327,7 +1329,7 @@ mod tests {
         // the listing: the cursor stays on the renamed label row
         let c = lock(&h);
         let cur = c.cursor().unwrap().index;
-        assert_eq!(c.model().label_at(cur), Some((sym.id, "my_label".to_string())));
+        assert_eq!(c.model().label_at(cur), Some((sym.id, "my_label".to_string(), sym.address)));
         drop(c);
         // the Symbols pane
         let symbols = s.tool().find_provider("Demo", "Symbols").unwrap();

@@ -85,6 +85,18 @@ impl TableModel for VecTable {
 }
 
 impl VecTable {
+    /// Edits stored row `index` (construction order, whatever the view's
+    /// sort or filter), then re-applies the last sort and the filter.
+    pub fn update_row(&mut self, index: usize, f: impl FnOnce(&mut Vec<CellValue>)) {
+        if let Some(row) = self.rows.get_mut(index) {
+            f(row);
+        }
+        match self.sorted {
+            Some((column, ascending)) => self.sort(column, ascending),
+            None => self.refilter(),
+        }
+    }
+
     /// Edits rows in place (all of them, filtered or not), then re-applies
     /// the last sort and the filter.
     pub fn update_rows(&mut self, mut f: impl FnMut(&mut Vec<CellValue>)) {
@@ -108,6 +120,11 @@ impl SharedTable {
 
     fn lock(&self) -> std::sync::MutexGuard<'_, VecTable> {
         self.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
+    }
+
+    /// [`VecTable::update_row`] for every holder.
+    pub fn update_row(&self, index: usize, f: impl FnOnce(&mut Vec<CellValue>)) {
+        self.lock().update_row(index, f);
     }
 
     /// [`VecTable::update_rows`] for every holder.
@@ -278,6 +295,18 @@ impl FormModel for MapForm {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn one_stored_row_updates_whatever_the_view_order() {
+        let t = SharedTable::new(VecTable::new(
+            vec!["Name".into()],
+            vec![vec![CellValue::Text("b".into())], vec![CellValue::Text("b".into())], vec![CellValue::Text("a".into())]],
+        ));
+        let mut view = t.clone();
+        view.sort(0, true); // a, b, b
+        t.update_row(1, |row| row[0] = CellValue::Text("c".into()));
+        assert_eq!((0..3).map(|r| view.cell(r, 0).to_string()).collect::<Vec<_>>(), vec!["a", "b", "c"]);
+    }
 
     #[test]
     fn updated_rows_keep_the_last_sort() {
