@@ -49,6 +49,11 @@ pub trait ConfigState: Send {
     fn write_config_state(&self, state: &mut ghidra_rs::framework::options::SaveState);
     /// Restores it.
     fn read_config_state(&mut self, state: &ghidra_rs::framework::options::SaveState);
+    /// Restore order: lower first. Tool options are 0 so plugins (1) read
+    /// their state under the restored option values, as in Java.
+    fn phase(&self) -> u8 {
+        1
+    }
 }
 
 impl UiSession {
@@ -148,7 +153,10 @@ impl UiSession {
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, format!("{}: {e:?}", path.display())))?;
         let state = ghidra_rs::framework::options::SaveState::from_xml(&element);
         self.tool.restore_layout(&state);
-        for (name, contributor) in &mut self.config_states {
+        let mut order: Vec<usize> = (0..self.config_states.len()).collect();
+        order.sort_by_key(|&i| self.config_states[i].1.phase());
+        for i in order {
+            let (name, contributor) = &mut self.config_states[i];
             if let Some(e) = state.get_xml_element(name) {
                 contributor.read_config_state(&ghidra_rs::framework::options::SaveState::from_xml(e));
             }

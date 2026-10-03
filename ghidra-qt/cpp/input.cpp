@@ -180,6 +180,7 @@ public:
 
 public:
     void reject() override {
+        flushEdits();  // a pending edit commits while the panes still exist
         bridgeCall(m_status, [&] { dialog_cancel(m_id); });
         QDialog::reject();
     }
@@ -262,6 +263,7 @@ private:
 public:
     // Presses an extra button (smoke tests skip the confirmation).
     void pressButton(const QString& key) {
+        flushEdits();
         const QByteArray k = key.toUtf8();
         bool done = false;
         if (!bridgeCall(m_status, [&] { done = dialog_button(m_id, rust::Str(k.constData(), static_cast<size_t>(k.size()))); })) return;
@@ -313,7 +315,15 @@ public:
 
 private:
 
+    // Commits the focused editor (its editingFinished) before the dialog acts:
+    // where buttons take no focus on click, the last edit would otherwise be
+    // missed by OK, or arrive after Cancel released the panes.
+    void flushEdits() {
+        if (QWidget* w = focusWidget()) w->clearFocus();
+    }
+
     void okPressed() {
+        flushEdits();
         rust::Vec<CheckInfo> checks;
         for (QCheckBox* box : m_checks) {
             const QByteArray key = box->property("rustKey").toString().toUtf8();

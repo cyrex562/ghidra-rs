@@ -33,6 +33,8 @@ pub struct OptionsDialogState {
     selected: usize,
     /// (options index, full option name) → staged value text.
     staged: BTreeMap<(usize, String), String>,
+    /// Rejected edits (what was typed, why): shown, and they block Apply/OK.
+    invalid: BTreeMap<(usize, String), (String, String)>,
     status: String,
 }
 
@@ -56,7 +58,15 @@ impl OptionsDialogState {
                 add_categories(&mut nodes, o, i, "", id);
             }
         }
-        Self { tool_name: tool_name.to_owned(), options, nodes, selected: 0, staged: BTreeMap::new(), status: String::new() }
+        Self {
+            tool_name: tool_name.to_owned(),
+            options,
+            nodes,
+            selected: 0,
+            staged: BTreeMap::new(),
+            invalid: BTreeMap::new(),
+            status: String::new(),
+        }
     }
 
     /// [`Self::new`] behind a shared handle.
@@ -99,14 +109,21 @@ impl OptionsDialogState {
         if field.read_only {
             return Err(format!("{} is read-only", field.label));
         }
-        field.validate(value)?;
         let ty = self.options[i].find_option(&name).map(|o| o.option_type());
-        match ty {
+        let checked = field.validate(value).and_then(|()| match ty {
             Some(OptionType::DoubleType | OptionType::FloatType) if value.trim().parse::<f64>().is_err() => {
-                return Err(format!("{}: not a number", field.label));
+                Err(format!("{}: not a number", field.label))
             }
-            _ => {}
+            _ => Ok(()),
+        });
+        if let Err(e) = checked {
+            // Keep it: the user sees what they typed, and OK can't silently drop it.
+            self.staged.remove(&(i, name.clone()));
+            self.invalid.insert((i, name), (value.to_owned(), e.clone()));
+            self.status = e.clone();
+            return Err(e);
         }
+        self.invalid.remove(&(i, name.clone()));
         self.staged.insert((i, name), value.to_owned());
         self.status.clear();
         Ok(())
@@ -114,12 +131,16 @@ impl OptionsDialogState {
 
     /// Whether edits are staged.
     pub fn has_changes(&self) -> bool {
-        !self.staged.is_empty()
+        !self.staged.is_empty() || !self.invalid.is_empty()
     }
 
     /// Writes every staged edit; on the first failure the status says why and
     /// the failed edit stays staged.
     pub fn apply(&mut self) -> Result<(), String> {
+        if let Some((_, error)) = self.invalid.values().next() {
+            self.status = error.clone();
+            return Err(error.clone());
+        }
         let staged = std::mem::take(&mut self.staged);
         let mut failed: Option<String> = None;
         for ((i, name), value) in staged {
@@ -147,6 +168,7 @@ impl OptionsDialogState {
     /// Drops staged edits (Cancel).
     pub fn discard(&mut self) {
         self.staged.clear();
+        self.invalid.clear();
         self.status.clear();
     }
 
@@ -162,7 +184,8 @@ impl OptionsDialogState {
             for rel in self.options[i].option_names_in_category(&path) {
                 let full = join(&path, &rel);
                 self.options[i].restore_default_value(&full).map_err(|e| format!("{full}: {e:?}"))?;
-                self.staged.remove(&(i, full));
+                self.staged.remove(&(i, full.clone()));
+                self.invalid.remove(&(i, full));
             }
         }
         self.status.clear();
@@ -184,9 +207,11 @@ impl OptionsDialogState {
         let entry = self.options.get(i)?.find_option(name)?;
         let leaf = name.rsplit('.').next().unwrap_or(name);
         let key = format!("{i}:{name}");
-        let value = match self.staged.get(&(i, name.to_owned())) {
-            Some(v) => v.clone(),
-            None => self.options[i].get_value_as_string(name).ok().flatten().unwrap_or_default(),
+        let k = (i, name.to_owned());
+        let value = match (self.invalid.get(&k), self.staged.get(&k)) {
+            (Some((typed, _)), _) => typed.clone(),
+            (None, Some(v)) => v.clone(),
+            (None, None) => self.options[i].get_value_as_string(name).ok().flatten().unwrap_or_default(),
         };
         let (kind, read_only) = match entry.option_type() {
             OptionType::IntType | OptionType::LongType => (FormFieldKind::Int, false),
@@ -429,6 +454,25 @@ mod tests {
         assert!(lock(&d).status().contains("Max Goto Entries"), "{}", lock(&d).status());
         assert!(lock(&d).has_changes());
         assert_eq!(o.get_int("Max Goto Entries", 0).unwrap(), 10);
+    }
+
+    #[test]
+    fn an_invalid_edit_stays_visible_and_blocks_ok() {
+        use crate::dialogs::{DialogModel, DialogReply};
+        let o = tool_options();
+        let d = OptionsDialogState::shared("T", vec![o.clone()]);
+        let mut dialog = OptionsDialog(d.clone());
+        let key = lock(&d).fields()[0].key.clone(); // Max Goto Entries
+        assert!(lock(&d).stage(&key, "abc").is_err());
+        assert_eq!(lock(&d).fields()[0].value, "abc", "what the user typed stays visible");
+        match dialog.ok("", &[]) {
+            DialogReply::Stay(s) => assert!(s.status.contains("not an integer"), "{}", s.status),
+            other => panic!("{other:?}"),
+        }
+        assert_eq!(o.get_int("Max Goto Entries", 0).unwrap(), 10);
+        lock(&d).stage(&key, "12").unwrap();
+        assert_eq!(dialog.ok("", &[]), DialogReply::Close);
+        assert_eq!(o.get_int("Max Goto Entries", 0).unwrap(), 12);
     }
 
     #[test]

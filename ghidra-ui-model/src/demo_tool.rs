@@ -348,12 +348,20 @@ impl OptionsChangeListener for MaxGotoListener {
     ) -> Result<(), Box<dyn ghidra_rs::framework::seam_stubs::OptionsVetoException>> {
         if option_name == MAX_GOTO_ENTRIES {
             if let Some(OptionValue::Int(n)) = new_value.and_then(|v| v.downcast_ref::<OptionValue>()) {
-                self.0 .0.lock().unwrap_or_else(std::sync::PoisonError::into_inner).set_max_entries((*n).max(0) as usize);
+                if *n <= 0 {
+                    // Java: OptionsVetoException("Search limit must be greater than 0")
+                    return Err(Box::new(SearchLimitVeto));
+                }
+                self.0 .0.lock().unwrap_or_else(std::sync::PoisonError::into_inner).set_max_entries(*n as usize);
             }
         }
         Ok(())
     }
 }
+
+/// "Search limit must be greater than 0".
+struct SearchLimitVeto;
+impl ghidra_rs::framework::seam_stubs::OptionsVetoException for SearchLimitVeto {}
 
 /// The options saved with the tool config; also keeps their listener alive
 /// (ToolOptions holds listeners weakly, as Java's WeakSet).
@@ -363,6 +371,9 @@ struct ToolOptionsState {
 }
 
 impl ConfigState for ToolOptionsState {
+    fn phase(&self) -> u8 {
+        0
+    }
     fn write_config_state(&self, state: &mut ghidra_rs::framework::options::SaveState) {
         state.put_xml_element(&self.options.get_name(), self.options.get_xml_root(false));
     }
@@ -503,6 +514,58 @@ mod tests {
         let goto = f.fields().into_iter().find(|f| f.label == "Max Goto Entries").expect("Max Goto Entries");
         assert_eq!(goto.value, "10");
         assert!(!goto.tooltip.is_empty());
+    }
+
+    #[test]
+    fn a_restored_max_goto_entries_applies_before_the_go_to_history_loads() {
+        let dir = std::env::temp_dir().join(format!("ghidra-ui-model-order-{}", std::process::id()));
+        let path = dir.join("tool.xml");
+        let mut s = build_demo_session();
+        let (id, _) = listing(&s);
+        set_max_goto_entries(&mut s, "25");
+        for i in 0..20 {
+            s.tool_mut().dispatch_key(KeyStroke::new(vk::G, 0), Some(id));
+            let d = take_dialog(&s);
+            s.events().dialog_ok(d, &format!("{:x}", 0x401000 + i % 12), &[]).unwrap();
+            if i >= 12 {
+                continue;
+            }
+        }
+        s.save_tool_config(&path).unwrap();
+        let before = {
+            s.tool_mut().dispatch_key(KeyStroke::new(vk::G, 0), Some(id));
+            let d = take_dialog(&s);
+            s.events().dialog_spec(d).unwrap().combo.unwrap().items.len()
+        };
+        let mut s2 = build_demo_session();
+        s2.load_tool_config(&path).unwrap();
+        s2.tool_mut().dispatch_key(KeyStroke::new(vk::G, 0), Some(id));
+        let d = take_dialog(&s2);
+        assert_eq!(s2.events().dialog_spec(d).unwrap().combo.unwrap().items.len(), before);
+        assert!(before > 10, "{before}");
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn max_goto_entries_must_be_positive() {
+        let mut s = build_demo_session();
+        let (id, _) = listing(&s);
+        s.tool_mut().dispatch_key(KeyStroke::new(vk::G, 0), Some(id));
+        let d = take_dialog(&s);
+        s.events().dialog_ok(d, "401000", &[]).unwrap();
+        let opts = edit_options_dialog(&mut s);
+        let (_, form) = s.dialog_pane_ids(opts).unwrap();
+        let Some(ViewModelBox::Form(f)) = s.model_mut(form) else { panic!("form") };
+        let key = f.fields().into_iter().find(|f| f.label == "Max Goto Entries").unwrap().key;
+        f.set(&key, "0").unwrap();
+        match s.events().dialog_ok(opts, "", &[]).unwrap() {
+            crate::dialogs::DialogReply::Stay(spec) => assert!(spec.status.to_lowercase().contains("veto"), "{}", spec.status),
+            other => panic!("{other:?}"),
+        }
+        s.events().dialog_cancel(opts).unwrap();
+        s.tool_mut().dispatch_key(KeyStroke::new(vk::G, 0), Some(id));
+        let again = take_dialog(&s);
+        assert_eq!(s.events().dialog_spec(again).unwrap().combo.unwrap().items, vec!["401000"]);
     }
 
     #[test]
