@@ -355,6 +355,19 @@ pub trait SymbolTable: Send + Sync {
         Box::new(EmptySymbolIterator)
     }
 
+    /// Iterate every symbol in the program, in address order. Stands in for
+    /// `SymbolTable.getAllSymbols(boolean includeDynamicSymbols)`.
+    ///
+    /// Grown (defaulted, so existing implementors keep compiling) for the ELF loader's symbol
+    /// processing and as the read API a symbol-table view iterates. A symbol table that creates no
+    /// dynamic symbols ignores `include_dynamic_symbols`.
+    ///
+    /// Defaults to an empty iterator so existing implementors are unaffected.
+    fn get_all_symbols(&self, include_dynamic_symbols: bool) -> Box<dyn SymbolIterator> {
+        let _ = include_dynamic_symbols;
+        Box::new(EmptySymbolIterator)
+    }
+
     fn get_symbols(&self, addr: &Address) -> io::Result<Vec<Arc<dyn Symbol>>>;
 
     /// All symbols with exactly the given name, in any namespace (global namespace first). Stands

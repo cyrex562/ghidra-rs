@@ -9,6 +9,10 @@ use crate::program::model::address::{Address, AddressSpace};
 use crate::program::model::listing::Library;
 use crate::program::model::symbol::{SourceType, Symbol, SymbolIterator, SymbolTable, SymbolType};
 use crate::program::model::listing::variable_storage::VariableStorage;
+use crate::program::model::address::BoxedAddressIterator;
+use crate::program::model::symbol::{Namespace, SymbolIteratorAdapter};
+use crate::util::user_search_utils::UserSearchUtils;
+use std::collections::BTreeSet;
 use std::io;
 use std::sync::{Arc, RwLock};
 
@@ -16,6 +20,12 @@ pub struct SymbolManagerDB {
     db_handle: Arc<RwLock<DBHandle>>,
     addr_map: Arc<RwLock<AddressMapDB>>,
     namespace_mgr: Arc<RwLock<NamespaceManagerDB>>,
+    /// The program's external entry points. Java keeps these as `EXTERNAL_ENTRY` references in
+    /// the `ReferenceDBManager` (`SymbolManager.addExternalEntryPoint` delegates to
+    /// `refManager.addExternalEntryPointRef`); `ProgramDB` has no reference manager yet, so the
+    /// symbol manager holds the entry point set itself, in address order as Java's
+    /// `getExternalEntryIterator` returns it.
+    external_entry_points: BTreeSet<Address>,
 }
 
 impl SymbolManagerDB {
@@ -69,6 +79,7 @@ impl SymbolManagerDB {
             db_handle,
             addr_map,
             namespace_mgr,
+            external_entry_points: BTreeSet::new(),
         })
     }
 
@@ -137,15 +148,86 @@ impl SymbolManagerDB {
 
         let address = self.addr_map.read().unwrap().decode_address(addr_key);
 
-        Ok(Arc::new(SymbolDB::new(
-            id,
-            name,
-            address,
-            symbol_type,
-            parent_id,
-            is_primary,
-            source,
-        )))
+        let mut symbol = SymbolDB::new(id, name, address, symbol_type, parent_id, is_primary, source);
+        symbol.pinned = flags & Self::SYMBOL_PINNED_FLAG != 0;
+        Ok(Arc::new(symbol))
+    }
+
+    /// Every symbol record, in table (ID) order.
+    fn all_records(&self) -> io::Result<Vec<DBRecord>> {
+        let handle = self.db_handle.read().unwrap();
+        let mut records = Vec::new();
+        if let Some(table) = handle.get_table(Self::SYMBOL_TABLE_NAME) {
+            let table_lock = table.read().unwrap();
+            let mut it = table_lock.get_record_iterator()?;
+            while let Some(rec) = it.next()? {
+                records.push(rec);
+            }
+        }
+        Ok(records)
+    }
+
+    /// The records at `addr`, in table (ID) order.
+    fn records_at(&self, addr: &Address) -> io::Result<Vec<DBRecord>> {
+        let addr_key = self.addr_map.read().unwrap().get_key(addr, false);
+        Ok(self
+            .all_records()?
+            .into_iter()
+            .filter(|rec| rec.get_long(Self::SYMBOL_ADDR_COL) == Some(addr_key))
+            .collect())
+    }
+
+    fn put_record(&self, rec: DBRecord) -> io::Result<()> {
+        let handle = self.db_handle.read().unwrap();
+        let table = handle
+            .get_table(Self::SYMBOL_TABLE_NAME)
+            .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "Symbol table not found"))?;
+        let mut table_lock = table.write().unwrap();
+        table_lock.put_record(rec)
+    }
+
+    /// Every symbol, ordered by address (ties in ID order) as Java's `getSymbolsByAddress`
+    /// index orders them.
+    fn symbols_by_address(&self) -> io::Result<Vec<Arc<dyn Symbol>>> {
+        let mut symbols = self
+            .all_records()?
+            .into_iter()
+            .map(|rec| self.record_to_symbol(rec))
+            .collect::<io::Result<Vec<_>>>()?;
+        symbols.sort_by(|a, b| a.get_address().cmp(&b.get_address()));
+        Ok(symbols)
+    }
+
+    /// Mirrors `SymbolManager.createLabel(Address, String, Namespace, SourceType)` for a
+    /// resolved namespace ID: an existing symbol with the same name and namespace at `addr` is
+    /// returned as is; otherwise the new label is primary only when no primary symbol is at
+    /// `addr` yet.
+    fn create_label_with_namespace_id(
+        &mut self,
+        addr: &Address,
+        name: &str,
+        namespace_id: i64,
+        source: SourceType,
+    ) -> io::Result<Arc<dyn Symbol>> {
+        if !addr.is_memory_address() {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!("Invalid memory address: {addr}"),
+            ));
+        }
+        let mut make_primary = true;
+        for rec in self.records_at(addr)? {
+            if rec.get_string(Self::SYMBOL_NAME_COL) == Some(name)
+                && rec.get_long(Self::SYMBOL_PARENT_ID_COL) == Some(namespace_id)
+            {
+                return self.record_to_symbol(rec);
+            }
+            if rec.get_long(Self::SYMBOL_PRIMARY_COL).unwrap_or(0) != 0 {
+                make_primary = false;
+            }
+        }
+        let rec = self.create_symbol_record(name, namespace_id, addr, SymbolType::Label, make_primary, source)?;
+        self.record_to_symbol(rec)
     }
 
     /// Computes the java `String.hashCode()` equivalent for a string.
@@ -190,6 +272,9 @@ impl SymbolManagerDB {
 }
 
 impl SymbolTable for SymbolManagerDB {
+    /// Mirrors `SymbolManager.createLabel(Address, String, SourceType)` -- see
+    /// [`create_label_in_namespace`](SymbolTable::create_label_in_namespace) for the primary and
+    /// duplicate rules.
     fn create_label(
         &mut self,
         addr: &Address,
@@ -197,9 +282,119 @@ impl SymbolTable for SymbolManagerDB {
         source: SourceType,
     ) -> io::Result<Arc<dyn Symbol>> {
         let namespace_id = self.namespace_mgr.read().unwrap().get_namespace_id(addr)?;
-        let rec =
-            self.create_symbol_record(name, namespace_id, addr, SymbolType::Label, true, source)?;
-        self.record_to_symbol(rec)
+        self.create_label_with_namespace_id(addr, name, namespace_id, source)
+    }
+
+    /// Mirrors `SymbolManager.createLabel(Address, String, Namespace, SourceType)`: returns the
+    /// existing symbol of that name and namespace at `addr` if there is one, else creates a label
+    /// that is primary exactly when `addr` has no primary symbol yet.
+    fn create_label_in_namespace(
+        &mut self,
+        addr: &Address,
+        name: &str,
+        namespace: Arc<dyn Namespace>,
+        source: SourceType,
+    ) -> io::Result<Arc<dyn Symbol>> {
+        self.create_label_with_namespace_id(addr, name, namespace.get_id(), source)
+    }
+
+    /// Mirrors `SymbolManager.getAllSymbols(boolean)`. This symbol manager creates no dynamic
+    /// symbols, so `include_dynamic_symbols` changes nothing.
+    fn get_all_symbols(&self, include_dynamic_symbols: bool) -> Box<dyn SymbolIterator> {
+        let _ = include_dynamic_symbols;
+        Box::new(SymbolIteratorAdapter::new(self.symbols_by_address().unwrap_or_default()))
+    }
+
+    /// Mirrors `SymbolManager.getSymbolIterator(Address, boolean)`: the symbols at and after
+    /// (`forward`) or at and before `start_addr`, in address order.
+    fn get_symbol_iterator_from(&self, start_addr: &Address, forward: bool) -> Box<dyn SymbolIterator> {
+        let mut symbols = self.symbols_by_address().unwrap_or_default();
+        if forward {
+            symbols.retain(|s| s.get_address() >= *start_addr);
+        } else {
+            symbols.retain(|s| s.get_address() <= *start_addr);
+            symbols.reverse();
+        }
+        Box::new(SymbolIteratorAdapter::new(symbols))
+    }
+
+    /// Mirrors `SymbolManager.getSymbolIterator(String, boolean)`: the symbols whose whole name
+    /// matches `search_str` as a `UserSearchUtils.createSearchPattern` glob (`*`, `?`).
+    fn get_symbol_iterator(&self, search_str: &str, case_sensitive: bool) -> Box<dyn SymbolIterator> {
+        // Java's `Matcher.matches()`: the whole name must match the glob's regex
+        let regex = format!("^(?:{})$", UserSearchUtils::create_pattern_string(search_str, true));
+        let Ok(pattern) = regex::RegexBuilder::new(&regex).case_insensitive(!case_sensitive).build() else {
+            return Box::new(SymbolIteratorAdapter::new(Vec::new()));
+        };
+        let matches = |name: &str| pattern.is_match(name);
+        let symbols = self
+            .all_records()
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|rec| matches(rec.get_string(Self::SYMBOL_NAME_COL).unwrap_or("")))
+            .filter_map(|rec| self.record_to_symbol(rec).ok())
+            .collect();
+        Box::new(SymbolIteratorAdapter::new(symbols))
+    }
+
+    /// Mirrors `SymbolManager.getPrimarySymbol(Address)` for memory addresses (no dynamic
+    /// symbols: there is no reference manager to ask whether `addr` is referenced).
+    fn get_primary_symbol(&self, addr: &Address) -> io::Result<Option<Arc<dyn Symbol>>> {
+        if !addr.is_memory_address() {
+            return Ok(None);
+        }
+        for rec in self.records_at(addr)? {
+            if rec.get_long(Self::SYMBOL_PRIMARY_COL).unwrap_or(0) != 0 {
+                return Ok(Some(self.record_to_symbol(rec)?));
+            }
+        }
+        Ok(None)
+    }
+
+    /// Mirrors `CodeSymbol.setPrimary()`: false if the symbol is missing or already primary;
+    /// otherwise the current primary symbol at its address stops being primary and this one
+    /// becomes it.
+    fn set_primary_symbol(&mut self, symbol_id: i64) -> io::Result<bool> {
+        let handle = self.db_handle.read().unwrap();
+        let Some(table) = handle.get_table(Self::SYMBOL_TABLE_NAME) else {
+            return Ok(false);
+        };
+        let Some(mut rec) = table.read().unwrap().get_record(&Field::Long(Some(symbol_id)))? else {
+            return Ok(false);
+        };
+        if rec.get_long(Self::SYMBOL_PRIMARY_COL).unwrap_or(0) != 0 {
+            return Ok(false);
+        }
+        drop(handle);
+        let addr_key = rec.get_long(Self::SYMBOL_ADDR_COL).unwrap_or(0);
+        let address = self.addr_map.read().unwrap().decode_address(addr_key);
+        for mut other in self.records_at(&address)? {
+            if other.get_long(Self::SYMBOL_PRIMARY_COL).unwrap_or(0) != 0 {
+                other.set_long(Self::SYMBOL_PRIMARY_COL, 0);
+                self.put_record(other)?;
+            }
+        }
+        rec.set_long(Self::SYMBOL_PRIMARY_COL, addr_key);
+        self.put_record(rec)?;
+        Ok(true)
+    }
+
+    fn add_external_entry_point(&mut self, addr: &Address) -> io::Result<()> {
+        self.external_entry_points.insert(addr.clone());
+        Ok(())
+    }
+
+    fn remove_external_entry_point(&mut self, addr: &Address) -> io::Result<()> {
+        self.external_entry_points.remove(addr);
+        Ok(())
+    }
+
+    fn is_external_entry_point(&self, addr: &Address) -> io::Result<bool> {
+        Ok(self.external_entry_points.contains(addr))
+    }
+
+    fn get_external_entry_point_iterator(&self) -> BoxedAddressIterator {
+        Box::new(self.external_entry_points.iter().cloned().collect::<Vec<_>>().into_iter())
     }
 
     fn get_symbol(&self, id: i64) -> io::Result<Option<Arc<dyn Symbol>>> {
@@ -213,27 +408,17 @@ impl SymbolTable for SymbolManagerDB {
     }
 
     fn get_symbols(&self, addr: &Address) -> io::Result<Vec<Arc<dyn Symbol>>> {
-        let handle = self.db_handle.read().unwrap();
-        let mut results = Vec::new();
-        if let Some(table) = handle.get_table(Self::SYMBOL_TABLE_NAME) {
-            let addr_key = self.addr_map.read().unwrap().get_key(addr, false);
-            // This is inefficient without a secondary index iterator.
-            // For now, iterate all (or use the primary index if keys match address order).
-            let table_lock = table.read().unwrap();
-            let mut it = table_lock.get_record_iterator()?;
-            while let Some(rec) = it.next()? {
-                if rec.get_long(Self::SYMBOL_ADDR_COL) == Some(addr_key) {
-                    results.push(self.record_to_symbol(rec)?);
-                }
-            }
-        }
-        Ok(results)
+        // This is inefficient without a secondary index iterator: every record is scanned.
+        self.records_at(addr)?.into_iter().map(|rec| self.record_to_symbol(rec)).collect()
     }
 
     fn set_symbol_pinned(&mut self, symbol_id: i64, pinned: bool) -> io::Result<()> {
         let handle = self.db_handle.read().unwrap();
         if let Some(table) = handle.get_table(Self::SYMBOL_TABLE_NAME) {
-            if let Some(mut rec) = table.read().unwrap().get_record(&Field::Long(Some(symbol_id)))? {
+            // bind the record first: an `if let` scrutinee's read guard would live through the
+            // body and deadlock the `write()` below
+            let record = table.read().unwrap().get_record(&Field::Long(Some(symbol_id)))?;
+            if let Some(mut rec) = record {
                 let mut flags = rec.get_byte(Self::SYMBOL_FLAGS_COL).unwrap_or(0) as u8;
                 if pinned {
                     flags |= Self::SYMBOL_PINNED_FLAG;
@@ -608,5 +793,152 @@ mod tests {
         assert!(mgr.get_symbols(&addr2).unwrap().is_empty());
 
         assert_eq!(mgr.get_dynamic_symbol_id(&addr1), addr1.offset() | (0x40i64 << 56));
+    }
+}
+
+/// Java-derived behaviour of the concrete [`SymbolManagerDB`]: `SymbolManager.createLabel`'s
+/// primary/duplicate rules, `getPrimarySymbol`, `CodeSymbol.setPrimary`, pinning, the address-
+/// and name-ordered iterators and the external entry point set.
+#[cfg(test)]
+mod symbol_manager_db_tests {
+    use super::*;
+    use crate::program::model::address::{AddressSpace, AddressSpaceType, DefaultAddressFactory};
+
+    fn manager() -> (SymbolManagerDB, Arc<AddressSpace>) {
+        let handle = Arc::new(RwLock::new(DBHandle::new().unwrap()));
+        let space = AddressSpace::new("RAM", 32, 1, AddressSpaceType::Ram, 1);
+        let factory = Arc::new(DefaultAddressFactory::new(vec![space.clone()]));
+        let addr_map = Arc::new(RwLock::new(AddressMapDB::new(handle.clone(), factory).unwrap()));
+        let namespace_mgr =
+            Arc::new(RwLock::new(NamespaceManagerDB::new(handle.clone(), addr_map.clone()).unwrap()));
+        (SymbolManagerDB::new(handle, addr_map, namespace_mgr, true).unwrap(), space)
+    }
+
+    /// A namespace that only has an ID -- all `createLabel(.., Namespace, ..)` reads from it.
+    struct TestNamespace(i64);
+
+    impl crate::program::model::symbol::Namespace for TestNamespace {
+        fn get_symbol(&self) -> Arc<dyn Symbol> {
+            unreachable!("createLabel only needs the namespace ID")
+        }
+        fn get_parent_namespace(&self) -> Option<Arc<dyn crate::program::model::symbol::Namespace>> {
+            None
+        }
+        fn get_id(&self) -> i64 {
+            self.0
+        }
+    }
+
+    fn names(mut it: Box<dyn SymbolIterator>) -> Vec<String> {
+        let mut out = Vec::new();
+        while let Some(s) = it.next_symbol() {
+            out.push(s.get_name().to_string());
+        }
+        out
+    }
+
+    #[test]
+    fn first_label_at_an_address_is_primary_and_later_ones_are_not() {
+        let (mut mgr, space) = manager();
+        let addr = Address::new(space, 0x100);
+        let first = mgr.create_label(&addr, "first", SourceType::Imported).unwrap();
+        let second = mgr.create_label(&addr, "second", SourceType::Imported).unwrap();
+        assert!(first.is_primary());
+        assert!(!second.is_primary());
+        assert_eq!(mgr.get_primary_symbol(&addr).unwrap().unwrap().get_name(), "first");
+    }
+
+    #[test]
+    fn creating_an_existing_label_returns_the_existing_symbol() {
+        let (mut mgr, space) = manager();
+        let addr = Address::new(space, 0x100);
+        let first = mgr.create_label(&addr, "dup", SourceType::Imported).unwrap();
+        let again = mgr.create_label(&addr, "dup", SourceType::Imported).unwrap();
+        assert_eq!(first.get_id(), again.get_id());
+        assert_eq!(mgr.get_symbols(&addr).unwrap().len(), 1);
+    }
+
+    #[test]
+    fn primary_symbol_is_none_where_there_are_no_symbols() {
+        let (mgr, space) = manager();
+        assert!(mgr.get_primary_symbol(&Address::new(space, 0x100)).unwrap().is_none());
+    }
+
+    #[test]
+    fn set_primary_moves_primary_status_from_the_old_symbol() {
+        let (mut mgr, space) = manager();
+        let addr = Address::new(space, 0x100);
+        let first = mgr.create_label(&addr, "first", SourceType::Imported).unwrap();
+        let second = mgr.create_label(&addr, "second", SourceType::Imported).unwrap();
+        assert!(mgr.set_primary_symbol(second.get_id()).unwrap());
+        assert_eq!(mgr.get_primary_symbol(&addr).unwrap().unwrap().get_name(), "second");
+        assert!(!mgr.get_symbol(first.get_id()).unwrap().unwrap().is_primary());
+        // already primary: CodeSymbol.setPrimary answers false
+        assert!(!mgr.set_primary_symbol(second.get_id()).unwrap());
+    }
+
+    #[test]
+    fn pinned_flag_reads_back_and_keeps_the_source() {
+        let (mut mgr, space) = manager();
+        let addr = Address::new(space, 0x100);
+        let sym = mgr.create_label(&addr, "abs", SourceType::Imported).unwrap();
+        assert!(!sym.is_pinned());
+        mgr.set_symbol_pinned(sym.get_id(), true).unwrap();
+        let sym = mgr.get_symbol(sym.get_id()).unwrap().unwrap();
+        assert!(sym.is_pinned());
+        assert_eq!(sym.get_source(), SourceType::Imported);
+    }
+
+    #[test]
+    fn label_in_namespace_records_the_parent_namespace() {
+        let (mut mgr, space) = manager();
+        let addr = Address::new(space, 0x100);
+        let ns: Arc<dyn crate::program::model::symbol::Namespace> = Arc::new(TestNamespace(42));
+        let sym = mgr.create_label_in_namespace(&addr, "inner", ns, SourceType::Imported).unwrap();
+        assert_eq!(sym.get_parent_id(), 42);
+    }
+
+    #[test]
+    fn all_symbols_iterate_in_address_order() {
+        let (mut mgr, space) = manager();
+        mgr.create_label(&Address::new(space.clone(), 0x300), "c", SourceType::Imported).unwrap();
+        mgr.create_label(&Address::new(space.clone(), 0x100), "a", SourceType::Imported).unwrap();
+        mgr.create_label(&Address::new(space.clone(), 0x200), "b", SourceType::Imported).unwrap();
+        assert_eq!(names(mgr.get_all_symbols(true)), ["a", "b", "c"]);
+        assert_eq!(names(mgr.get_symbol_iterator_from(&Address::new(space.clone(), 0x200), true)), ["b", "c"]);
+        assert_eq!(names(mgr.get_symbol_iterator_from(&Address::new(space, 0x200), false)), ["b", "a"]);
+    }
+
+    #[test]
+    fn name_queries_match_globs_and_exact_names() {
+        let (mut mgr, space) = manager();
+        mgr.create_label(&Address::new(space.clone(), 0x100), "printf", SourceType::Imported).unwrap();
+        mgr.create_label(&Address::new(space.clone(), 0x200), "puts", SourceType::Imported).unwrap();
+        mgr.create_label(&Address::new(space, 0x300), "Puts", SourceType::Imported).unwrap();
+        let mut found = names(mgr.get_symbol_iterator("p*", true));
+        found.sort();
+        assert_eq!(found, ["printf", "puts"]);
+        let mut found = names(mgr.get_symbol_iterator("p?ts", false));
+        found.sort();
+        assert_eq!(found, ["Puts", "puts"]);
+        let by_name = mgr.get_symbols_by_name("puts").unwrap();
+        assert_eq!(by_name.len(), 1);
+        assert_eq!(by_name[0].get_address().offset(), 0x200);
+    }
+
+    #[test]
+    fn external_entry_points_are_a_sorted_address_set() {
+        let (mut mgr, space) = manager();
+        let a = Address::new(space.clone(), 0x200);
+        let b = Address::new(space, 0x100);
+        assert!(!mgr.is_external_entry_point(&a).unwrap());
+        mgr.add_external_entry_point(&a).unwrap();
+        mgr.add_external_entry_point(&b).unwrap();
+        mgr.add_external_entry_point(&a).unwrap();
+        assert!(mgr.is_external_entry_point(&a).unwrap());
+        let all: Vec<i64> = mgr.get_external_entry_point_iterator().map(|x| x.offset()).collect();
+        assert_eq!(all, [0x100, 0x200]);
+        mgr.remove_external_entry_point(&a).unwrap();
+        assert!(!mgr.is_external_entry_point(&a).unwrap());
     }
 }

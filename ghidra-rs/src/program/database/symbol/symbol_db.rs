@@ -9,6 +9,8 @@ pub struct SymbolDB {
     pub parent_id: i64,
     pub is_primary: bool,
     pub source: SourceType,
+    /// The record's pinned flag (`SymbolDB.isPinned`); `false` from [`SymbolDB::new`].
+    pub pinned: bool,
 }
 
 impl SymbolDB {
@@ -29,6 +31,7 @@ impl SymbolDB {
             parent_id,
             is_primary,
             source,
+            pinned: false,
         }
     }
 }
@@ -60,5 +63,9 @@ impl Symbol for SymbolDB {
 
     fn get_parent_id(&self) -> i64 {
         self.parent_id
+    }
+
+    fn is_pinned(&self) -> bool {
+        self.pinned
     }
 }

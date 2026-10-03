@@ -442,3 +442,313 @@ fn host_elf_sweep() {
     eprintln!("loaded {loaded}, failures {}: {failures:#?}", failures.len());
     assert!(failures.is_empty(), "{failures:#?}");
 }
+
+// ---------------------------------------------------------------------------------------------
+// Phase 2: symbols, the EXTERNAL block, entry points (Java's processSymbolTables /
+// evaluateElfSymbol / createSymbol / checkPrimary / processEntryPoints).
+// ---------------------------------------------------------------------------------------------
+
+mod phase2 {
+    use super::*;
+    use crate::format::elf::elf_section_header_constants::{SHN_ABS, SHT_DYNSYM, SHT_STRTAB, SHT_SYMTAB};
+    use crate::format::elf::elf_symbol::{STB_GLOBAL, STB_LOCAL, STB_WEAK, STT_FILE, STT_FUNC, STT_NOTYPE, STT_OBJECT, STT_SECTION, STT_TLS};
+    use crate::format::elf::elf_test_image::StrTab;
+    use crate::program::model::mem::memory_block::EXTERNAL_BLOCK_NAME;
+    use crate::program::model::symbol::SourceType;
+
+    const BASE: u64 = 0x400000;
+
+    fn info(bind: u8, ty: u8) -> u8 {
+        (bind << 4) | ty
+    }
+
+    /// One symbol as the tests compare it: name, address offset, primary, pinned.
+    #[derive(Debug, PartialEq)]
+    struct S {
+        name: String,
+        addr: i64,
+        primary: bool,
+        pinned: bool,
+    }
+
+    fn s(name: &str, addr: i64, primary: bool, pinned: bool) -> S {
+        S { name: name.into(), addr, primary, pinned }
+    }
+
+    /// Every symbol in the program's symbol table, in address order.
+    fn symbols(program: &dyn Program) -> Vec<S> {
+        let table = program.get_symbol_table().unwrap();
+        let mut it = table.get_all_symbols(true);
+        let mut out = Vec::new();
+        while let Some(sym) = it.next_symbol() {
+            assert_eq!(sym.get_source(), SourceType::Imported, "{}", sym.get_name());
+            out.push(s(sym.get_name(), sym.get_address().offset(), sym.is_primary(), sym.is_pinned()));
+        }
+        out
+    }
+
+    fn entry_points(program: &dyn Program) -> Vec<i64> {
+        program.get_symbol_table().unwrap().get_external_entry_point_iterator().map(|a| a.offset()).collect()
+    }
+
+    /// A static executable with `.text` (RX, 0x401000) and `.data` (RW, 0x403000), a `.dynsym`
+    /// importing `puts` and a `.symtab` with a file symbol, a section symbol, `$x` + `main` at
+    /// the same address, a weak function, a local object, an absolute symbol, a TLS symbol, the
+    /// `puts` import again and a versioned `puts@GLIBC_2.2.5`.
+    fn symbol_image() -> Vec<u8> {
+        let mut img = ElfImage::new(true, true);
+        img.e_entry = BASE + 0x1000;
+        let e = img.enc;
+        let t = img.add_section(".text", 1, (SHF_ALLOC | SHF_EXECINSTR) as u64, BASE + 0x1000, &[0x90; 0x40]);
+        let d = img.add_section(".data", 1, (SHF_ALLOC | SHF_WRITE) as u64, BASE + 0x3000, &[0x11; 0x10]);
+
+        let mut dynstr = StrTab::new();
+        let dputs = dynstr.add("puts");
+        let dynstr_idx = img.add_section(".dynstr", SHT_STRTAB, 0, 0, &dynstr.bytes());
+        let mut dsyms = e.sym(0, 0, 0, 0, 0, 0);
+        dsyms.extend(e.sym(dputs, 0, 0, info(STB_GLOBAL, STT_FUNC), 0, 0));
+        let dynsym = img.add_section(".dynsym", SHT_DYNSYM, 0, 0, &dsyms);
+        img.section_mut(dynsym).sh_link = dynstr_idx;
+        img.section_mut(dynsym).sh_info = 1;
+        img.section_mut(dynsym).sh_entsize = e.sym_size();
+
+        let mut strtab = StrTab::new();
+        let file = strtab.add("a.c");
+        let dollar_x = strtab.add("$x");
+        let main = strtab.add("main");
+        let weak_fn = strtab.add("weak_fn");
+        let local_obj = strtab.add("local_obj");
+        let abs_sym = strtab.add("abs_sym");
+        let tls_var = strtab.add("tls_var");
+        let puts = strtab.add("puts");
+        let puts_v = strtab.add("puts@GLIBC_2.2.5");
+        let strtab_idx = img.add_section(".strtab", SHT_STRTAB, 0, 0, &strtab.bytes());
+        let mut syms = e.sym(0, 0, 0, 0, 0, 0);
+        syms.extend(e.sym(file, 0, 0, info(STB_LOCAL, STT_FILE), 0, SHN_ABS));
+        syms.extend(e.sym(0, BASE + 0x1000, 0, info(STB_LOCAL, STT_SECTION), 0, t as u16));
+        syms.extend(e.sym(dollar_x, BASE + 0x1010, 0, info(STB_LOCAL, STT_NOTYPE), 0, t as u16));
+        syms.extend(e.sym(local_obj, BASE + 0x3000, 8, info(STB_LOCAL, STT_OBJECT), 0, d as u16));
+        syms.extend(e.sym(tls_var, 0, 4, info(STB_LOCAL, STT_TLS), 0, d as u16));
+        syms.extend(e.sym(main, BASE + 0x1010, 0x10, info(STB_GLOBAL, STT_FUNC), 0, t as u16));
+        syms.extend(e.sym(weak_fn, BASE + 0x1020, 0x10, info(STB_WEAK, STT_FUNC), 0, t as u16));
+        syms.extend(e.sym(abs_sym, 0x5000, 0, info(STB_GLOBAL, STT_OBJECT), 0, SHN_ABS));
+        syms.extend(e.sym(puts, 0, 0, info(STB_GLOBAL, STT_FUNC), 0, 0));
+        syms.extend(e.sym(puts_v, 0, 0, info(STB_GLOBAL, STT_FUNC), 0, 0));
+        let symtab = img.add_section(".symtab", SHT_SYMTAB, 0, 0, &syms);
+        img.section_mut(symtab).sh_link = strtab_idx;
+        img.section_mut(symtab).sh_info = 5;
+        img.section_mut(symtab).sh_entsize = e.sym_size();
+
+        let (t_off, d_off) = (img.section_mut(t).sh_offset, img.section_mut(d).sh_offset);
+        img.add_segment(1, PF_R | PF_X, t_off, BASE + 0x1000, 0x40, 0x40);
+        img.add_segment(1, PF_R | PF_W, d_off, BASE + 0x3000, 0x10, 0x10);
+        img.build()
+    }
+
+    #[test]
+    fn symbol_tables_become_program_symbols() {
+        let (program, log) = load(symbol_image(), 8, &image_base_option("401000"));
+        assert_eq!(
+            symbols(program.as_ref()),
+            vec![
+                s("abs_sym", 0x5000, true, true),
+                s("$x", 0x401010, false, false),
+                s("main", 0x401010, true, false),
+                s("weak_fn", 0x401020, true, false),
+                s("local_obj", 0x403000, true, false),
+                s("puts", 0x404000, true, false),
+            ],
+            "{log}"
+        );
+        let text = log.to_string();
+        assert!(text.contains("Unsupported Thread-Local Symbol not loaded: tls_var"), "{text}");
+    }
+
+    #[test]
+    fn imports_are_allocated_in_an_artificial_external_block() {
+        let (program, _) = load(symbol_image(), 8, &image_base_option("401000"));
+        let memory = program.get_memory().unwrap();
+        let ram = program.get_image_base().unwrap().space().clone();
+        let block = memory.get_block_handle(&ram.address(0x404000)).expect("EXTERNAL block");
+        let block = block.read().unwrap();
+        assert_eq!(block.get_name(), EXTERNAL_BLOCK_NAME);
+        assert_eq!(block.get_size(), 8);
+        assert!(block.is_artificial());
+        assert!(block.is_write());
+        assert!(!block.is_initialized());
+        assert_eq!(block.get_source_name(), Some(BLOCK_SOURCE_NAME));
+        assert_eq!(
+            block.get_comment(),
+            Some("NOTE: This block is artificial and allows ELF Relocations to work correctly")
+        );
+    }
+
+    #[test]
+    fn global_and_weak_symbols_and_the_entry_are_external_entry_points() {
+        let (program, log) = load(symbol_image(), 8, &image_base_option("401000"));
+        // e_entry (0x401000, executable) + main + weak_fn + abs_sym; not the fake-external puts
+        // nor the local symbols
+        assert_eq!(entry_points(program.as_ref()), vec![0x5000, 0x401000, 0x401010, 0x401020]);
+        let text = log.to_string();
+        assert!(text.contains("ELF function creation is not supported by this loader yet"), "{text}");
+        assert_eq!(text.matches("ELF function creation is not supported").count(), 1, "logged once");
+    }
+
+    #[test]
+    fn entry_outside_executable_memory_is_not_an_entry_point() {
+        let bytes = {
+            let mut img = ElfImage::new(true, true);
+            img.e_entry = BASE + 0x3004;
+            let d = img.add_section(".data", 1, (SHF_ALLOC | SHF_WRITE) as u64, BASE + 0x3000, &[0x11; 0x10]);
+            let d_off = img.section_mut(d).sh_offset;
+            img.add_segment(1, PF_R | PF_W, d_off, BASE + 0x3000, 0x10, 0x10);
+            img.build()
+        };
+        let (program, _) = load(bytes, 8, &image_base_option("403000"));
+        assert!(entry_points(program.as_ref()).is_empty());
+        assert!(symbols(program.as_ref()).is_empty());
+    }
+
+    #[test]
+    fn elf_symbol_addresses_are_remembered() {
+        let program: Arc<dyn Program> = Arc::new(ProgramDB::new("elf".into(), test_language(8, false)).unwrap());
+        let log = Arc::new(MessageLog::new());
+        let elf = ElfHeader::new(provider(symbol_image()), None).unwrap();
+        let options = image_base_option("401000");
+        let mut builder = ElfProgramBuilder::new(elf, Arc::clone(&program), &options, log).unwrap();
+        builder.load(&DummyMonitor).unwrap();
+        let tables = builder.get_elf_header().get_symbol_tables().to_vec();
+        let at = |table: usize, name: &str| {
+            let sym = tables[table]
+                .get_symbols()
+                .iter()
+                .find(|s| s.get_name_as_string() == Some(name))
+                .unwrap_or_else(|| panic!("{name}"));
+            builder.get_elf_symbol_address(sym).map(|a| a.offset())
+        };
+        let (dynsym, symtab) = if tables[0].is_dynamic() { (0, 1) } else { (1, 0) };
+        assert_eq!(at(symtab, "main"), Some(0x401010));
+        assert_eq!(at(dynsym, "puts"), Some(0x404000));
+        // duplicate and versioned externals reuse the first allocation
+        assert_eq!(at(symtab, "puts"), Some(0x404000));
+        assert_eq!(at(symtab, "puts@GLIBC_2.2.5"), Some(0x404000));
+        assert_eq!(at(symtab, "tls_var"), None);
+        assert_eq!(at(symtab, "a.c"), None);
+    }
+
+    #[test]
+    fn got_value_falls_back_to_the_global_offset_table_symbol() {
+        let mut img = ElfImage::new(true, true);
+        let e = img.enc;
+        let d = img.add_section(".got", 1, (SHF_ALLOC | SHF_WRITE) as u64, BASE + 0x3000, &[0; 0x10]);
+        let mut strtab = StrTab::new();
+        let got = strtab.add("_GLOBAL_OFFSET_TABLE_");
+        let strtab_idx = img.add_section(".strtab", SHT_STRTAB, 0, 0, &strtab.bytes());
+        let mut syms = e.sym(0, 0, 0, 0, 0, 0);
+        syms.extend(e.sym(got, BASE + 0x3008, 0, info(STB_LOCAL, STT_OBJECT), 0, d as u16));
+        let symtab = img.add_section(".symtab", SHT_SYMTAB, 0, 0, &syms);
+        img.section_mut(symtab).sh_link = strtab_idx;
+        img.section_mut(symtab).sh_info = 2;
+        img.section_mut(symtab).sh_entsize = e.sym_size();
+        let d_off = img.section_mut(d).sh_offset;
+        img.add_segment(1, PF_R | PF_W, d_off, BASE + 0x3000, 0x10, 0x10);
+
+        let program: Arc<dyn Program> = Arc::new(ProgramDB::new("elf".into(), test_language(8, false)).unwrap());
+        let elf = ElfHeader::new(provider(img.build()), None).unwrap();
+        let options = image_base_option("403000");
+        let mut builder = ElfProgramBuilder::new(elf, Arc::clone(&program), &options, Arc::new(MessageLog::new())).unwrap();
+        builder.load(&DummyMonitor).unwrap();
+        assert_eq!(builder.get_got_value(), Some(0x403008));
+    }
+
+    #[test]
+    fn linkage_blocks_avoid_memory_and_earlier_allocations() {
+        let (_, bytes) = typical_image(true, 62, BASE);
+        let program: Arc<dyn Program> = Arc::new(ProgramDB::new("elf".into(), test_language(4, false)).unwrap());
+        let elf = ElfHeader::new(provider(bytes), None).unwrap();
+        let options = image_base_option("401000");
+        let mut builder = ElfProgramBuilder::new(elf, Arc::clone(&program), &options, Arc::new(MessageLog::new())).unwrap();
+        builder.load(&DummyMonitor).unwrap();
+        // blocks end at .bss 0x40310f: the last free range [0x403110, 0xffffffff] is the biggest
+        let first = builder.allocate_linkage_block(0x1000, 0x100, "test").unwrap();
+        assert_eq!((first.min_address().offset(), first.max_address().offset()), (0x404000, 0x4040ff));
+        let second = builder.allocate_linkage_block(0x1000, 0x100, "test").unwrap();
+        assert_eq!(second.min_address().offset(), 0x405000);
+        // size <= 0: the whole free range, not recorded as allocated
+        let open = builder.allocate_linkage_block(0x1000, -1, "EXTERNAL block").unwrap();
+        assert_eq!((open.min_address().offset(), open.max_address().offset()), (0x406000, 0xffffffff));
+    }
+
+    /// Acceptance: `x86:LE:64:default` from the language service over the local Ghidra
+    /// distribution -> `ProgramDB` -> `/bin/ls` through `ElfLoader`: the imports become symbols
+    /// in the EXTERNAL block, `_start` (when the binary still has a `.symtab`) is a symbol, and
+    /// the ELF entry is a registered entry point. Skipped when the distribution or an x86-64
+    /// `/bin/ls` is absent.
+    #[test]
+    fn bin_ls_symbols_and_entry_via_language_service() {
+        use crate::app::plugin::processors::sleigh::sleigh_language_provider::tests::ghidra_dist;
+        use crate::app::plugin::processors::sleigh::sleigh_language_provider::SleighLanguageProvider;
+        use crate::app::util::opinion::elf_loader::ElfLoader;
+        use crate::program::model::lang::LanguageID;
+        use crate::program::util::default_language_service::DefaultLanguageService;
+
+        let Some(dist) = ghidra_dist() else {
+            return;
+        };
+        let Ok(bytes) = std::fs::read("/bin/ls") else {
+            return;
+        };
+        if bytes.len() < 0x40 || bytes[..4] != [0x7f, b'E', b'L', b'F'] || bytes[4] != 2 || bytes[5] != 1 || bytes[18] != 62 {
+            return; // not x86-64
+        }
+        let parsed = {
+            let mut h = ElfHeader::new(provider(bytes.clone()), None).unwrap();
+            h.parse().unwrap();
+            h
+        };
+        let import = parsed
+            .get_symbol_tables()
+            .iter()
+            .filter(|t| t.is_dynamic())
+            .flat_map(|t| t.get_symbols().iter())
+            .find(|s| {
+                s.get_section_header_index() == 0
+                    && s.get_type() == STT_FUNC
+                    && s.get_name_as_string().is_some_and(|n| !n.is_empty() && !n.contains('@'))
+            })
+            .and_then(|s| s.get_name_as_string())
+            .expect("a dynamic function import")
+            .to_string();
+        let has_start = parsed
+            .get_symbol_tables()
+            .iter()
+            .flat_map(|t| t.get_symbols().iter())
+            .any(|s| s.get_name_as_string() == Some("_start"));
+        let entry = parsed.e_entry() + 0x100000 - parsed.get_image_base();
+
+        let service = DefaultLanguageService::from_sleigh_provider(SleighLanguageProvider::from_ghidra_installation(&dist));
+        let language = service.get_sleigh_language(&LanguageID::new("x86:LE:64:default").unwrap()).unwrap();
+        let program: Arc<dyn Program> = Arc::new(ProgramDB::new("ls".into(), language).unwrap());
+        let log = Arc::new(MessageLog::new());
+        ElfLoader::new()
+            .load(provider(bytes), &program, &image_base_option("100000"), &log, &DummyMonitor)
+            .unwrap();
+
+        let all = symbols(program.as_ref());
+        let external = program
+            .get_memory()
+            .unwrap()
+            .get_block_handles()
+            .into_iter()
+            .find(|b| b.read().unwrap().get_name() == EXTERNAL_BLOCK_NAME)
+            .expect("EXTERNAL block");
+        let external = external.read().unwrap();
+        let sym = all.iter().find(|s| s.name == import).unwrap_or_else(|| panic!("no {import}: {log}"));
+        assert!(external.contains(&program.get_image_base().unwrap().space().address(sym.addr)), "{import} at {:#x}", sym.addr);
+        if has_start {
+            assert!(all.iter().any(|s| s.name == "_start"));
+        }
+        let entries = entry_points(program.as_ref());
+        assert!(entries.contains(&entry), "entry {entry:#x} not in {entries:x?}");
+    }
+}

@@ -1,6 +1,7 @@
-//! Port of `ghidra.app.util.opinion.ElfProgramBuilder` -- phase 1: program memory.
+//! Port of `ghidra.app.util.opinion.ElfProgramBuilder` -- phase 1: program memory; phase 2:
+//! symbols and entry points.
 //!
-//! `ElfProgramBuilder.loadElf` turns a parsed [`ElfHeader`] into a populated `Program`. This port
+//! `ElfProgramBuilder.loadElf` turns a parsed [`ElfHeader`] into a populated `Program`. Phase 1
 //! covers the memory half of Java's `load`:
 //!
 //! 1. finish parsing the header (`elf.parse()`),
@@ -13,15 +14,18 @@
 //! 6. resolve them into memory blocks through [`MemorySectionResolverBase`], and
 //! 7. zero-extend PT_LOAD segments when there are no section headers.
 //!
-//! # Not yet ported (phase 2)
+//! Phase 2 (the `symbols` submodule) then ports `processSymbolTables` (symbols, the artificial
+//! EXTERNAL block for imports, external entry points), the extension's `processElf`,
+//! `processEntryPoints` and `processImports`, in Java's order.
 //!
-//! Everything Java's `load` does after the blocks exist -- ELF header/program header/section
-//! header/dynamic-table markup, string tables, symbol tables (`processSymbolTables`), the
-//! processor extension's `processElf`/`processGotPlt`, relocations, entry points, imports, hash
-//! tables, GNU notes, read-only adjustments, info producers -- plus `addProgramProperties` and
-//! `setExecutableFormat`: the ported `ProgramDB` has no listing/data/function managers, program
-//! options or relocation table to write them into. The [`ElfLoadHelper`] methods that only those
-//! phases call log that they are unavailable and return their "failed" value.
+//! # Not yet ported
+//!
+//! ELF header/program header/section header/dynamic-table/interpreter markup, string tables,
+//! relocations, the extension's `processGotPlt`, hash tables, GNU notes, read-only adjustments,
+//! info producers, `addProgramProperties` and `setExecutableFormat`: the ported `ProgramDB` has no
+//! listing/data/function/external managers, program options or relocation table to write them
+//! into. Where phase 2 reaches one of those (functions, data, equates, comments, external
+//! library paths) it logs once per kind that it is unavailable -- see the `symbols` module docs.
 //!
 //! # Divergences
 //!
@@ -33,7 +37,7 @@
 //! * There is no program transaction to start/end.
 
 use std::cell::{Cell, RefCell};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::io;
 use std::sync::Arc;
 
@@ -181,6 +185,14 @@ pub struct ElfProgramBuilder<'a> {
     /// The `MemorySectionResolver` superclass state. Taken out while it resolves, so the block
     /// hooks (which may call back into this builder) never see it borrowed.
     resolver: RefCell<MemorySectionResolverBase<ElfLoadable>>,
+    /// Java's `symbolMap`: where each ELF symbol was placed.
+    symbol_map: RefCell<HashMap<ElfSymbol, Address>>,
+    /// Java's `allocatedRegions`: linkage blocks handed out other than the EXTERNAL block.
+    allocated_regions: RefCell<Vec<AddressRange>>,
+    /// The EXTERNAL block allocator.
+    external_block: RefCell<symbols::ExternalBlockState>,
+    /// The phase-2 features already logged as unavailable (each is logged once).
+    unavailable_logged: RefCell<HashSet<String>>,
 }
 
 impl<'a> ElfProgramBuilder<'a> {
@@ -203,11 +215,15 @@ impl<'a> ElfProgramBuilder<'a> {
             data_image_base: Cell::new(None),
             file_bytes: None,
             resolver: RefCell::new(resolver),
+            symbol_map: RefCell::new(HashMap::new()),
+            allocated_regions: RefCell::new(Vec::new()),
+            external_block: RefCell::new(symbols::ExternalBlockState::default()),
+            unavailable_logged: RefCell::new(HashSet::new()),
         })
     }
 
-    /// Mirrors the protected `load(TaskMonitor)` up to the point the program's memory is
-    /// complete (see the module docs for the rest).
+    /// Mirrors the protected `load(TaskMonitor)`: memory, then symbols, entry points and imports
+    /// (see the module docs for what is not ported yet).
     ///
     /// # Errors
     /// As for [`load_elf`].
@@ -239,6 +255,25 @@ impl<'a> ElfProgramBuilder<'a> {
             self.expand_program_header_blocks(monitor)?;
         }
 
+        let memory_is_empty = self.program.get_memory().is_none_or(|m| m.get_blocks().is_empty());
+        if memory_is_empty {
+            return Ok(());
+        }
+
+        // header, dynamic table, interpreter and string table markup need a listing
+
+        self.process_symbol_tables(monitor)?;
+
+        monitor.set_indeterminate(true);
+        self.elf.get_load_adapter().process_elf(self, monitor)?;
+        monitor.set_indeterminate(false);
+
+        // relocations need a relocation table
+        self.process_entry_points(monitor)?;
+        self.process_imports(monitor)?;
+
+        // PLT/GOT, hash table and GNU markup, read-only adjustments and info producers need a
+        // listing
         Ok(())
     }
 
@@ -1058,8 +1093,11 @@ impl<'a> ElfProgramBuilder<'a> {
         }
     }
 
+    /// Logs, once per `what`, that a load step needs a program manager `ProgramDB` lacks.
     fn phase2_unavailable(&self, what: &str) {
-        self.log(&format!("ELF {what} is not supported by this loader yet"));
+        if self.unavailable_logged.borrow_mut().insert(what.to_string()) {
+            self.log(&format!("ELF {what} is not supported by this loader yet"));
+        }
     }
 }
 
@@ -1412,12 +1450,11 @@ impl ElfLoadHelper for ElfProgramBuilder<'_> {
 
     fn create_one_byte_function(
         &self,
-        _name: std::option::Option<&str>,
-        _address: Address,
-        _is_entry: bool,
+        name: std::option::Option<&str>,
+        address: Address,
+        is_entry: bool,
     ) -> std::option::Option<Arc<dyn Function>> {
-        self.phase2_unavailable("function creation");
-        None
+        self.create_one_byte_function_impl(name, address, is_entry)
     }
 
     fn create_external_function_linkage(
@@ -1440,25 +1477,32 @@ impl ElfLoadHelper for ElfProgramBuilder<'_> {
         None
     }
 
-    fn set_elf_symbol_address(&self, _elf_symbol: &ElfSymbol, _address: std::option::Option<Address>) {
-        self.phase2_unavailable("symbol processing");
+    /// Mirrors `setElfSymbolAddress(ElfSymbol, Address)` (a `null` address maps to `null`).
+    fn set_elf_symbol_address(&self, elf_symbol: &ElfSymbol, address: std::option::Option<Address>) {
+        let mut map = self.symbol_map.borrow_mut();
+        match address {
+            Some(a) => {
+                map.insert(elf_symbol.clone(), a);
+            }
+            None => {
+                map.remove(elf_symbol);
+            }
+        }
     }
 
-    fn get_elf_symbol_address(&self, _elf_symbol: &ElfSymbol) -> std::option::Option<Address> {
-        None
+    fn get_elf_symbol_address(&self, elf_symbol: &ElfSymbol) -> std::option::Option<Address> {
+        self.symbol_map.borrow().get(elf_symbol).cloned()
     }
 
     fn create_symbol(
         &self,
-        _addr: Address,
+        addr: Address,
         name: &str,
-        _is_primary: bool,
-        _pin_absolute: bool,
-        _namespace: std::option::Option<Arc<dyn Namespace>>,
+        is_primary: bool,
+        pin_absolute: bool,
+        namespace: std::option::Option<Arc<dyn Namespace>>,
     ) -> Result<Arc<dyn Symbol>, InvalidInputException> {
-        Err(InvalidInputException::with_message(format!(
-            "ELF symbol creation is not supported by this loader yet: {name}"
-        )))
+        self.create_symbol_impl(addr, name, is_primary, pin_absolute, namespace)
     }
 
     fn find_load_address(
@@ -1488,21 +1532,45 @@ impl ElfLoadHelper for ElfProgramBuilder<'_> {
         image_base.wrapping_sub(self.elf.get_image_base())
     }
 
-    /// Mirrors `getGOTValue()` for the `DT_PLTGOT` case; the `_GLOBAL_OFFSET_TABLE_` symbol
-    /// fallback needs program symbols (phase 2).
+    /// Mirrors `getGOTValue()`: `DT_PLTGOT` when the dynamic table has it, else the address of
+    /// the one global `_GLOBAL_OFFSET_TABLE_` label or function symbol
+    /// (`SymbolUtilities.getLabelOrFunctionSymbol`).
     fn get_got_value(&self) -> std::option::Option<i64> {
-        let dynamic = self.elf.get_dynamic_table()?;
-        let pltgot = crate::format::elf::elf_dynamic_type::dt_pltgot();
-        if !dynamic.contains_dynamic_value_of_type(&pltgot) {
-            return None;
+        if let Some(dynamic) = self.elf.get_dynamic_table() {
+            let pltgot = crate::format::elf::elf_dynamic_type::dt_pltgot();
+            if dynamic.contains_dynamic_value_of_type(&pltgot) {
+                let value = dynamic.get_dynamic_value_of_type(&pltgot).ok()?;
+                return Some(self.elf.adjust_address_for_prelink(value) + self.get_image_base_word_adjustment_offset());
+            }
         }
-        let value = dynamic.get_dynamic_value_of_type(&pltgot).ok()?;
-        Some(self.elf.adjust_address_for_prelink(value) + self.get_image_base_word_adjustment_offset())
+        let name = crate::format::elf::elf_constants::GOT_SYMBOL_NAME;
+        let symbols: Vec<Arc<dyn Symbol>> = self
+            .program
+            .get_symbol_table()?
+            .get_symbols_by_name(name)
+            .ok()?
+            .into_iter()
+            .filter(|s| {
+                s.get_parent_id() == crate::program::model::symbol::GLOBAL_NAMESPACE_ID
+                    && matches!(
+                        s.get_symbol_type(),
+                        crate::program::model::symbol::SymbolType::Label
+                            | crate::program::model::symbol::SymbolType::Function
+                    )
+            })
+            .collect();
+        match symbols.as_slice() {
+            [got] => Some(got.get_address().addressable_word_offset()),
+            [] => None,
+            _ => {
+                self.log(&format!("Multiple {name} symbols found!"));
+                None
+            }
+        }
     }
 
-    fn allocate_linkage_block(&self, _alignment: i32, _size: i32, purpose: &str) -> std::option::Option<AddressRange> {
-        self.phase2_unavailable(&format!("linkage block allocation ({purpose})"));
-        None
+    fn allocate_linkage_block(&self, alignment: i32, size: i32, purpose: &str) -> std::option::Option<AddressRange> {
+        self.allocate_linkage_block_impl(alignment, size, purpose)
     }
 
     /// Mirrors `getOriginalValue(Address, boolean)`: the 4- or 8-byte value at `addr` before
@@ -1551,6 +1619,8 @@ impl ElfLoadHelper for ElfProgramBuilder<'_> {
         false
     }
 }
+
+mod symbols;
 
 #[cfg(test)]
 mod tests;
