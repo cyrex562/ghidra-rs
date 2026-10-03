@@ -183,3 +183,20 @@ fn code_units_skip_gaps_between_blocks_and_show_uninitialized_bytes_as_unknown()
     );
     assert!(f.units(0x3000, 0x3010).is_empty());
 }
+
+#[test]
+fn instruction_summaries_list_only_instructions_in_the_range() {
+    let mut f = Fixture::new();
+    f.create(0x1000).unwrap();
+    f.create(0x1004).unwrap();
+    f.create(0x1006).unwrap();
+    let mem = f.memory.read().unwrap();
+    let rows: Vec<(i64, String, String)> = f
+        .store
+        .instruction_summaries(&*mem, &f.at(0x1001), &f.at(0x1004))
+        .map(|u| (u.address.offset(), u.mnemonic, u.operand_text))
+        .collect();
+    // starts at or after the range start: the instruction containing 0x1001 is not included
+    assert_eq!(rows, vec![(0x1004, "jmp".to_string(), "0x100b".to_string())]);
+    assert_eq!(f.store.instruction_summaries(&*mem, &f.at(0x1000), &f.at(0x1fff)).count(), 3);
+}

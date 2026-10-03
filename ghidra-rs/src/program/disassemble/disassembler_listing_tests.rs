@@ -275,6 +275,8 @@ fn bin_ls_disassembles_from_its_entry_point() {
     let count = program.get_listing_store().read().unwrap().num_instructions();
     assert!(count >= 10, "only {count} instructions: {:?}", result.errors);
 
+    let summaries = program.instruction_summaries(&entry, &entry.add_wrap(15));
+    assert_eq!(summaries.first().map(|u| u.address.clone()), Some(entry.clone()));
     let units = program.code_units(&entry, &entry.add_wrap(15));
     assert!(units.iter().take(4).all(|u| u.is_instruction()), "{units:#?}");
     // every instruction's bytes are the file's, and the known x86-64 encodings decode as such

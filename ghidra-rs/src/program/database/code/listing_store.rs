@@ -277,6 +277,18 @@ impl ListingStore {
         CodeUnits { store: self, memory, blocks, cursor: Some(first), end: end.clone() }
     }
 
+    /// The summaries of the instructions starting in `[start, end]`, in address order, without
+    /// walking the undefined bytes between them (what a listing snapshot of a large program
+    /// wants).
+    pub fn instruction_summaries<'a>(
+        &'a self,
+        memory: &'a dyn Memory,
+        start: &Address,
+        end: &Address,
+    ) -> impl Iterator<Item = CodeUnitSummary> + 'a {
+        self.instructions_in(start, end).map(move |id| self.instruction_summary(id, memory))
+    }
+
     /// The summary of instruction `id`.
     ///
     /// # Panics

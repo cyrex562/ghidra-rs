@@ -102,6 +102,15 @@ impl ProgramDB {
         let memory = self.memory.read().unwrap_or_else(|p| p.into_inner());
         listing.code_units(&*memory, start, end).collect()
     }
+
+    /// The instructions starting in `[start, end]`, in address order (see
+    /// [`ListingStore::instruction_summaries`]). Takes the listing and memory read locks for the
+    /// duration of the call.
+    pub fn instruction_summaries(&self, start: &Address, end: &Address) -> Vec<CodeUnitSummary> {
+        let listing = self.listing.read().unwrap_or_else(|p| p.into_inner());
+        let memory = self.memory.read().unwrap_or_else(|p| p.into_inner());
+        listing.instruction_summaries(&*memory, start, end).collect()
+    }
 }
 
 impl DomainObject for ProgramDB {
