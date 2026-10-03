@@ -396,6 +396,28 @@ The pseudo-disassembly path landed on this design:
 emulators' default decoder. The program-mutating half of `Disassembler` (listing writes,
 `InstructionSet` building, flow following, bookmarks) lands with the program arena.
 
+### The program store (2026-10-03)
+
+The program backing landed as a concrete store rather than through `InstructionDB`:
+
+- **`ListingStore`** (`program/database/code/listing_store.rs`), owned by `ProgramDB` as
+  `Arc<RwLock<ListingStore>>`, holds each instruction as an `InstructionRecord` plus the context
+  register value it was decoded under, named by a `Copy` `InstructionId` (record key, monotonic,
+  never reused) and ordered by address. It ports `CodeManager`'s instruction half:
+  `createCodeUnit` with `checkValidAddressRange`'s conflicts and messages, at / containing /
+  after / before, `isUndefined`, `getUndefinedRanges`, `clearCodeUnits`.
+- **`ProgramInstructionSnapshot`** is the program's `InstructionSnapshot`: the instruction's
+  bytes read from program memory when the snapshot is taken, its context, and (new trait hook
+  `InstructionSnapshot::own_parser_context`) its parser context built once and copied per query.
+- **`CodeUnitSummary`** is the flattened, UI-facing description (address, length, bytes,
+  mnemonic, operands, operand text, instruction vs undefined); undefined bytes are implied.
+- The program path of `Disassembler` (`disassemble_into` / `disassemble_set_into`) and
+  `DisassembleCommand` write into the store.
+
+Still to do: `InstructionDB` itself (a program-backed `Instruction` trait object resolving an
+`InstructionId` against the store, with length overrides — `PseudoInstruction` has none), defined
+data (`DataRecord`), and `Listing` for `ProgramDB` (`Program::get_listing`).
+
 ### Migration path for the other backings
 
 - **`InstructionDB`**: replace `proto`/`flags`/`flow_override`/`length_override` with an
