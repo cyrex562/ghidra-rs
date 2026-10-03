@@ -14,7 +14,20 @@
 //! instruction owns ([`DisassemblerInstructionContext`]). This is the path the emulator's
 //! `SleighInstructionDecoder` uses.
 //!
-//! # What is not (the program-mutating paths)
+//! # The program path
+//!
+//! [`Disassembler::disassemble_into`] (and its `ProgramDB` wrapper
+//! [`Disassembler::disassemble_program`]) is Java's `disassemble(Address, AddressSetView,
+//! RegisterValue, boolean)` into a [`ListingStore`]: flow following (`processInstructionFlows`),
+//! the flow priority order of the `DisassemblerQueue`, memory restriction to loaded and initialized
+//! memory (`setMemoryConstraintError`, the uninitialized fall-through in `endBlockEarly`), the
+//! restricted set, and the block-start / offcut checks against the listing. Errors are returned
+//! (and reported to the listener) rather than bookmarked. Still missing there: no-return call
+//! detection (`isNoReturnCall`, `checkForIndirectCallFlow`), `InstructionSet` building and its
+//! size limit, prototype-equality checks against existing instructions, defined-data conflicts,
+//! the program's stored context and disassembler options.
+//!
+//! # What is not (the rest of the program-mutating paths)
 //!
 //! Everything that needs a `Program`: the program constructors and `getDisassembler(Program,
 //! ...)`, the `Program` options (`isMarkBadDisassemblyOptionEnabled`, ...), `disassemble(...)`
@@ -48,6 +61,7 @@
 //!   checked ones never reach it (the loop records them in the block); the unchecked ones are
 //!   programming errors, which panic here.
 
+use std::collections::VecDeque;
 use std::rc::Rc;
 use std::sync::Arc;
 
@@ -55,6 +69,9 @@ use crate::app::plugin::processors::sleigh::sleigh_instruction_prototype::Sleigh
 use crate::app::util::pseudo_code_unit::PseudoCodeUnitError;
 use crate::app::util::pseudo_instruction::PseudoInstruction;
 use crate::app::util::repeat_instruction_byte_tracker::RepeatInstructionByteTracker;
+use crate::program::database::code::listing_store::ListingStore;
+use crate::program::database::mem::MemoryMapDB;
+use crate::program::database::program_db::ProgramDB;
 use crate::program::database::register::address_range_object_map::AddressRangeObjectMap;
 use crate::program::disassemble::disassembler_context_impl::DisassemblerContextImpl;
 use crate::program::disassemble::disassembler_message_listener::DisassemblerMessageListener;
@@ -77,6 +94,10 @@ use crate::program::model::listing::context_change_exception::ContextChangeExcep
 use crate::program::model::listing::instruction::Instruction;
 use crate::program::model::listing::instruction_record::SharedPrototype;
 use crate::program::model::listing::program_context::ProgramContext;
+use crate::program::model::address::AddressSet;
+use crate::program::model::lang::instruction_error::InstructionErrorType;
+use crate::program::model::mem::memory_block::EXTERNAL_BLOCK_NAME;
+use crate::program::model::mem::memory_buffer_impl::MemoryBufferImpl;
 use crate::program::model::mem::{MemBuffer, Memory, MemoryAccessException, WrappedMemBuffer};
 use crate::program::util::abstract_program_context::AbstractProgramContext;
 use crate::program::util::program_context_impl::ProgramContextImpl;
@@ -148,6 +169,27 @@ impl MemBuffer for SharedMemBuffer {
     fn get_memory(&self) -> Option<Arc<dyn Memory>> {
         self.0.get_memory()
     }
+}
+
+/// What the program path checks the block loop against: Java's `listing`,
+/// `initializedAddressSet`, `restrictedAddressSet` and `followFlow`, present only while
+/// [`Disassembler::disassemble_into`] runs. The pseudo path passes none.
+struct ListingConstraints<'a> {
+    listing: &'a ListingStore,
+    memory: &'a dyn Memory,
+    initialized: &'a dyn AddressSetView,
+    restricted: Option<&'a dyn AddressSetView>,
+    follow_flow: bool,
+}
+
+/// What [`Disassembler::disassemble_into`] did.
+#[derive(Debug, Default)]
+pub struct DisassembleResult {
+    /// The addresses of the instructions actually added to the listing (Java's return value).
+    pub disassembled: AddressSet,
+    /// Each disassembly error, as (intended instruction address, message): what Java marks as
+    /// `ERROR` bookmarks in the `Bad Instruction` category when bad-instruction marking is on.
+    pub errors: Vec<(Address, String)>,
 }
 
 /// What the disassembler asks of a seed context: Java's `setSeedContext` takes any
@@ -232,6 +274,38 @@ impl Disassembler {
             );
         }
         Disassembler::new(language, addr_factory, monitor, listener)
+    }
+
+    /// A disassembler for `program`: its language and address factory. Stands in for
+    /// `getDisassembler(Program, TaskMonitor, DisassemblerMessageListener)`; the program's
+    /// disassembler options and stored program context are not consulted (they are not ported
+    /// on `ProgramDB`), so the language's default context seeds every flow.
+    ///
+    /// # Panics
+    /// As [`Disassembler::get_disassembler`].
+    pub fn get_program_disassembler(
+        program: &ProgramDB,
+        monitor: Arc<dyn TaskMonitor>,
+        listener: Option<Arc<dyn DisassemblerMessageListener>>,
+    ) -> Disassembler {
+        let language = Arc::clone(program.get_language());
+        let addr_factory: Arc<dyn AddressFactory> = SleighLanguage::get_address_factory(&language);
+        Disassembler::get_disassembler(language, addr_factory, monitor, listener)
+    }
+
+    /// [`Disassembler::disassemble_into`] `program`'s listing and memory, holding the listing's
+    /// write lock for the duration.
+    pub fn disassemble_program(
+        &mut self,
+        program: &ProgramDB,
+        start_addr: &Address,
+        restricted_set: Option<&dyn AddressSetView>,
+        follow_flow: bool,
+    ) -> DisassembleResult {
+        let listing = program.get_listing_store();
+        let mut listing = listing.write().unwrap_or_else(|p| p.into_inner());
+        let memory = MemoryMapDB::as_memory(&program.get_memory());
+        self.disassemble_into(&mut listing, memory, start_addr, restricted_set, None, follow_flow)
     }
 
     /// Disassembler constructor intended for block pseudo-disassembly only. Executable memory
@@ -398,7 +472,7 @@ impl Disassembler {
         // Java also catches any runtime exception here, reporting "Pseudo block disassembly
         // failure at ..."; the checked failures are recorded in the block, and the unchecked ones
         // (programming errors) are panics in this port.
-        self.disassemble_instruction_block(&mut block, &block_mem_buffer, None, limit);
+        self.disassemble_instruction_block(&mut block, &block_mem_buffer, None, limit, None);
 
         // restore bookmark settings
         self.do_mark_bad_instructions = old_mark_bad_instructions;
@@ -429,12 +503,21 @@ impl Disassembler {
         block_mem_buffer: &Arc<dyn MemBuffer>,
         flow_from: Option<Address>,
         limit: i32,
+        constraints: Option<&ListingConstraints<'_>>,
     ) {
         let mut addr = Some(block_mem_buffer.get_address());
         let mut flow_from = flow_from;
         self.repeat_instruction_byte_tracker.reset();
 
-        let result = self.disassemble_block_body(block, block_mem_buffer, &mut addr, &mut flow_from, limit);
+        if let Some(c) = constraints {
+            if !c.initialized.contains(&block_mem_buffer.get_address()) {
+                Self::set_memory_constraint_error(block, flow_from, c.memory);
+                return;
+            }
+        }
+
+        let result =
+            self.disassemble_block_body(block, block_mem_buffer, &mut addr, &mut flow_from, limit, constraints);
         let Err(error) = result else {
             return;
         };
@@ -481,11 +564,24 @@ impl Disassembler {
         addr: &mut Option<Address>,
         flow_from: &mut Option<Address>,
         limit: i32,
+        constraints: Option<&ListingConstraints<'_>>,
     ) -> Result<(), StepError> {
         while !self.monitor.is_cancelled() {
             let Some(inst_addr) = addr.clone() else {
                 break;
             };
+
+            if let Some(c) = constraints {
+                if c.restricted.is_some_and(|r| !r.contains(&inst_addr)) {
+                    self.block_terminated(block);
+                    return Ok(()); // no fall-through
+                }
+                if block.is_empty() && c.listing.instruction_at(&inst_addr).is_some() {
+                    // skip block start silently if it was previously disassembled
+                    self.block_terminated(block);
+                    return Ok(());
+                }
+            }
 
             self.disassembler_context.flow_to_address(&inst_addr);
 
@@ -503,6 +599,26 @@ impl Disassembler {
 
             let inst = self.get_pseudo_instruction(&instr_mem_buffer, prototype, context_value.clone())?;
 
+            if let Some(c) = constraints {
+                if c.listing.instruction_at(&inst_addr).is_some() {
+                    // the flow falls into existing code: the block ends there
+                    block.set_fall_through(Some(inst_addr.clone()));
+                    self.block_terminated(block);
+                    return Ok(());
+                }
+                let max_addr = inst.get_max_address();
+                let existing = c
+                    .listing
+                    .instruction_containing(&inst_addr)
+                    .or_else(|| c.listing.instructions_in(&inst_addr, &max_addr).next());
+                if let Some(existing) = existing {
+                    let existing_addr = c.listing.record(existing).address().clone();
+                    block.set_code_unit_conflict(existing_addr, inst_addr.clone(), flow_from.clone(), true, true);
+                    self.block_terminated(block);
+                    return Ok(());
+                }
+            }
+
             if self.repeat_instruction_byte_tracker.exceeds_repeat_byte_pattern(&inst) {
                 block.set_parse_conflict(
                     inst_addr.clone(),
@@ -513,7 +629,8 @@ impl Disassembler {
             }
 
             // process instruction flows and obtain fallthrough address
-            *addr = self.process_instruction(inst, block_mem_buffer, block)?;
+            let follow_flow = constraints.is_some_and(|c| c.follow_flow);
+            *addr = self.process_instruction(inst, block_mem_buffer, block, follow_flow)?;
 
             let Some(fall_thru_addr) = addr.clone() else {
                 self.block_terminated(block);
@@ -527,7 +644,8 @@ impl Disassembler {
                 let inst = block.get_instruction_at(&inst_addr).expect("the instruction was just added");
                 (self.is_block_termination_ok(inst), inst.get_flow_type().is_call())
             };
-            if self.end_block_early(&inst_addr, &fall_thru_addr, limit, termination_ok, block)
+            let falls_out_of_memory = constraints.is_some_and(|c| !c.initialized.contains(&fall_thru_addr));
+            if self.end_block_early(&inst_addr, &fall_thru_addr, limit, termination_ok, falls_out_of_memory, block)
                 || self.end_block_on_call(&inst_addr, &fall_thru_addr, is_call && termination_ok, block)
             {
                 // Preserve fallthrough context for future disassembly continuation. No need to
@@ -575,10 +693,10 @@ impl Disassembler {
         fall_thru_addr: &Address,
         limit: i32,
         termination_ok: bool,
+        falls_out_of_memory: bool,
         block: &mut DisassembledBlock,
     ) -> bool {
-        // (the uninitialized-memory condition needs a program; see the module docs)
-        if block.get_instruction_count() as i64 >= limit as i64 && termination_ok {
+        if (block.get_instruction_count() as i64 >= limit as i64 && termination_ok) || falls_out_of_memory {
             self.disassembler_context.copy_to_future_flow_state(fall_thru_addr);
             block.add_block_flow(InstructionBlockFlow::new(
                 fall_thru_addr.clone(),
@@ -665,7 +783,11 @@ impl Disassembler {
         inst: DisassembledInstruction,
         block_mem_buffer: &Arc<dyn MemBuffer>,
         block: &mut DisassembledBlock,
+        follow_flow: bool,
     ) -> Result<Option<Address>, StepError> {
+        if follow_flow {
+            self.process_instruction_flows(&inst, block);
+        }
         let delay_slot_list = self
             .parse_delay_slots(&inst, block_mem_buffer, block)
             .map_err(StepError::NestedDelaySlot)?;
@@ -779,6 +901,222 @@ impl Disassembler {
             }
         }
         Ok(None) // error occurred
+    }
+
+    /// Port of the private `processInstructionFlows`: queues the instruction's language flows
+    /// on the block (calls as `CALL` flows, everything else as `BRANCH` flows), carrying the
+    /// current context to each destination. The no-return checks (`isNoReturnCall`,
+    /// `checkForIndirectCallFlow`) need the function manager and are not ported.
+    fn process_instruction_flows(&mut self, inst: &DisassembledInstruction, block: &mut DisassembledBlock) {
+        let flow_addrs = inst.get_flows().unwrap_or_default();
+        let flow_type = inst.get_flow_type();
+        let inst_addr = inst.get_min_address();
+        for flow_addr in flow_addrs {
+            if flow_addr.offset() % self.inst_alignment as i64 != 0 {
+                block.set_instruction_error(
+                    InstructionErrorType::FlowAlignment,
+                    inst_addr.clone(),
+                    None,
+                    None,
+                    format!(
+                        "Flow destination address {flow_addr} from {inst_addr} violates {}-byte instruction alignment",
+                        self.inst_alignment
+                    ),
+                );
+            } else {
+                self.disassembler_context.copy_to_future_flow_state(&flow_addr);
+                if flow_type.is_call() {
+                    block.add_block_flow(InstructionBlockFlow::new(
+                        flow_addr,
+                        Some(inst_addr.clone()),
+                        InstructionBlockFlowType::Call,
+                    ));
+                } else {
+                    block.add_block_flow(InstructionBlockFlow::new(
+                        flow_addr.clone(),
+                        Some(inst_addr.clone()),
+                        InstructionBlockFlowType::Branch,
+                    ));
+                    block.add_branch_flow(flow_addr);
+                }
+            }
+        }
+    }
+
+    /// Port of the private `setMemoryConstraintError`: the block's start is outside the
+    /// disassemblable memory.
+    fn set_memory_constraint_error(block: &mut DisassembledBlock, flow_from: Option<Address>, memory: &dyn Memory) {
+        let start_addr = block.get_start_address();
+        match memory.get_block(&start_addr) {
+            Some(mem_block) => {
+                if mem_block.get_name() == EXTERNAL_BLOCK_NAME {
+                    return; // return empty block without error
+                }
+                let reason = if !start_addr.space().is_loaded_memory_space() {
+                    "non-loaded"
+                } else if mem_block.is_initialized() {
+                    // assume non-execute restriction was imposed
+                    "non-execute"
+                } else {
+                    "uninitialized"
+                };
+                block.set_instruction_memory_error(
+                    start_addr,
+                    flow_from,
+                    format!("Disassembly not permitted within {reason} memory block"),
+                );
+            }
+            None => block.set_instruction_memory_error(
+                start_addr.clone(),
+                flow_from,
+                format!("Could not follow disassembly flow into non-existing memory at {start_addr}"),
+            ),
+        }
+    }
+
+    /// Disassembles into `listing` from `start_addr`, following flows when `follow_flow` is set
+    /// (otherwise only fall-throughs), within `restricted_set` (if any) and the loaded,
+    /// initialized `memory`. Port of `disassemble(Address, AddressSetView, RegisterValue,
+    /// boolean)` for a program whose listing is a [`ListingStore`].
+    ///
+    /// Flows are processed in Java's priority order: priority flows (block limits, fall-throughs
+    /// out of a block), branches, then call fall-throughs, then call destinations. A destination
+    /// already holding an instruction is skipped silently; one inside an instruction is a
+    /// conflict. Each block's instructions go into the listing in address order until one fails
+    /// to insert.
+    ///
+    /// Not ported (see the module docs): no-return call detection, bookmarks (errors are
+    /// returned and reported to the listener instead), instruction sets and their size limit,
+    /// prototype-equality checks against existing instructions, and defined-data conflicts.
+    ///
+    /// # Panics
+    /// If `initial_context_value` is not a value of the disassembler's context register (Java's
+    /// `IllegalArgumentException`).
+    pub fn disassemble_into(
+        &mut self,
+        listing: &mut ListingStore,
+        memory: Arc<dyn Memory>,
+        start_addr: &Address,
+        restricted_set: Option<&dyn AddressSetView>,
+        initial_context_value: Option<&RegisterValue>,
+        follow_flow: bool,
+    ) -> DisassembleResult {
+        let mut result = DisassembleResult::default();
+        if let Some(value) = initial_context_value {
+            let base = value.register().get_base_register();
+            assert!(
+                self.base_context_register.as_ref() == Some(&base),
+                "Invalid initialContextValue"
+            );
+        }
+
+        let addressable_unit_size = start_addr.space().unit_size();
+        if self.inst_alignment % addressable_unit_size != 0 || start_addr.offset() % self.inst_alignment as i64 != 0 {
+            self.report_message(&format!(
+                "Disassembly address {start_addr} violates {}-byte instruction alignment",
+                self.inst_alignment
+            ));
+            return result;
+        }
+
+        if let Some(seed) = &self.seed_context {
+            let seed_value = seed.flow_context_value(start_addr);
+            self.disassembler_context.set_future_register_value_at(start_addr, Some(seed_value));
+        }
+        if let (Some(value), Some(_)) = (initial_context_value, &self.base_context_register) {
+            let initial = self.disassembler_context.get_flow_context_value(start_addr, false);
+            self.disassembler_context
+                .set_future_register_value_at(start_addr, Some(initial.combine_values(value)));
+        }
+
+        let initialized = memory.get_loaded_and_initialized_address_set();
+        // priority, branch, call fall-through, call
+        let mut queues: [VecDeque<(Address, Option<Address>)>; 4] = Default::default();
+        queues[1].push_back((start_addr.clone(), None));
+
+        while !self.monitor.is_cancelled() {
+            let Some((block_addr, flow_from)) = queues.iter_mut().find_map(VecDeque::pop_front) else {
+                break;
+            };
+            if restricted_set.is_some_and(|r| !r.contains(&block_addr)) {
+                continue;
+            }
+            if listing.instruction_at(&block_addr).is_some() {
+                continue; // skip call point silently if it was previously disassembled
+            }
+            if let Some(existing) = listing.instruction_containing(&block_addr) {
+                // markCallConflict
+                let message = format!(
+                    "Failed to disassemble at {block_addr} due to conflicting instruction at {}",
+                    listing.record(existing).address()
+                );
+                self.report_message(&message);
+                result.errors.push((block_addr, message));
+                continue;
+            }
+
+            if !self.disassembler_context.is_flow_active() {
+                self.disassembler_context.flow_start(&block_addr);
+            }
+            let mut block = InstructionBlock::new(block_addr.clone());
+            block.set_flow_from_address(flow_from.clone());
+            let block_mem_buffer: Arc<dyn MemBuffer> =
+                Arc::new(MemoryBufferImpl::new(Arc::clone(&memory), block_addr.clone()));
+            {
+                let constraints = ListingConstraints {
+                    listing: &*listing,
+                    memory: &*memory,
+                    initialized: &*initialized,
+                    restricted: restricted_set,
+                    follow_flow,
+                };
+                self.disassemble_instruction_block(&mut block, &block_mem_buffer, flow_from, i32::MAX, Some(&constraints));
+            }
+            if block.is_empty() {
+                self.disassembler_context.flow_end(Some(&block_addr));
+            } else {
+                self.disassembler_context.flow_end(Some(&block.get_max_address()));
+            }
+
+            // add the block's instructions to the listing (CodeManager.addInstructions)
+            for inst in block.iter() {
+                let min = inst.get_min_address();
+                match listing.create_instruction(
+                    &*memory,
+                    min.clone(),
+                    Arc::clone(inst.record().prototype()),
+                    inst.context().context_value().cloned(),
+                    0,
+                ) {
+                    Ok(_) => result.disassembled.add_range(&min, &inst.get_max_address()),
+                    Err(e) => {
+                        let message = e.message().to_string();
+                        self.report_message(&message);
+                        result.errors.push((min, message));
+                        break;
+                    }
+                }
+            }
+            if let Some(error) = block.get_instruction_conflict() {
+                let message = error.get_conflict_message().to_string();
+                self.report_message(&message);
+                result.errors.push((error.get_instruction_address(), message));
+            }
+
+            for flow in block.get_block_flows().unwrap_or_default() {
+                let queue = match flow.get_type() {
+                    InstructionBlockFlowType::Priority => 0,
+                    InstructionBlockFlowType::Branch => 1,
+                    InstructionBlockFlowType::CallFallthrough => 2,
+                    InstructionBlockFlowType::Call => 3,
+                };
+                queues[queue].push_back((flow.get_destination_address(), flow.get_flow_from_address()));
+            }
+        }
+        if self.disassembler_context.is_flow_active() {
+            self.disassembler_context.flow_abort();
+        }
+        result
     }
 
     fn report_message(&self, msg: &str) {
@@ -1091,6 +1429,10 @@ impl ProcessorContext for DisassemblerInstructionContext {
         panic!("UnsupportedOperationException: an instruction's context is immutable")
     }
 }
+
+#[cfg(test)]
+#[path = "disassembler_listing_tests.rs"]
+mod listing_tests;
 
 #[cfg(test)]
 mod tests {
