@@ -564,6 +564,19 @@ fn direction(d: i64) -> Result<Move, String> {
 }
 
 fn listing_intent(pid: u64, kind: u8, a: i64, b: i64, extend: bool) -> Result<(), String> {
+    if kind == 6 {
+        // activate (double-click): follow the operand's reference, with history
+        return with("listing_intent", |s| {
+            let handle = model!(s, pid, Listing, "listing").clone();
+            let px = |v: i64| v.clamp(i32::MIN as i64, i32::MAX as i64) as i32;
+            let navigated = ghidra_ui_model::listing_controller::lock(&handle).activate(px(a), px(b));
+            if navigated {
+                s.events().post(UiEvent::ViewChanged(pid));
+                s.events().post(UiEvent::ActionsChanged);
+            }
+            Ok(())
+        });
+    }
     with_listing("listing_intent", pid, |c| {
         let px = |v: i64| v.clamp(i32::MIN as i64, i32::MAX as i64) as i32;
         match kind {
@@ -969,6 +982,11 @@ mod tests {
         assert_eq!(selected, vec!["15", "16"]);
         assert_eq!(f.location, "00402004");
         assert!(f.rows.iter().any(|r| r.index == "16" && r.cursor_x == 0));
+        // activate (double-click): no reference in the fixture, so a plain click
+        drain_events().unwrap();
+        listing_intent(p, 6, 0, h + 1, false).unwrap(); // row 14 (top is 13)
+        assert_eq!(listing_frame(p).unwrap().location, "00402002");
+        assert!(drain_events().unwrap().iter().all(|e| e.kind != 3), "no navigation, no action refresh");
         assert!(listing_intent(p, 9, 0, 0, false).is_err());
         assert!(listing_intent(p, 0, 42, 0, false).is_err());
     }
