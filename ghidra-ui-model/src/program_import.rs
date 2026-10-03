@@ -96,12 +96,15 @@ pub fn instructions_in(
         .into_iter()
         .zip(references)
         .map(|(u, references)| {
-            let operands = if references.is_empty() {
-                u.operand_text
-            } else {
-                program.operand_display(&u.address).map_or(u.operand_text, |d| d.operand_field)
+            let (operands, parts) = match references.is_empty() {
+                true => (u.operand_text, u.operands),
+                false => match program.operand_display(&u.address) {
+                    Some(d) => (d.operand_field, d.operands),
+                    None => (u.operand_text, u.operands),
+                },
             };
             InstructionSnapshot {
+                operand_starts: crate::code_unit_listing::operand_starts(&operands, &parts),
                 references,
                 start: u.address.offset() as u64,
                 len: u32::try_from(u.length).unwrap_or(u32::MAX),

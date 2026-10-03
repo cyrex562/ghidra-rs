@@ -22,6 +22,9 @@ pub struct InstructionSnapshot {
     pub operands: String,
     /// Each operand's primary memory reference.
     pub references: Vec<OperandRef>,
+    /// Each operand's first column in `operands` (empty: unknown, the
+    /// operand is guessed from top-level commas).
+    pub operand_starts: Vec<usize>,
 }
 
 /// An operand's primary memory reference (Java `getPrimaryReferenceFrom`).
@@ -75,7 +78,7 @@ enum SegKind {
     Label { name: String, id: i64, address: u64 },
     /// A block-start `//` header line.
     Header(String),
-    Instruction { len: u64, mnemonic: String, operands: String, references: Vec<OperandRef> },
+    Instruction { len: u64, mnemonic: String, operands: String, references: Vec<OperandRef>, operand_starts: Vec<usize> },
     /// `rows` undefined bytes from `address`.
     Undefined,
 }
@@ -199,6 +202,7 @@ impl CodeUnitListing {
                         mnemonic: insn.mnemonic.clone(),
                         operands: insn.operands.clone(),
                         references: insn.references.clone(),
+                        operand_starts: insn.operand_starts.clone(),
                     };
                     push(&mut segments, 1, p, bi, kind);
                     cursor = p + len;
@@ -277,6 +281,19 @@ impl CodeUnitListing {
     }
 }
 
+/// Each operand's first column (in chars) in the operand field `text`, found
+/// in order; empty when an operand's text is not found.
+pub fn operand_starts(text: &str, operands: &[String]) -> Vec<usize> {
+    let mut starts = Vec::with_capacity(operands.len());
+    let mut from = 0; // byte offset
+    for op in operands {
+        let Some(at) = text.get(from..).and_then(|rest| rest.find(op.as_str())) else { return Vec::new() };
+        starts.push(text[..from + at].chars().count());
+        from += at + op.len();
+    }
+    starts
+}
+
 /// The operand (0-based) holding column `col` of an operand field's text:
 /// operands are separated by commas outside `[]`/`()`; a column past the end
 /// belongs to the last operand.
@@ -304,11 +321,15 @@ impl ListingViewModel for CodeUnitListing {
     fn reference_target(&self, c: CursorPos) -> Option<u64> {
         const OPERANDS: usize = 3;
         let s = self.segment(c.index)?;
-        let SegKind::Instruction { operands, references, .. } = &s.kind else { return None };
+        let SegKind::Instruction { operands, references, operand_starts, .. } = &s.kind else { return None };
         if c.field != OPERANDS {
             return None;
         }
-        let op = operand_index_at(operands, c.col);
+        let op = if operand_starts.is_empty() {
+            operand_index_at(operands, c.col)
+        } else {
+            operand_starts.partition_point(|&start| start <= c.col).saturating_sub(1) as i32
+        };
         references.iter().find(|r| r.op_index == op).map(|r| r.to)
     }
     fn set_metrics(&mut self, metrics: FontMetrics) {
@@ -433,7 +454,7 @@ mod tests {
     }
 
     fn insn(start: u64, len: u32, mnemonic: &str, operands: &str) -> InstructionSnapshot {
-        InstructionSnapshot { start, len, mnemonic: mnemonic.into(), operands: operands.into(), references: vec![] }
+        InstructionSnapshot { start, len, mnemonic: mnemonic.into(), operands: operands.into(), references: vec![], operand_starts: vec![] }
     }
 
     fn label(address: u64, name: &str, primary: bool) -> LabelSnapshot {
@@ -525,6 +546,24 @@ mod tests {
         assert_eq!(operand_index_at(text, 99), 1, "past the end: the last operand");
         assert_eq!(operand_index_at("qword ptr [RIP + 0x2fe2]", 12), 0);
         assert_eq!(operand_index_at("dword ptr [RAX + RAX*0x1],EAX", 26), 1);
+    }
+
+    #[test]
+    fn exact_operand_starts_beat_the_comma_guess() {
+        // ARM `ldmia r0,{r4,lr}` style: commas inside a register list
+        let mut ins = insn(0x1000, 4, "LDM", "{r4,lr},[r0]");
+        ins.operand_starts = vec![0, 8];
+        ins.references = vec![OperandRef { op_index: 1, to: 0x2000 }];
+        let l = listing(vec![ins], vec![]);
+        assert_eq!(l.reference_target(CursorPos { index: 0, field: 3, col: 9 }), Some(0x2000));
+        assert_eq!(l.reference_target(CursorPos { index: 0, field: 3, col: 5 }), None, "inside the register list: operand 0");
+    }
+
+    #[test]
+    fn operand_starts_are_found_in_the_field_text() {
+        assert_eq!(operand_starts("{r4,lr},[r0]", &["{r4,lr}".to_string(), "[r0]".to_string()]), vec![0, 8]);
+        assert_eq!(operand_starts("RAX,qword ptr [DAT_1]", &["RAX".to_string(), "qword ptr [DAT_1]".to_string()]), vec![0, 4]);
+        assert!(operand_starts("x", &["y".to_string()]).is_empty(), "not found: no starts (fall back)");
     }
 
     #[test]
